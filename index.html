@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Family Chores</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #F7F5F0;
+    --surface: #FFFFFF;
+    --text: #1A1A18;
+    --muted: #7A7870;
+    --border: rgba(26,26,24,0.1);
+    --accent: #2D6A4F;
+    --accent-light: #E8F5EE;
+    --warn: #B5460F;
+    --warn-light: #FDF0EA;
+    --soon: #8B5E00;
+    --soon-light: #FEF6E4;
+    --done: #3A3A38;
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: 16px; }
+
+  /* PIN SCREEN */
+  #pin-screen { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; z-index: 999; }
+  #pin-screen.hidden { display: none; }
+  .pin-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 2.5rem 2rem; width: 100%; max-width: 360px; text-align: center; }
+  .pin-title { font-family: 'DM Serif Display', serif; font-size: 1.6rem; margin-bottom: 0.4rem; }
+  .pin-sub { font-size: 0.85rem; color: var(--muted); margin-bottom: 1.75rem; }
+  .pin-dots { display: flex; gap: 12px; justify-content: center; margin-bottom: 1.5rem; }
+  .pin-dot { width: 14px; height: 14px; border-radius: 50%; border: 1.5px solid var(--border); background: var(--bg); transition: all 0.15s; }
+  .pin-dot.filled { background: var(--accent); border-color: var(--accent); }
+  .pin-dot.error { background: var(--warn); border-color: var(--warn); }
+  .pin-pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .pin-key { height: 56px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg); color: var(--text); font-size: 1.25rem; font-family: 'DM Sans', sans-serif; cursor: pointer; transition: background 0.1s; }
+  .pin-key:hover { background: var(--surface); }
+  .pin-key:active { transform: scale(0.95); }
+  .pin-key.del { font-size: 1rem; color: var(--muted); }
+  .pin-error { font-size: 0.8rem; color: var(--warn); min-height: 1.4em; margin-top: 0.75rem; }
+
+  /* HEADER */
+  header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 1.25rem 2rem; display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap; }
+  .logo { font-family: 'DM Serif Display', serif; font-size: 1.6rem; color: var(--text); flex-shrink: 0; }
+  .logo span { color: var(--accent); }
+  .live-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); animation: pulse 2s infinite; flex-shrink: 0; }
+  @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+  .header-stats { display: flex; gap: 1.5rem; margin-left: auto; flex-wrap: wrap; }
+  .hstat { text-align: center; }
+  .hstat-val { font-size: 1.5rem; font-weight: 500; line-height: 1; }
+  .hstat-label { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 2px; }
+  .progress-bar { flex-basis: 100%; height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; }
+  .progress-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.4s ease; }
+
+  /* LAYOUT */
+  .container { max-width: 1200px; margin: 0 auto; padding: 1.5rem 2rem; }
+
+  /* MEMBERS BAR */
+  .members-bar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 1.5rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 0.875rem 1.25rem; }
+  .members-label { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; flex-shrink: 0; margin-right: 4px; }
+  .chip { font-size: 0.8rem; font-weight: 500; padding: 4px 12px; border-radius: 20px; display: flex; align-items: center; gap: 6px; cursor: default; }
+  .chip-del { cursor: pointer; opacity: 0.5; font-size: 1rem; line-height: 1; }
+  .chip-del:hover { opacity: 1; }
+  .member-add { display: flex; gap: 6px; margin-left: auto; }
+  .member-add input { height: 32px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg); color: var(--text); font-size: 0.85rem; padding: 0 10px; width: 130px; font-family: inherit; }
+  .member-add input:focus { outline: none; border-color: var(--accent); }
+  .btn-sm { height: 32px; padding: 0 14px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); font-size: 0.8rem; cursor: pointer; font-family: inherit; white-space: nowrap; }
+  .btn-sm:hover { background: var(--bg); }
+  .btn-accent { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .btn-accent:hover { opacity: 0.88; background: var(--accent); }
+
+  /* ADD BAR */
+  .add-bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 0.875rem 1.25rem; margin-bottom: 1.5rem; }
+  .add-bar input[type=text] { flex: 1; min-width: 160px; height: 40px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg); color: var(--text); font-size: 0.95rem; padding: 0 12px; font-family: inherit; }
+  .add-bar input:focus { outline: none; border-color: var(--accent); }
+  .add-bar select { height: 40px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg); color: var(--text); font-size: 0.9rem; padding: 0 10px; font-family: inherit; }
+  .add-bar select:focus { outline: none; border-color: var(--accent); }
+  .btn-lg { height: 40px; padding: 0 20px; border-radius: var(--radius-sm); font-size: 0.9rem; font-family: inherit; cursor: pointer; border: 1px solid; white-space: nowrap; }
+
+  /* FILTERS */
+  .filters { display: flex; gap: 8px; margin-bottom: 1.25rem; flex-wrap: wrap; }
+  .filter-pill { height: 32px; padding: 0 16px; border-radius: 20px; border: 1px solid var(--border); background: var(--surface); color: var(--muted); font-size: 0.8rem; cursor: pointer; font-family: inherit; display: flex; align-items: center; gap: 6px; }
+  .filter-pill:hover { border-color: var(--accent); color: var(--accent); }
+  .filter-pill.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .filter-pill .count { background: rgba(255,255,255,0.25); border-radius: 10px; padding: 0 6px; font-size: 0.7rem; }
+  .filter-pill:not(.active) .count { background: var(--bg); color: var(--muted); }
+
+  /* SECTIONS */
+  .section { margin-bottom: 1.5rem; }
+  .section-head { font-size: 0.7rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; }
+  .section-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+  .dot-overdue { background: var(--warn); }
+  .dot-soon { background: var(--soon); }
+  .dot-ok { background: var(--accent); }
+  .dot-done { background: var(--muted); }
+
+  /* TASK CARD */
+  .task-card { display: flex; align-items: center; gap: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 8px; transition: opacity 0.2s, transform 0.15s; cursor: default; }
+  .task-card:hover { transform: translateY(-1px); border-color: rgba(26,26,24,0.18); }
+  .task-card.done { opacity: 0.4; }
+  .task-card.done .task-name { text-decoration: line-through; }
+  .task-card.overdue { border-left: 3px solid var(--warn); }
+  .task-card.soon { border-left: 3px solid var(--soon); }
+  .check { width: 24px; height: 24px; border-radius: 6px; flex-shrink: 0; border: 1.5px solid var(--border); background: var(--bg); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.15s; }
+  .check:hover { border-color: var(--accent); }
+  .check.checked { background: var(--accent); border-color: var(--accent); }
+  .check svg { display: none; }
+  .check.checked svg { display: block; }
+  .task-name { flex: 1; font-size: 1rem; color: var(--text); }
+  .task-meta { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+  .tag { font-size: 0.72rem; font-weight: 500; padding: 3px 10px; border-radius: 20px; white-space: nowrap; }
+  .tag-freq { background: var(--bg); color: var(--muted); border: 1px solid var(--border); }
+  .tag-overdue { background: var(--warn-light); color: var(--warn); }
+  .tag-soon { background: var(--soon-light); color: var(--soon); }
+  .tag-ok { background: var(--accent-light); color: var(--accent); }
+  .del { width: 28px; height: 28px; border: none; background: none; cursor: pointer; color: var(--muted); font-size: 1.1rem; border-radius: 6px; display: flex; align-items: center; justify-content: center; opacity: 0; flex-shrink: 0; }
+  .task-card:hover .del { opacity: 0.5; }
+  .del:hover { opacity: 1 !important; background: var(--bg); }
+  .empty { font-size: 0.9rem; color: var(--muted); padding: 1rem 0; }
+
+  /* TOAST */
+  .toast { position: fixed; bottom: 1.5rem; right: 1.5rem; background: var(--done); color: #fff; font-size: 0.8rem; padding: 8px 16px; border-radius: var(--radius-sm); opacity: 0; transform: translateY(8px); transition: all 0.25s; pointer-events: none; z-index: 100; }
+  .toast.show { opacity: 1; transform: translateY(0); }
+
+  /* TV */
+  @media (min-width: 1400px) {
+    body { font-size: 18px; }
+    .logo { font-size: 2rem; }
+    .task-name { font-size: 1.1rem; }
+    .hstat-val { font-size: 1.8rem; }
+    header { padding: 1.5rem 3rem; }
+    .container { padding: 2rem 3rem; }
+  }
+  /* Tablet */
+  @media (max-width: 700px) {
+    header { padding: 1rem 1.25rem; }
+    .container { padding: 1rem 1.25rem; }
+    .header-stats { gap: 1rem; }
+    .task-card { padding: 12px; }
+    .check { width: 28px; height: 28px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- PIN SCREEN -->
+<div id="pin-screen">
+  <div class="pin-card">
+    <div class="pin-title">Family<span style="color:var(--accent)">Chores</span></div>
+    <div class="pin-sub">Enter your 6-digit family PIN to continue</div>
+    <div class="pin-dots" id="pin-dots">
+      <div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div>
+      <div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div>
+    </div>
+    <div class="pin-pad">
+      <button class="pin-key" onclick="pinKey('1')">1</button>
+      <button class="pin-key" onclick="pinKey('2')">2</button>
+      <button class="pin-key" onclick="pinKey('3')">3</button>
+      <button class="pin-key" onclick="pinKey('4')">4</button>
+      <button class="pin-key" onclick="pinKey('5')">5</button>
+      <button class="pin-key" onclick="pinKey('6')">6</button>
+      <button class="pin-key" onclick="pinKey('7')">7</button>
+      <button class="pin-key" onclick="pinKey('8')">8</button>
+      <button class="pin-key" onclick="pinKey('9')">9</button>
+      <button class="pin-key" style="visibility:hidden" disabled></button>
+      <button class="pin-key" onclick="pinKey('0')">0</button>
+      <button class="pin-key del" onclick="pinDel()">&#9003;</button>
+    </div>
+    <div class="pin-error" id="pin-error"></div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<header>
+  <div class="logo">Family<span>Chores</span></div>
+  <div class="live-dot" title="Live sync"></div>
+  <div class="header-stats">
+    <div class="hstat"><div class="hstat-val" id="h-total">—</div><div class="hstat-label">Total</div></div>
+    <div class="hstat"><div class="hstat-val" id="h-done" style="color:var(--accent)">—</div><div class="hstat-label">Done today</div></div>
+    <div class="hstat"><div class="hstat-val" id="h-overdue" style="color:var(--warn)">—</div><div class="hstat-label">Overdue</div></div>
+    <div class="hstat"><div class="hstat-val" id="h-pct">—</div><div class="hstat-label">Progress</div></div>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" id="prog" style="width:0%"></div></div>
+</header>
+
+<div class="container">
+  <div class="members-bar">
+    <span class="members-label">Family members</span>
+    <div id="member-chips" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
+    <div class="member-add">
+      <input type="text" id="new-member" placeholder="Add family member..." maxlength="24" />
+      <button class="btn-sm btn-accent" onclick="addMember()">+ Add</button>
+    </div>
+  </div>
+
+  <div class="add-bar">
+    <input type="text" id="new-task" placeholder="Add a chore..." maxlength="60" />
+    <select id="new-freq">
+      <option value="daily">Daily</option>
+      <option value="weekly" selected>Weekly</option>
+      <option value="fortnightly">Fortnightly</option>
+      <option value="monthly">Monthly</option>
+    </select>
+    <select id="new-person"></select>
+    <button class="btn-lg btn-accent" onclick="addTask()">+ Add chore</button>
+  </div>
+
+  <div class="filters" id="filters"></div>
+  <div id="task-list"></div>
+</div>
+
+<div class="toast" id="toast">Saved</div>
+
+<!-- PIN LOGIC (plain script, runs first) -->
+<script>
+(function() {
+  const CORRECT_HASH = 'c14c70ff95f6fde8c02bf3a1aa58586756a6867f2f5bbf92f4ba6060b5ede619';
+  const SESSION_KEY  = 'fc_auth';
+  const LOCKOUT_KEY  = 'fc_lockout';
+  const MAX_ATTEMPTS = 5;
+  const LOCKOUT_MS   = 5 * 60 * 1000;
+
+  let pinBuffer = '';
+
+  async function sha256(str) {
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+  }
+
+  function isLockedOut() {
+    try {
+      const d = JSON.parse(sessionStorage.getItem(LOCKOUT_KEY) || 'null');
+      if (!d) return false;
+      if (Date.now() - d.time < LOCKOUT_MS) return true;
+      sessionStorage.removeItem(LOCKOUT_KEY);
+    } catch(e) {}
+    return false;
+  }
+
+  function recordFailure() {
+    try {
+      const d = JSON.parse(sessionStorage.getItem(LOCKOUT_KEY) || '{"count":0,"time":0}');
+      d.count = (d.count || 0) + 1;
+      d.time  = Date.now();
+      sessionStorage.setItem(LOCKOUT_KEY, JSON.stringify(d));
+      return d.count;
+    } catch(e) { return 1; }
+  }
+
+  function remainingMins() {
+    try {
+      const d = JSON.parse(sessionStorage.getItem(LOCKOUT_KEY) || 'null');
+      if (!d) return 0;
+      return Math.ceil((LOCKOUT_MS - (Date.now() - d.time)) / 60000);
+    } catch(e) { return 0; }
+  }
+
+  function checkSession() {
+    try { return sessionStorage.getItem(SESSION_KEY) === 'ok'; } catch(e) { return false; }
+  }
+
+  function grantAccess() {
+    try { sessionStorage.setItem(SESSION_KEY, 'ok'); } catch(e) {}
+    document.getElementById('pin-screen').classList.add('hidden');
+  }
+
+  function updateDots() {
+    document.querySelectorAll('.pin-dot').forEach((d, i) => {
+      d.classList.toggle('filled', i < pinBuffer.length);
+      d.classList.remove('error');
+    });
+  }
+
+  function flashError(msg) {
+    document.querySelectorAll('.pin-dot').forEach(d => { d.classList.remove('filled'); d.classList.add('error'); });
+    document.getElementById('pin-error').textContent = msg;
+    setTimeout(() => {
+      document.querySelectorAll('.pin-dot').forEach(d => d.classList.remove('error'));
+      pinBuffer = '';
+      updateDots();
+    }, 700);
+  }
+
+  window.pinKey = async function(digit) {
+    if (isLockedOut()) {
+      document.getElementById('pin-error').textContent = 'Too many attempts. Try again in ' + remainingMins() + ' min.';
+      return;
+    }
+    if (pinBuffer.length >= 6) return;
+    pinBuffer += digit;
+    updateDots();
+
+    if (pinBuffer.length === 6) {
+      const hash = await sha256(pinBuffer);
+      pinBuffer = '';
+      if (hash === CORRECT_HASH) {
+        grantAccess();
+      } else {
+        const attempts = recordFailure();
+        const left = MAX_ATTEMPTS - attempts;
+        if (left <= 0) {
+          flashError('Too many attempts. Locked for 5 minutes.');
+        } else {
+          flashError('Incorrect PIN. ' + left + ' attempt' + (left !== 1 ? 's' : '') + ' left.');
+        }
+      }
+    }
+  };
+
+  window.pinDel = function() {
+    if (isLockedOut()) return;
+    pinBuffer = pinBuffer.slice(0, -1);
+    updateDots();
+  };
+
+  // On load: skip PIN if session already valid
+  if (checkSession()) {
+    document.getElementById('pin-screen').classList.add('hidden');
+  } else if (isLockedOut()) {
+    document.getElementById('pin-error').textContent = 'Too many attempts. Try again in ' + remainingMins() + ' min.';
+  }
+
+  // Keyboard support
+  document.addEventListener('keydown', function(e) {
+    if (document.getElementById('pin-screen').classList.contains('hidden')) return;
+    if (e.key >= '0' && e.key <= '9') pinKey(e.key);
+    if (e.key === 'Backspace') pinDel();
+  });
+})();
+</script>
+
+<!-- FIREBASE + APP LOGIC -->
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import { getDatabase, ref, onValue, set, remove, update } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js';
+
+const FB_URL = 'https://home-chores-glades-default-rtdb.asia-southeast1.firebasedatabase.app';
+const app = initializeApp({ databaseURL: FB_URL }, 'homechores');
+const db  = getDatabase(app);
+
+const PCOLS = [
+  {bg:'#EAF4FF',text:'#0B3D6B'},{bg:'#E8F5EE',text:'#1A4D35'},
+  {bg:'#FEF6E4',text:'#6B4500'},{bg:'#FCE8F3',text:'#6B1A46'},
+  {bg:'#EEF0FE',text:'#2D2E8F'},{bg:'#F0FAE8',text:'#2A5210'},
+];
+
+let state = { members: [], tasks: {}, nextId: 1 };
+let members = [];
+let filter = 'all';
+
+function freqDays(f) { return {daily:1,weekly:7,fortnightly:14,monthly:30}[f] || 7; }
+function daysSince(ts) { return Math.floor((Date.now() - ts) / 86400000); }
+function dueStatus(t) {
+  if (t.done) return 'done';
+  const d = freqDays(t.freq), s = daysSince(t.lastDone || 0);
+  if (s >= d) return 'overdue';
+  if (s >= d - 1) return 'soon';
+  return 'ok';
+}
+function pColor(name) {
+  const i = members.indexOf(name);
+  return i >= 0 ? PCOLS[i % PCOLS.length] : null;
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg || 'Saved';
+  t.classList.add('show');
+  clearTimeout(t._tid);
+  t._tid = setTimeout(() => t.classList.remove('show'), 1800);
+}
+
+// Firebase live listener
+onValue(ref(db, 'state'), snap => {
+  const val = snap.val() || {};
+  members = val.members || [];
+  state = { members, tasks: val.tasks || {}, nextId: val.nextId || 1 };
+  render();
+});
+
+async function writeState() {
+  await set(ref(db, 'state'), { members, tasks: state.tasks, nextId: state.nextId });
+  showToast('Saved');
+}
+
+// Exposed to HTML onclick
+window.addTask = async function() {
+  const name = document.getElementById('new-task').value.trim();
+  if (!name) return;
+  const freq   = document.getElementById('new-freq').value;
+  const person = document.getElementById('new-person').value;
+  const id = 't' + Date.now();
+  state.tasks[id] = { id, name, freq, person, done: false, lastDone: Date.now() - freqDays(freq) * 86400000 };
+  state.nextId++;
+  document.getElementById('new-task').value = '';
+  await writeState();
+};
+
+window.addMember = async function() {
+  const inp  = document.getElementById('new-member');
+  const name = inp.value.trim();
+  if (!name || members.includes(name)) return;
+  members.push(name);
+  state.members = members;
+  inp.value = '';
+  await writeState();
+};
+
+window.removeMember = async function(name) {
+  members = members.filter(m => m !== name);
+  Object.values(state.tasks).forEach(t => { if (t.person === name) t.person = ''; });
+  state.members = members;
+  await writeState();
+};
+
+window.toggleTask = async function(id) {
+  const t = state.tasks[id];
+  if (!t) return;
+  const done = !t.done;
+  await update(ref(db, 'state/tasks/' + id), { done, lastDone: done ? Date.now() : t.lastDone });
+};
+
+window.deleteTask = async function(id) {
+  await remove(ref(db, 'state/tasks/' + id));
+  showToast('Removed');
+};
+
+window.setFilter = function(f, el) {
+  filter = f;
+  document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  renderTasks();
+};
+
+function render() {
+  renderHeader();
+  renderMembers();
+  renderMemberSelect();
+  renderFilters();
+  renderTasks();
+}
+
+function renderHeader() {
+  const tasks  = Object.values(state.tasks);
+  const total  = tasks.length;
+  const done   = tasks.filter(t => t.done).length;
+  const over   = tasks.filter(t => dueStatus(t) === 'overdue').length;
+  const pct    = total ? Math.round(done / total * 100) : 0;
+  document.getElementById('h-total').textContent   = total;
+  document.getElementById('h-done').textContent    = done;
+  document.getElementById('h-overdue').textContent = over;
+  document.getElementById('h-pct').textContent     = pct + '%';
+  document.getElementById('prog').style.width      = pct + '%';
+}
+
+function renderMembers() {
+  document.getElementById('member-chips').innerHTML = members.map((m, i) => {
+    const c = PCOLS[i % PCOLS.length];
+    return '<span class="chip" style="background:' + c.bg + ';color:' + c.text + ';">' + m +
+      ' <span class="chip-del" onclick="removeMember(\'' + m + '\')">×</span></span>';
+  }).join('');
+}
+
+function renderMemberSelect() {
+  const sel = document.getElementById('new-person');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">Anyone</option>' +
+    members.map(m => '<option value="' + m + '"' + (m === cur ? ' selected' : '') + '>' + m + '</option>').join('');
+}
+
+function renderFilters() {
+  const tasks = Object.values(state.tasks);
+  const counts = {
+    all:     tasks.length,
+    pending: tasks.filter(t => !t.done).length,
+    overdue: tasks.filter(t => dueStatus(t) === 'overdue').length,
+    done:    tasks.filter(t => t.done).length,
+  };
+  const defs = [{k:'all',label:'All'},{k:'pending',label:'Pending'},{k:'overdue',label:'Overdue'},{k:'done',label:'Done today'}];
+  document.getElementById('filters').innerHTML = defs.map(d =>
+    '<button class="filter-pill' + (filter === d.k ? ' active' : '') + '" onclick="setFilter(\'' + d.k + '\',this)">' +
+    d.label + '<span class="count">' + counts[d.k] + '</span></button>'
+  ).join('');
+}
+
+function renderTasks() {
+  let tasks = Object.values(state.tasks);
+  if (filter === 'pending') tasks = tasks.filter(t => !t.done);
+  else if (filter === 'overdue') tasks = tasks.filter(t => dueStatus(t) === 'overdue');
+  else if (filter === 'done') tasks = tasks.filter(t => t.done);
+
+  const order = {overdue:0, soon:1, ok:2, done:3};
+  tasks.sort((a, b) => (order[dueStatus(a)] || 2) - (order[dueStatus(b)] || 2));
+
+  const sections = {overdue:[], soon:[], ok:[], done:[]};
+  tasks.forEach(t => sections[dueStatus(t)].push(t));
+
+  const defs = [
+    {k:'overdue', label:'Overdue',   dot:'dot-overdue'},
+    {k:'soon',    label:'Due soon',  dot:'dot-soon'},
+    {k:'ok',      label:'Upcoming',  dot:'dot-ok'},
+    {k:'done',    label:'Done today',dot:'dot-done'},
+  ];
+
+  let html = '';
+  for (const d of defs) {
+    if (!sections[d.k].length) continue;
+    html += '<div class="section"><div class="section-head"><span class="section-dot ' + d.dot + '"></span>' + d.label + '</div>';
+    sections[d.k].forEach(t => { html += cardHTML(t); });
+    html += '</div>';
+  }
+  if (!html) html = '<div class="empty">Nothing here — all clear!</div>';
+  document.getElementById('task-list').innerHTML = html;
+}
+
+function cardHTML(t) {
+  const s  = dueStatus(t);
+  const pc = t.person ? pColor(t.person) : null;
+  const personTag = pc
+    ? '<span class="tag" style="background:' + pc.bg + ';color:' + pc.text + ';">' + t.person + '</span>'
+    : '';
+  const dueTag = s === 'overdue' ? '<span class="tag tag-overdue">Overdue</span>'
+               : s === 'soon'    ? '<span class="tag tag-soon">Due soon</span>'
+               : s === 'ok'      ? '<span class="tag tag-ok">On track</span>' : '';
+
+  return '<div class="task-card ' + s + '" id="tc-' + t.id + '">' +
+    '<div class="check' + (t.done ? ' checked' : '') + '" onclick="toggleTask(\'' + t.id + '\')">' +
+      '<svg width="12" height="12" viewBox="0 0 12 12" fill="none">' +
+        '<polyline points="2,6 5,9 10,3" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>' +
+      '</svg>' +
+    '</div>' +
+    '<span class="task-name">' + t.name + '</span>' +
+    '<div class="task-meta">' + dueTag + '<span class="tag tag-freq">' + t.freq + '</span>' + personTag + '</div>' +
+    '<button class="del" onclick="deleteTask(\'' + t.id + '\')" title="Remove">×</button>' +
+  '</div>';
+}
+
+document.getElementById('new-task').addEventListener('keydown', e => { if (e.key === 'Enter') addTask(); });
+document.getElementById('new-member').addEventListener('keydown', e => { if (e.key === 'Enter') addMember(); });
+</script>
+
+</body>
+</html>
