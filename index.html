@@ -42,6 +42,24 @@
   .pin-key.del { font-size: 1rem; color: var(--muted); }
   .pin-error { font-size: 0.8rem; color: var(--warn); min-height: 1.4em; margin-top: 0.75rem; }
 
+  /* MEMBER SELECTOR (Phase 9) */
+  .pin-member-chip { padding: 8px 20px; border-radius: 20px; border: none; font-size: 0.9rem; font-family: 'DM Sans', sans-serif; font-weight: 500; cursor: pointer; transition: opacity 0.15s; }
+  .pin-member-chip:hover { opacity: 0.82; }
+  .chip-role { cursor: pointer; opacity: 0.5; font-size: 0.85rem; line-height: 1; }
+  .chip-role:hover { opacity: 1; }
+
+  /* ROLE-BASED VISIBILITY (Phase 9b) */
+  body[data-role="member"] .add-bar,
+  body[data-role="member"] .member-add,
+  body[data-role="member"] .edit-btn,
+  body[data-role="member"] .del { display: none !important; }
+
+  /* READ-ONLY MODE (Phase 9c) */
+  body[data-readonly] .chip-del,
+  body[data-readonly] .chip-role { display: none !important; }
+  #readonly-banner { position: fixed; top: 0; left: 0; right: 0; z-index: 1000; background: var(--surface); color: var(--muted); font-size: 0.8rem; text-align: center; padding: 6px 1rem; border-bottom: 1px solid var(--border); pointer-events: none; }
+  #readonly-banner.hidden { display: none; }
+
   /* HEADER */
   header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 1.25rem 2rem; display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap; }
   .logo { font-family: 'DM Serif Display', serif; font-size: 1.6rem; color: var(--text); flex-shrink: 0; }
@@ -218,6 +236,12 @@
   .lb-streak { white-space: nowrap; font-size: 0.85rem; color: var(--muted); }
   .lb-badges { font-size: 0.9rem; }
 
+  /* SUMMARY MODAL */
+  #summary-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; z-index: 998; }
+  #summary-modal.hidden { display: none; }
+  .summary-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; width: 100%; max-width: 480px; max-height: 80vh; overflow-y: auto; }
+  .summary-footer { margin-top: 1.25rem; text-align: center; }
+
   /* STATS MODAL */
   #stats-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; z-index: 998; }
   #stats-modal.hidden { display: none; }
@@ -258,34 +282,82 @@
 </head>
 <body>
 
+<!-- READ-ONLY BANNER (Phase 9c) -->
+<div id="readonly-banner" class="hidden">👁 View only</div>
+
 <!-- PIN SCREEN -->
 <div id="pin-screen">
   <div class="pin-card">
-    <div class="pin-title">Family<span style="color:var(--accent)">Chores</span></div>
-    <div class="pin-sub">Enter your 6-digit family PIN to continue</div>
-    <div class="pin-dots" id="pin-dots">
-      <div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div>
-      <div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div>
+    <!-- House PIN section -->
+    <div id="pin-house">
+      <div class="pin-title">Family<span style="color:var(--accent)">Chores</span></div>
+      <div class="pin-sub">Enter your 6-digit family PIN to continue</div>
+      <div class="pin-dots" id="pin-dots">
+        <div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div>
+        <div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div>
+      </div>
+      <div class="pin-pad">
+        <button class="pin-key" onclick="pinKey('1')">1</button>
+        <button class="pin-key" onclick="pinKey('2')">2</button>
+        <button class="pin-key" onclick="pinKey('3')">3</button>
+        <button class="pin-key" onclick="pinKey('4')">4</button>
+        <button class="pin-key" onclick="pinKey('5')">5</button>
+        <button class="pin-key" onclick="pinKey('6')">6</button>
+        <button class="pin-key" onclick="pinKey('7')">7</button>
+        <button class="pin-key" onclick="pinKey('8')">8</button>
+        <button class="pin-key" onclick="pinKey('9')">9</button>
+        <button class="pin-key" style="visibility:hidden" disabled></button>
+        <button class="pin-key" onclick="pinKey('0')">0</button>
+        <button class="pin-key del" onclick="pinDel()">&#9003;</button>
+      </div>
+      <div class="pin-error" id="pin-error"></div>
     </div>
-    <div class="pin-pad">
-      <button class="pin-key" onclick="pinKey('1')">1</button>
-      <button class="pin-key" onclick="pinKey('2')">2</button>
-      <button class="pin-key" onclick="pinKey('3')">3</button>
-      <button class="pin-key" onclick="pinKey('4')">4</button>
-      <button class="pin-key" onclick="pinKey('5')">5</button>
-      <button class="pin-key" onclick="pinKey('6')">6</button>
-      <button class="pin-key" onclick="pinKey('7')">7</button>
-      <button class="pin-key" onclick="pinKey('8')">8</button>
-      <button class="pin-key" onclick="pinKey('9')">9</button>
-      <button class="pin-key" style="visibility:hidden" disabled></button>
-      <button class="pin-key" onclick="pinKey('0')">0</button>
-      <button class="pin-key del" onclick="pinDel()">&#9003;</button>
+    <!-- Member selector section (Phase 9a) -->
+    <div id="pin-member" class="hidden">
+      <div class="pin-title" id="pin-member-title">Who's using the app?</div>
+      <div class="pin-sub" id="pin-member-sub">Select your name to continue</div>
+      <div id="pin-member-chips" style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:1.25rem;"></div>
+      <!-- 4-digit PIN pad (shown when member has a PIN set) -->
+      <div id="pin-member-pin" class="hidden">
+        <div class="pin-dots" id="pin-member-dots">
+          <div class="pin-dot"></div><div class="pin-dot"></div>
+          <div class="pin-dot"></div><div class="pin-dot"></div>
+        </div>
+        <div class="pin-pad">
+          <button class="pin-key" onclick="window.memberPinKey('1')">1</button>
+          <button class="pin-key" onclick="window.memberPinKey('2')">2</button>
+          <button class="pin-key" onclick="window.memberPinKey('3')">3</button>
+          <button class="pin-key" onclick="window.memberPinKey('4')">4</button>
+          <button class="pin-key" onclick="window.memberPinKey('5')">5</button>
+          <button class="pin-key" onclick="window.memberPinKey('6')">6</button>
+          <button class="pin-key" onclick="window.memberPinKey('7')">7</button>
+          <button class="pin-key" onclick="window.memberPinKey('8')">8</button>
+          <button class="pin-key" onclick="window.memberPinKey('9')">9</button>
+          <button class="pin-key" style="visibility:hidden" disabled></button>
+          <button class="pin-key" onclick="window.memberPinKey('0')">0</button>
+          <button class="pin-key del" onclick="window.memberPinDel()">&#9003;</button>
+        </div>
+        <div class="pin-error" id="pin-member-error"></div>
+        <button class="btn-sm" style="margin-top:1rem;width:100%" onclick="window.memberPinBack()">← Back</button>
+      </div>
     </div>
-    <div class="pin-error" id="pin-error"></div>
   </div>
 </div>
 
 <!-- MAIN APP -->
+<div id="summary-modal" class="hidden" onclick="window.closeSummary()">
+  <div class="summary-card" onclick="event.stopPropagation()">
+    <div class="lb-header">
+      <span class="lb-title">👋 Here's your day!</span>
+      <button class="lb-close" onclick="window.closeSummary()">×</button>
+    </div>
+    <div id="summary-body"></div>
+    <div class="summary-footer">
+      <button class="btn-lg btn-accent" onclick="window.summaryLetsGo()">Let's go</button>
+    </div>
+  </div>
+</div>
+
 <div id="stats-modal" class="hidden" onclick="window.closeStats()">
   <div class="stats-card" onclick="event.stopPropagation()">
     <div class="lb-header">
@@ -422,7 +494,12 @@
 
   function grantAccess() {
     try { sessionStorage.setItem(SESSION_KEY, 'ok'); } catch(e) {}
-    document.getElementById('pin-screen').classList.add('hidden');
+    // Don't hide pin-screen yet — show member selector first (Phase 9a)
+    if (typeof window._fcOnHousePin === 'function') {
+      window._fcOnHousePin();
+    } else {
+      window._fcHousePinPending = true;
+    }
   }
 
   function updateDots() {
@@ -474,9 +551,22 @@
     updateDots();
   };
 
-  // On load: skip PIN if session already valid
+  // On load: skip PIN if session already valid (Phase 9a)
   if (checkSession()) {
-    document.getElementById('pin-screen').classList.add('hidden');
+    try {
+      if (sessionStorage.getItem('fc_member')) {
+        // Both house PIN and member already done — skip everything
+        document.getElementById('pin-screen').classList.add('hidden');
+      } else {
+        // House PIN done but no member yet — show member screen (needs Firebase data)
+        document.getElementById('pin-house').classList.add('hidden');
+        document.getElementById('pin-member').classList.remove('hidden');
+        document.getElementById('pin-member-sub').textContent = 'Loading\u2026';
+        window._fcHousePinPending = true;
+      }
+    } catch(e) {
+      document.getElementById('pin-screen').classList.add('hidden');
+    }
   } else if (isLockedOut()) {
     document.getElementById('pin-error').textContent = 'Too many attempts. Try again in ' + remainingMins() + ' min.';
   }
@@ -528,6 +618,122 @@ function getWeekStart() {
 let state = { members: {}, tasks: {}, history: [], nextId: 1 };
 let members = [];   // convenience array of name strings, derived from state.members
 let filter = 'all';
+
+// ── Phase 9: Per-member login, roles, read-only ───────────────────────────────
+const READONLY = new URLSearchParams(location.search).get('readonly') === '1';
+let _pendingMemberName = '';
+let _memberPinBuffer   = '';
+
+function currentMember() {
+  try { return sessionStorage.getItem('fc_member') || ''; } catch(e) { return ''; }
+}
+
+function isAdmin() {
+  if (READONLY) return false;
+  const m = currentMember();
+  return m ? (state.members[m]?.role === 'admin') : false;
+}
+
+async function moduleSha256(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+// ── Phase 8a: Browser Notifications ──────────────────────────────────────────
+let notifiedIds = new Set();
+let _overdueCheckStarted = false;
+
+function requestNotificationPermission() {
+  if (!('Notification' in window)) { scheduleOverdueCheck(); return; }
+  if (Notification.permission === 'default') {
+    Notification.requestPermission();
+  }
+  scheduleOverdueCheck();
+}
+
+function scheduleOverdueCheck() {
+  if (_overdueCheckStarted) return;
+  _overdueCheckStarted = true;
+  runOverdueCheck();
+  setInterval(runOverdueCheck, 30 * 60 * 1000);
+}
+
+function runOverdueCheck() {
+  const today = new Date().toISOString().slice(0, 10);
+  try {
+    if (localStorage.getItem('fc_last_notify_date') !== today) {
+      notifiedIds = new Set();
+      localStorage.setItem('fc_last_notify_date', today);
+    }
+  } catch(e) {}
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  Object.values(state.tasks).forEach(t => {
+    if (dueStatus(t) === 'overdue' && !t.done && !notifiedIds.has(t.id)) {
+      notifiedIds.add(t.id);
+      new Notification('FamilyChores', { body: t.name + ' is overdue', icon: '' });
+    }
+  });
+}
+
+// ── Phase 8b: Daily Summary Modal ────────────────────────────────────────────
+function maybeShowDailySummary() {
+  const today = new Date().toISOString().slice(0, 10);
+  try {
+    if (localStorage.getItem('fc_summary_date') === today) return;
+    localStorage.setItem('fc_summary_date', today);
+  } catch(e) { return; }
+  renderSummaryModal();
+  document.getElementById('summary-modal').classList.remove('hidden');
+}
+
+function renderSummaryModal() {
+  const currentMember = sessionStorage.getItem('fc_member') || '';
+  let tasks = Object.values(state.tasks).filter(t =>
+    !t.done && (dueStatus(t) === 'overdue' || dueStatus(t) === 'soon')
+  );
+  if (currentMember) {
+    tasks = tasks.filter(t => t.person === currentMember || t.person === '');
+  }
+  let body = '';
+  if (tasks.length === 0) {
+    body = '<div class="empty" style="text-align:center;padding:2rem 0;">You\'re all clear today! \uD83C\uDF89</div>';
+  } else {
+    body = '<ul style="list-style:none;padding:0;">' +
+      tasks.map(t => {
+        const s = dueStatus(t);
+        const pc = t.person ? pColor(t.person) : null;
+        const personBit = t.person && pc
+          ? ' <span class="tag" style="background:' + pc.bg + ';color:' + pc.text + ';">' + esc(t.person) + '</span>'
+          : '';
+        const statusBit = s === 'overdue'
+          ? '<span class="tag tag-overdue">Overdue</span>'
+          : '<span class="tag tag-soon">Due soon</span>';
+        return '<li style="display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--border);">' +
+          '<span style="flex:1;font-size:0.95rem;">' + esc(t.name) + '</span>' +
+          statusBit + personBit +
+          '</li>';
+      }).join('') +
+    '</ul>';
+  }
+  document.getElementById('summary-body').innerHTML = body;
+}
+
+window.closeSummary = function() {
+  document.getElementById('summary-modal').classList.add('hidden');
+};
+
+window.summaryLetsGo = function() {
+  document.getElementById('summary-modal').classList.add('hidden');
+  filter = 'pending';
+  renderFilters();
+  renderTasks();
+};
+
+// Grant hook — called by PIN IIFE after access is granted (if module already loaded)
+window._fcOnGrant = function() {
+  requestNotificationPermission();
+  maybeShowDailySummary();
+};
 
 function freqDays(f) { return {daily:1,weekly:7,fortnightly:14,monthly:30}[f] || 7; }
 function daysSince(ts) { return Math.floor((Date.now() - ts) / 86400000); }
@@ -609,6 +815,7 @@ function migrateLegacyMembers(raw) {
 }
 
 // Firebase live listener
+let _firstStateLoad = true;
 onValue(ref(db, 'state'), snap => {
   const val = snap.val() || {};
   const memberObj = migrateLegacyMembers(val.members);
@@ -616,12 +823,36 @@ onValue(ref(db, 'state'), snap => {
   members = Object.values(state.members).map(m => m.name);
   checkTaskResets();
   render();
+  // Run grant hooks once on first load — handles session-restore and deferred-PIN cases (Phase 9)
+  if (_firstStateLoad) {
+    _firstStateLoad = false;
+    // Also define _fcOnHousePin now that members are loaded (covers deferred case)
+    window._fcOnHousePin = function() {
+      if (members.length === 0) { completeLogin(null); } else { showMemberSelector(); }
+    };
+    try {
+      if (window._fcHousePinPending) {
+        // House PIN was validated (or session-restored) before Firebase loaded
+        window._fcHousePinPending = false;
+        if (members.length === 0) {
+          completeLogin(null);
+        } else {
+          showMemberSelector();
+        }
+      } else if (sessionStorage.getItem('fc_auth') === 'ok' && sessionStorage.getItem('fc_member')) {
+        // Full session restore — both house PIN and member already set
+        requestNotificationPermission();
+        maybeShowDailySummary();
+      }
+    } catch(e) {}
+  }
 }, err => {
   showToast('DB error: ' + err.code);
   console.error('Firebase read error:', err);
 });
 
 async function writeState() {
+  if (READONLY) return;
   try {
     await set(ref(db, 'state'), {
       members: Object.keys(state.members).length ? state.members : null,
@@ -636,6 +867,112 @@ async function writeState() {
   }
 }
 
+// ── Phase 9c: Read-only mode init ─────────────────────────────────────────────
+if (READONLY) {
+  document.getElementById('pin-screen').classList.add('hidden');
+  document.body.setAttribute('data-role', 'member');
+  document.body.setAttribute('data-readonly', '1');
+  document.getElementById('readonly-banner').classList.remove('hidden');
+}
+
+// ── Phase 9a: Member login helpers ────────────────────────────────────────────
+function completeLogin(name) {
+  try { if (name) sessionStorage.setItem('fc_member', name); } catch(e) {}
+  document.getElementById('pin-screen').classList.add('hidden');
+  requestNotificationPermission();
+  maybeShowDailySummary();
+  render();
+}
+
+function showMemberSelector() {
+  document.getElementById('pin-house').classList.add('hidden');
+  document.getElementById('pin-member').classList.remove('hidden');
+  document.getElementById('pin-member-pin').classList.add('hidden');
+  document.getElementById('pin-member-title').textContent = "Who\u2019s using the app?";
+  document.getElementById('pin-member-sub').textContent = 'Select your name to continue';
+  document.getElementById('pin-member-chips').innerHTML = members.map((m, i) => {
+    const c = PCOLS[i % PCOLS.length];
+    return '<button class="pin-member-chip" style="background:' + c.bg + ';color:' + c.text + ';"' +
+      ' onclick="window.memberSelect(\'' + esc(m) + '\')">' + esc(m) + '</button>';
+  }).join('');
+}
+
+function showMemberPinPad(name) {
+  document.getElementById('pin-member-chips').innerHTML = '';
+  document.getElementById('pin-member-title').textContent = name;
+  document.getElementById('pin-member-sub').textContent = 'Enter your 4-digit PIN';
+  document.getElementById('pin-member-error').textContent = '';
+  document.getElementById('pin-member-pin').classList.remove('hidden');
+  _memberPinBuffer = '';
+  _updateMemberDots();
+}
+
+function _updateMemberDots() {
+  document.querySelectorAll('#pin-member-dots .pin-dot').forEach((d, i) => {
+    d.classList.toggle('filled', i < _memberPinBuffer.length);
+    d.classList.remove('error');
+  });
+}
+
+function _flashMemberError(msg) {
+  document.querySelectorAll('#pin-member-dots .pin-dot').forEach(d => {
+    d.classList.remove('filled'); d.classList.add('error');
+  });
+  document.getElementById('pin-member-error').textContent = msg;
+  setTimeout(() => {
+    document.querySelectorAll('#pin-member-dots .pin-dot').forEach(d => d.classList.remove('error'));
+    _memberPinBuffer = '';
+    _updateMemberDots();
+  }, 700);
+}
+
+window.memberSelect = function(name) {
+  const mem = state.members[name];
+  if (!mem) { completeLogin(null); return; }
+  if (mem.pinHash) {
+    _pendingMemberName = name;
+    showMemberPinPad(name);
+  } else {
+    completeLogin(name);
+  }
+};
+
+window.memberPinKey = async function(digit) {
+  if (_memberPinBuffer.length >= 4) return;
+  _memberPinBuffer += digit;
+  _updateMemberDots();
+  if (_memberPinBuffer.length === 4) {
+    const hash = await moduleSha256(_memberPinBuffer);
+    const expected = (state.members[_pendingMemberName] || {}).pinHash || '';
+    _memberPinBuffer = '';
+    if (hash === expected) {
+      completeLogin(_pendingMemberName);
+    } else {
+      _flashMemberError('Incorrect PIN');
+    }
+  }
+};
+
+window.memberPinDel = function() {
+  _memberPinBuffer = _memberPinBuffer.slice(0, -1);
+  _updateMemberDots();
+};
+
+window.memberPinBack = function() {
+  _pendingMemberName = '';
+  _memberPinBuffer = '';
+  showMemberSelector();
+};
+
+// _fcOnHousePin: called by plain script after house PIN is validated
+window._fcOnHousePin = function() {
+  if (members.length === 0) {
+    completeLogin(null); // no members yet — guest
+  } else {
+    showMemberSelector();
+  }
+};
+
 // Exposed to HTML onclick
 window.toggleNewNote = function() {
   const ta = document.getElementById('new-notes');
@@ -644,6 +981,7 @@ window.toggleNewNote = function() {
 };
 
 window.addTask = async function() {
+  if (READONLY) return;
   const name = document.getElementById('new-task').value.trim();
   if (!name) return;
   const freq   = document.getElementById('new-freq').value;
@@ -661,6 +999,7 @@ window.addTask = async function() {
 };
 
 window.addMember = async function() {
+  if (READONLY) return;
   const inp  = document.getElementById('new-member');
   const name = inp.value.trim();
   if (!name || state.members[name]) return;
@@ -671,14 +1010,31 @@ window.addMember = async function() {
 };
 
 window.removeMember = async function(name) {
+  if (READONLY) return;
   delete state.members[name];
   Object.values(state.tasks).forEach(t => { if (t.person === name) t.person = ''; });
   await writeState();
 };
 
+window.toggleRole = async function(name) {
+  if (READONLY) return;
+  const m = state.members[name];
+  if (!m) return;
+  try {
+    await update(ref(db, 'state/members/' + name), { role: m.role === 'admin' ? 'member' : 'admin' });
+  } catch(err) {
+    showToast('Update failed: ' + err.code);
+  }
+};
+
 window.toggleTask = async function(id) {
+  if (READONLY) return;
   const t = state.tasks[id];
   if (!t) return;
+  if (!isAdmin() && t.person !== currentMember()) {
+    showToast('Only your own tasks can be checked');
+    return;
+  }
   const done = !t.done;
   try {
     await update(ref(db, 'state/tasks/' + id), { done, lastDone: done ? Date.now() : t.lastDone });
@@ -736,6 +1092,7 @@ window.toggleTask = async function(id) {
 };
 
 window.deleteTask = async function(id) {
+  if (READONLY) return;
   try {
     await remove(ref(db, 'state/tasks/' + id));
     showToast('Removed');
@@ -775,6 +1132,7 @@ window.editTask = function(id) {
 };
 
 window.saveTask = async function(id) {
+  if (READONLY) return;
   const card = document.getElementById('tc-' + id);
   if (!card) return;
   const name = card.querySelector('.edit-name').value.trim();
@@ -803,6 +1161,7 @@ window.toggleSubtasks = function(taskId) {
 };
 
 window.toggleSubtask = async function(taskId, subId) {
+  if (READONLY) return;
   const t = state.tasks[taskId];
   if (!t || !t.subtasks || !t.subtasks[subId]) return;
   try {
@@ -813,6 +1172,7 @@ window.toggleSubtask = async function(taskId, subId) {
 };
 
 window.addSubtask = async function(taskId) {
+  if (READONLY) return;
   const card = document.getElementById('tc-' + taskId);
   if (!card) return;
   const inp = card.querySelector('.subtask-add input');
@@ -828,6 +1188,7 @@ window.addSubtask = async function(taskId) {
 };
 
 window.removeSubtask = async function(taskId, subId) {
+  if (READONLY) return;
   const t = state.tasks[taskId];
   if (!t || !t.subtasks) return;
   delete t.subtasks[subId];
@@ -847,6 +1208,9 @@ function render() {
   renderMemberSelect();
   renderFilters();
   renderTasks();
+  if (!READONLY) {
+    document.body.setAttribute('data-role', isAdmin() ? 'admin' : 'member');
+  }
 }
 
 function renderHeader() {
@@ -875,6 +1239,7 @@ function renderMembers() {
       ' <span style="opacity:0.55;font-size:0.75em">' + (mem.points || 0) + '</span>' +
       (streak >= 2 ? ' 🔥' + streak : '') +
       (badgeIcons ? ' ' + badgeIcons : '') +
+      (isAdmin() ? ' <span class="chip-role" title="Toggle role (' + esc(mem.role || 'member') + ')" onclick="window.toggleRole(\'' + esc(m) + '\')">🛡</span>' : '') +
       ' <span class="chip-del">×</span></span>';
   }).join('');
 }
@@ -1015,7 +1380,8 @@ function cardHTML(t) {
 }
 
 window.claimTask = async function(id) {
-  const member = sessionStorage.getItem('fc_member') || '';
+  if (READONLY) return;
+  const member = currentMember();
   if (!member) { showToast('Select a member first'); return; }
   const t = state.tasks[id];
   if (!t) return;
