@@ -119,6 +119,14 @@
   .del { width: 28px; height: 28px; border: none; background: none; cursor: pointer; color: var(--muted); font-size: 1.1rem; border-radius: 6px; display: flex; align-items: center; justify-content: center; opacity: 0; flex-shrink: 0; }
   .task-card:hover .del { opacity: 0.5; }
   .del:hover { opacity: 1 !important; background: var(--bg); }
+  .edit-btn { width: 28px; height: 28px; border: none; background: none; cursor: pointer; color: var(--muted); font-size: 1rem; border-radius: 6px; display: flex; align-items: center; justify-content: center; opacity: 0; flex-shrink: 0; }
+  .task-card:hover .edit-btn { opacity: 0.5; }
+  .edit-btn:hover { opacity: 1 !important; background: var(--bg); }
+  .edit-name { flex: 1; padding: 6px 10px; border: 1.5px solid var(--accent); border-radius: var(--radius-sm); font-size: 0.95rem; font-family: inherit; color: var(--text); background: var(--bg); width: 100%; }
+  .edit-row { display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
+  .edit-row select { flex: 1; padding: 6px 8px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); font-size: 0.85rem; font-family: inherit; background: var(--bg); color: var(--text); }
+  .edit-actions { display: flex; gap: 8px; margin-top: 8px; justify-content: flex-end; }
+  .task-card.editing { flex-direction: column; align-items: stretch; cursor: default; }
   .empty { font-size: 0.9rem; color: var(--muted); padding: 1rem 0; }
 
   /* TOAST */
@@ -373,17 +381,29 @@ function showToast(msg) {
   t._tid = setTimeout(() => t.classList.remove('show'), 1800);
 }
 
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
 // Firebase live listener
 onValue(ref(db, 'state'), snap => {
   const val = snap.val() || {};
   members = val.members || [];
   state = { members, tasks: val.tasks || {}, nextId: val.nextId || 1 };
   render();
+}, err => {
+  showToast('DB error: ' + err.code);
+  console.error('Firebase read error:', err);
 });
 
 async function writeState() {
-  await set(ref(db, 'state'), { members, tasks: state.tasks, nextId: state.nextId });
-  showToast('Saved');
+  try {
+    await set(ref(db, 'state'), { members, tasks: state.tasks, nextId: state.nextId });
+    showToast('Saved');
+  } catch (err) {
+    showToast('Save failed: ' + err.code);
+    console.error('Firebase write error:', err);
+  }
 }
 
 // Exposed to HTML onclick
@@ -420,12 +440,63 @@ window.toggleTask = async function(id) {
   const t = state.tasks[id];
   if (!t) return;
   const done = !t.done;
-  await update(ref(db, 'state/tasks/' + id), { done, lastDone: done ? Date.now() : t.lastDone });
+  try {
+    await update(ref(db, 'state/tasks/' + id), { done, lastDone: done ? Date.now() : t.lastDone });
+  } catch (err) {
+    showToast('Update failed: ' + err.code);
+    console.error('Firebase toggle error:', err);
+  }
 };
 
 window.deleteTask = async function(id) {
-  await remove(ref(db, 'state/tasks/' + id));
-  showToast('Removed');
+  try {
+    await remove(ref(db, 'state/tasks/' + id));
+    showToast('Removed');
+  } catch (err) {
+    showToast('Delete failed: ' + err.code);
+    console.error('Firebase delete error:', err);
+  }
+};
+
+window.editTask = function(id) {
+  const t = state.tasks[id];
+  if (!t) return;
+  const card = document.getElementById('tc-' + id);
+  if (!card) return;
+  const freqOpts = ['daily','weekly','fortnightly','monthly'].map(f =>
+    '<option value="' + f + '"' + (t.freq === f ? ' selected' : '') + '>' + f + '</option>'
+  ).join('');
+  const personOpts = '<option value="">Anyone</option>' +
+    members.map(m => '<option value="' + esc(m) + '"' + (t.person === m ? ' selected' : '') + '>' + esc(m) + '</option>').join('');
+  card.className = 'task-card editing';
+  card.innerHTML =
+    '<input class="edit-name" value="' + esc(t.name) + '" maxlength="60" />' +
+    '<div class="edit-row">' +
+      '<select class="edit-freq">' + freqOpts + '</select>' +
+      '<select class="edit-person">' + personOpts + '</select>' +
+    '</div>' +
+    '<div class="edit-actions">' +
+      '<button class="btn-sm btn-accent" onclick="saveTask(\'' + id + '\')">Save</button>' +
+      '<button class="btn-sm" onclick="cancelEdit(\'' + id + '\')">Cancel</button>' +
+    '</div>';
+  card.querySelector('.edit-name').focus();
+};
+
+window.saveTask = async function(id) {
+  const card = document.getElementById('tc-' + id);
+  if (!card) return;
+  const name = card.querySelector('.edit-name').value.trim();
+  if (!name) return;
+  state.tasks[id].name   = name;
+  state.tasks[id].freq   = card.querySelector('.edit-freq').value;
+  state.tasks[id].person = card.querySelector('.edit-person').value;
+  await writeState();
+};
+
+window.cancelEdit = function(id) {
+  const t = state.tasks[id];
+  const card = document.getElementById('tc-' + id);
+  if (t && card) card.outerHTML = cardHTML(t);
 };
 
 window.setFilter = function(f, el) {
@@ -459,16 +530,22 @@ function renderHeader() {
 function renderMembers() {
   document.getElementById('member-chips').innerHTML = members.map((m, i) => {
     const c = PCOLS[i % PCOLS.length];
-    return '<span class="chip" style="background:' + c.bg + ';color:' + c.text + ';">' + m +
-      ' <span class="chip-del" onclick="removeMember(\'' + m + '\')">×</span></span>';
+    return '<span class="chip" data-member="' + esc(m) + '" style="background:' + c.bg + ';color:' + c.text + ';">' +
+      esc(m) + ' <span class="chip-del">×</span></span>';
   }).join('');
 }
+
+document.getElementById('member-chips').addEventListener('click', function(e) {
+  if (e.target.classList.contains('chip-del')) {
+    removeMember(e.target.closest('.chip').dataset.member);
+  }
+});
 
 function renderMemberSelect() {
   const sel = document.getElementById('new-person');
   const cur = sel.value;
   sel.innerHTML = '<option value="">Anyone</option>' +
-    members.map(m => '<option value="' + m + '"' + (m === cur ? ' selected' : '') + '>' + m + '</option>').join('');
+    members.map(m => '<option value="' + esc(m) + '"' + (m === cur ? ' selected' : '') + '>' + esc(m) + '</option>').join('');
 }
 
 function renderFilters() {
@@ -520,7 +597,7 @@ function cardHTML(t) {
   const s  = dueStatus(t);
   const pc = t.person ? pColor(t.person) : null;
   const personTag = pc
-    ? '<span class="tag" style="background:' + pc.bg + ';color:' + pc.text + ';">' + t.person + '</span>'
+    ? '<span class="tag" style="background:' + pc.bg + ';color:' + pc.text + ';">' + esc(t.person) + '</span>'
     : '';
   const dueTag = s === 'overdue' ? '<span class="tag tag-overdue">Overdue</span>'
                : s === 'soon'    ? '<span class="tag tag-soon">Due soon</span>'
@@ -532,8 +609,9 @@ function cardHTML(t) {
         '<polyline points="2,6 5,9 10,3" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>' +
       '</svg>' +
     '</div>' +
-    '<span class="task-name">' + t.name + '</span>' +
+    '<span class="task-name">' + esc(t.name) + '</span>' +
     '<div class="task-meta">' + dueTag + '<span class="tag tag-freq">' + t.freq + '</span>' + personTag + '</div>' +
+    '<button class="edit-btn" onclick="editTask(\'' + t.id + '\')" title="Edit">✎</button>' +
     '<button class="del" onclick="deleteTask(\'' + t.id + '\')" title="Remove">×</button>' +
   '</div>';
 }
