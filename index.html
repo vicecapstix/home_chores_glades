@@ -218,6 +218,12 @@
   .lb-streak { white-space: nowrap; font-size: 0.85rem; color: var(--muted); }
   .lb-badges { font-size: 0.9rem; }
 
+  /* SUMMARY MODAL */
+  #summary-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; z-index: 998; }
+  #summary-modal.hidden { display: none; }
+  .summary-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; width: 100%; max-width: 480px; max-height: 80vh; overflow-y: auto; }
+  .summary-footer { margin-top: 1.25rem; text-align: center; }
+
   /* STATS MODAL */
   #stats-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; z-index: 998; }
   #stats-modal.hidden { display: none; }
@@ -286,6 +292,19 @@
 </div>
 
 <!-- MAIN APP -->
+<div id="summary-modal" class="hidden" onclick="window.closeSummary()">
+  <div class="summary-card" onclick="event.stopPropagation()">
+    <div class="lb-header">
+      <span class="lb-title">👋 Here's your day!</span>
+      <button class="lb-close" onclick="window.closeSummary()">×</button>
+    </div>
+    <div id="summary-body"></div>
+    <div class="summary-footer">
+      <button class="btn-lg btn-accent" onclick="window.summaryLetsGo()">Let's go</button>
+    </div>
+  </div>
+</div>
+
 <div id="stats-modal" class="hidden" onclick="window.closeStats()">
   <div class="stats-card" onclick="event.stopPropagation()">
     <div class="lb-header">
@@ -423,6 +442,11 @@
   function grantAccess() {
     try { sessionStorage.setItem(SESSION_KEY, 'ok'); } catch(e) {}
     document.getElementById('pin-screen').classList.add('hidden');
+    if (typeof window._fcOnGrant === 'function') {
+      window._fcOnGrant();
+    } else {
+      window._fcGrantPending = true;
+    }
   }
 
   function updateDots() {
@@ -529,6 +553,102 @@ let state = { members: {}, tasks: {}, history: [], nextId: 1 };
 let members = [];   // convenience array of name strings, derived from state.members
 let filter = 'all';
 
+// ── Phase 8a: Browser Notifications ──────────────────────────────────────────
+let notifiedIds = new Set();
+let _overdueCheckStarted = false;
+
+function requestNotificationPermission() {
+  if (!('Notification' in window)) { scheduleOverdueCheck(); return; }
+  if (Notification.permission === 'default') {
+    Notification.requestPermission();
+  }
+  scheduleOverdueCheck();
+}
+
+function scheduleOverdueCheck() {
+  if (_overdueCheckStarted) return;
+  _overdueCheckStarted = true;
+  runOverdueCheck();
+  setInterval(runOverdueCheck, 30 * 60 * 1000);
+}
+
+function runOverdueCheck() {
+  const today = new Date().toISOString().slice(0, 10);
+  try {
+    if (localStorage.getItem('fc_last_notify_date') !== today) {
+      notifiedIds = new Set();
+      localStorage.setItem('fc_last_notify_date', today);
+    }
+  } catch(e) {}
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  Object.values(state.tasks).forEach(t => {
+    if (dueStatus(t) === 'overdue' && !t.done && !notifiedIds.has(t.id)) {
+      notifiedIds.add(t.id);
+      new Notification('FamilyChores', { body: t.name + ' is overdue', icon: '' });
+    }
+  });
+}
+
+// ── Phase 8b: Daily Summary Modal ────────────────────────────────────────────
+function maybeShowDailySummary() {
+  const today = new Date().toISOString().slice(0, 10);
+  try {
+    if (localStorage.getItem('fc_summary_date') === today) return;
+    localStorage.setItem('fc_summary_date', today);
+  } catch(e) { return; }
+  renderSummaryModal();
+  document.getElementById('summary-modal').classList.remove('hidden');
+}
+
+function renderSummaryModal() {
+  const currentMember = sessionStorage.getItem('fc_member') || '';
+  let tasks = Object.values(state.tasks).filter(t =>
+    !t.done && (dueStatus(t) === 'overdue' || dueStatus(t) === 'soon')
+  );
+  if (currentMember) {
+    tasks = tasks.filter(t => t.person === currentMember || t.person === '');
+  }
+  let body = '';
+  if (tasks.length === 0) {
+    body = '<div class="empty" style="text-align:center;padding:2rem 0;">You\'re all clear today! \uD83C\uDF89</div>';
+  } else {
+    body = '<ul style="list-style:none;padding:0;">' +
+      tasks.map(t => {
+        const s = dueStatus(t);
+        const pc = t.person ? pColor(t.person) : null;
+        const personBit = t.person && pc
+          ? ' <span class="tag" style="background:' + pc.bg + ';color:' + pc.text + ';">' + esc(t.person) + '</span>'
+          : '';
+        const statusBit = s === 'overdue'
+          ? '<span class="tag tag-overdue">Overdue</span>'
+          : '<span class="tag tag-soon">Due soon</span>';
+        return '<li style="display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--border);">' +
+          '<span style="flex:1;font-size:0.95rem;">' + esc(t.name) + '</span>' +
+          statusBit + personBit +
+          '</li>';
+      }).join('') +
+    '</ul>';
+  }
+  document.getElementById('summary-body').innerHTML = body;
+}
+
+window.closeSummary = function() {
+  document.getElementById('summary-modal').classList.add('hidden');
+};
+
+window.summaryLetsGo = function() {
+  document.getElementById('summary-modal').classList.add('hidden');
+  filter = 'pending';
+  renderFilters();
+  renderTasks();
+};
+
+// Grant hook — called by PIN IIFE after access is granted (if module already loaded)
+window._fcOnGrant = function() {
+  requestNotificationPermission();
+  maybeShowDailySummary();
+};
+
 function freqDays(f) { return {daily:1,weekly:7,fortnightly:14,monthly:30}[f] || 7; }
 function daysSince(ts) { return Math.floor((Date.now() - ts) / 86400000); }
 function checkTaskResets() {
@@ -609,6 +729,7 @@ function migrateLegacyMembers(raw) {
 }
 
 // Firebase live listener
+let _firstStateLoad = true;
 onValue(ref(db, 'state'), snap => {
   const val = snap.val() || {};
   const memberObj = migrateLegacyMembers(val.members);
@@ -616,6 +737,17 @@ onValue(ref(db, 'state'), snap => {
   members = Object.values(state.members).map(m => m.name);
   checkTaskResets();
   render();
+  // Run grant hooks once on first load — handles session-restore and deferred-PIN cases
+  if (_firstStateLoad) {
+    _firstStateLoad = false;
+    try {
+      if (window._fcGrantPending || sessionStorage.getItem('fc_auth') === 'ok') {
+        window._fcGrantPending = false;
+        requestNotificationPermission();
+        maybeShowDailySummary();
+      }
+    } catch(e) {}
+  }
 }, err => {
   showToast('DB error: ' + err.code);
   console.error('Firebase read error:', err);
