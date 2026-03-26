@@ -379,11 +379,19 @@ onValue(ref(db, 'state'), snap => {
   members = val.members || [];
   state = { members, tasks: val.tasks || {}, nextId: val.nextId || 1 };
   render();
+}, err => {
+  showToast('DB error: ' + err.code);
+  console.error('Firebase read error:', err);
 });
 
 async function writeState() {
-  await set(ref(db, 'state'), { members, tasks: state.tasks, nextId: state.nextId });
-  showToast('Saved');
+  try {
+    await set(ref(db, 'state'), { members, tasks: state.tasks, nextId: state.nextId });
+    showToast('Saved');
+  } catch (err) {
+    showToast('Save failed: ' + err.code);
+    console.error('Firebase write error:', err);
+  }
 }
 
 // Exposed to HTML onclick
