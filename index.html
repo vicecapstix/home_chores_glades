@@ -199,6 +199,25 @@
   .theme-toggle { width: 36px; height: 36px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg); color: var(--text); font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: background 0.15s; }
   .theme-toggle:hover { background: var(--surface); }
 
+  /* LEADERBOARD MODAL */
+  #leaderboard-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; z-index: 998; }
+  #leaderboard-modal.hidden { display: none; }
+  .lb-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; width: 100%; max-width: 480px; max-height: 80vh; overflow-y: auto; }
+  .lb-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+  .lb-title { font-family: 'DM Serif Display', serif; font-size: 1.4rem; }
+  .lb-close { border: none; background: none; font-size: 1.5rem; cursor: pointer; color: var(--muted); padding: 0 4px; line-height: 1; }
+  .lb-close:hover { color: var(--text); }
+  .lb-tabs { display: flex; gap: 8px; margin-bottom: 1rem; }
+  .lb-tab { height: 32px; padding: 0 16px; border-radius: 20px; border: 1px solid var(--border); background: var(--bg); color: var(--muted); font-size: 0.8rem; cursor: pointer; font-family: inherit; }
+  .lb-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .lb-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .lb-row:last-child { border-bottom: none; }
+  .lb-rank { font-size: 1rem; font-weight: 500; width: 28px; color: var(--muted); flex-shrink: 0; text-align: center; }
+  .lb-name { flex: 1; font-size: 0.85rem; font-weight: 500; padding: 3px 10px; border-radius: 20px; }
+  .lb-pts { font-weight: 500; color: var(--accent); white-space: nowrap; font-size: 0.85rem; }
+  .lb-streak { white-space: nowrap; font-size: 0.85rem; color: var(--muted); }
+  .lb-badges { font-size: 0.9rem; }
+
   /* TV */
   @media (min-width: 1400px) {
     body { font-size: 18px; }
@@ -253,10 +272,25 @@
 </div>
 
 <!-- MAIN APP -->
+<div id="leaderboard-modal" class="hidden" onclick="window.closeLeaderboard()">
+  <div class="lb-card" onclick="event.stopPropagation()">
+    <div class="lb-header">
+      <span class="lb-title">🏆 Leaderboard</span>
+      <button class="lb-close" onclick="window.closeLeaderboard()">×</button>
+    </div>
+    <div class="lb-tabs">
+      <button class="lb-tab active" id="lb-tab-alltime" onclick="window.setLbTab('alltime',this)">All time</button>
+      <button class="lb-tab" id="lb-tab-week" onclick="window.setLbTab('week',this)">This week</button>
+    </div>
+    <div id="lb-list"></div>
+  </div>
+</div>
+
 <header>
   <div class="logo">Family<span>Chores</span></div>
   <div class="live-dot" title="Live sync"></div>
   <button class="theme-toggle" onclick="toggleTheme()" title="Toggle dark mode" id="theme-btn">🌙</button>
+  <button class="theme-toggle" onclick="window.openLeaderboard()" title="Leaderboard">🏆</button>
   <div class="header-stats">
     <div class="hstat"><div class="hstat-val" id="h-total">—</div><div class="hstat-label">Total</div></div>
     <div class="hstat"><div class="hstat-val" id="h-done" style="color:var(--accent)">—</div><div class="hstat-label">Done today</div></div>
@@ -434,6 +468,26 @@ const PCOLS = [
   {bg:'#EEF0FE',text:'#2D2E8F'},{bg:'#F0FAE8',text:'#2A5210'},
 ];
 
+const BADGES = [
+  { id: 'first',     label: 'First Chore', icon: '⭐', check: m => (m.completedCount || 0) >= 1 },
+  { id: 'century',   label: 'Century',     icon: '💯', check: m => (m.completedCount || 0) >= 100 },
+  { id: 'on_fire',   label: 'On Fire',     icon: '🔥', check: m => (m.streak || 0) >= 7 },
+  { id: 'dedicated', label: 'Dedicated',   icon: '🏅', check: m => (m.streak || 0) >= 30 },
+];
+
+function taskPoints(t) {
+  const base = { daily: 1, weekly: 3, fortnightly: 5, monthly: 8 }[t.freq] || 1;
+  const mult = { easy: 1, medium: 2, hard: 3 }[t.difficulty || 'easy'];
+  return base * mult;
+}
+
+function getWeekStart() {
+  const d = new Date();
+  const day = d.getDay();
+  d.setDate(d.getDate() - (day === 0 ? 6 : day - 1));
+  return d.toISOString().slice(0, 10);
+}
+
 let state = { members: {}, tasks: {}, history: [], nextId: 1 };
 let members = [];   // convenience array of name strings, derived from state.members
 let filter = 'all';
@@ -503,7 +557,7 @@ function migrateLegacyMembers(raw) {
   if (Array.isArray(raw)) {
     const obj = {};
     raw.forEach((name, i) => {
-      if (name) obj[name] = { name, role: i === 0 ? 'admin' : 'member', pinHash: '', points: 0, streak: 0, lastStreakDate: null, badges: [], completedCount: 0 };
+      if (name) obj[name] = { name, role: i === 0 ? 'admin' : 'member', pinHash: '', points: 0, streak: 0, lastStreakDate: null, badges: [], completedCount: 0, weekPoints: 0, weekStart: null };
     });
     return obj;
   }
@@ -511,7 +565,7 @@ function migrateLegacyMembers(raw) {
   const obj = {};
   Object.values(raw).forEach((m, i) => {
     if (!m || !m.name) return;
-    obj[m.name] = { points: 0, streak: 0, lastStreakDate: null, badges: [], completedCount: 0, role: 'member', pinHash: '', ...m };
+    obj[m.name] = { points: 0, streak: 0, lastStreakDate: null, badges: [], completedCount: 0, weekPoints: 0, weekStart: null, role: 'member', pinHash: '', ...m };
     if (i === 0 && !m.role) obj[m.name].role = 'admin';
   });
   return obj;
@@ -594,6 +648,45 @@ window.toggleTask = async function(id) {
   } catch (err) {
     showToast('Update failed: ' + err.code);
     console.error('Firebase toggle error:', err);
+    return;
+  }
+  if (done && t.person) {
+    const person = t.person;
+    const m = state.members[person];
+    if (!m) return;
+    const pts = taskPoints(t);
+    const today = new Date().toISOString().slice(0, 10);
+    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+    const weekStart = getWeekStart();
+    const newPoints = (m.points || 0) + pts;
+    const newCompletedCount = (m.completedCount || 0) + 1;
+    const newStreak = m.lastStreakDate === today ? (m.streak || 0) :
+                      m.lastStreakDate === yesterday ? (m.streak || 0) + 1 : 1;
+    const newWeekPoints = (m.weekStart === weekStart ? (m.weekPoints || 0) : 0) + pts;
+    const currentBadges = m.badges || [];
+    const virtualMember = { ...m, points: newPoints, completedCount: newCompletedCount, streak: newStreak };
+    const newBadgeIds = BADGES
+      .filter(b => !currentBadges.includes(b.id) && b.check(virtualMember))
+      .map(b => b.id);
+    const memberUpdate = {
+      points: newPoints,
+      completedCount: newCompletedCount,
+      streak: newStreak,
+      lastStreakDate: today,
+      weekPoints: newWeekPoints,
+      weekStart: weekStart,
+    };
+    if (newBadgeIds.length) memberUpdate.badges = [...currentBadges, ...newBadgeIds];
+    try {
+      await update(ref(db, 'state/members/' + person), memberUpdate);
+      newBadgeIds.forEach(bid => {
+        const b = BADGES.find(b => b.id === bid);
+        if (b) showToast(b.icon + ' Badge earned: ' + b.label + '!');
+      });
+    } catch (err) {
+      showToast('Member update failed: ' + err.code);
+      console.error('Firebase member update error:', err);
+    }
   }
 };
 
@@ -727,8 +820,17 @@ function renderHeader() {
 function renderMembers() {
   document.getElementById('member-chips').innerHTML = members.map((m, i) => {
     const c = PCOLS[i % PCOLS.length];
+    const mem = state.members[m] || {};
+    const streak = mem.streak || 0;
+    const badgeIcons = (mem.badges || []).map(id => {
+      const b = BADGES.find(b => b.id === id); return b ? b.icon : '';
+    }).join('');
     return '<span class="chip" data-member="' + esc(m) + '" style="background:' + c.bg + ';color:' + c.text + ';">' +
-      esc(m) + ' <span class="chip-del">×</span></span>';
+      esc(m) +
+      ' <span style="opacity:0.55;font-size:0.75em">' + (mem.points || 0) + '</span>' +
+      (streak >= 2 ? ' 🔥' + streak : '') +
+      (badgeIcons ? ' ' + badgeIcons : '') +
+      ' <span class="chip-del">×</span></span>';
   }).join('');
 }
 
@@ -878,6 +980,48 @@ window.claimTask = async function(id) {
 
 document.getElementById('new-task').addEventListener('keydown', e => { if (e.key === 'Enter') addTask(); });
 document.getElementById('new-member').addEventListener('keydown', e => { if (e.key === 'Enter') addMember(); });
+
+// Leaderboard
+let lbTab = 'alltime';
+
+window.openLeaderboard = function() {
+  renderLeaderboard();
+  document.getElementById('leaderboard-modal').classList.remove('hidden');
+};
+
+window.closeLeaderboard = function() {
+  document.getElementById('leaderboard-modal').classList.add('hidden');
+};
+
+window.setLbTab = function(tab, btn) {
+  lbTab = tab;
+  document.querySelectorAll('.lb-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderLeaderboard();
+};
+
+function renderLeaderboard() {
+  const sorted = Object.values(state.members).slice().sort((a, b) => {
+    const va = lbTab === 'week' ? (a.weekPoints || 0) : (a.points || 0);
+    const vb = lbTab === 'week' ? (b.weekPoints || 0) : (b.points || 0);
+    return vb - va;
+  });
+  document.getElementById('lb-list').innerHTML = sorted.map((m, i) => {
+    const c = pColor(m.name) || { bg: '#EEE', text: '#333' };
+    const streak = m.streak || 0;
+    const pts = lbTab === 'week' ? (m.weekPoints || 0) : (m.points || 0);
+    const badgeIcons = (m.badges || []).map(id => {
+      const b = BADGES.find(b => b.id === id); return b ? b.icon : '';
+    }).join('');
+    return '<div class="lb-row">' +
+      '<span class="lb-rank">' + (i + 1) + '</span>' +
+      '<span class="lb-name" style="background:' + c.bg + ';color:' + c.text + ';">' + esc(m.name) + '</span>' +
+      '<span class="lb-pts">' + pts + ' pts</span>' +
+      (streak > 0 ? '<span class="lb-streak">🔥 ' + streak + '</span>' : '') +
+      (badgeIcons ? '<span class="lb-badges">' + badgeIcons + '</span>' : '') +
+      '</div>';
+  }).join('') || '<div class="empty">No members yet.</div>';
+}
 
 // Drag-and-drop reorder
 let draggedId = null;
