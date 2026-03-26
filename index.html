@@ -218,6 +218,20 @@
   .lb-streak { white-space: nowrap; font-size: 0.85rem; color: var(--muted); }
   .lb-badges { font-size: 0.9rem; }
 
+  /* STATS MODAL */
+  #stats-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; z-index: 998; }
+  #stats-modal.hidden { display: none; }
+  .stats-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; width: 100%; max-width: 520px; max-height: 85vh; overflow-y: auto; }
+  .stats-chart { display: flex; flex-direction: column; gap: 10px; margin: 1rem 0; }
+  .stats-row { display: flex; align-items: center; gap: 10px; }
+  .stats-bar-wrap { flex: 1; background: var(--bg); border-radius: 4px; overflow: hidden; height: 20px; }
+  .stats-bar { height: 100%; background: var(--accent); border-radius: 4px; transition: width 0.4s ease; min-width: 0; }
+  .stats-count { font-size: 0.85rem; font-weight: 500; color: var(--muted); min-width: 28px; text-align: right; }
+  .stats-export { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border); }
+  .stats-export label { font-size: 0.8rem; color: var(--muted); }
+  .stats-export input[type=date] { height: 32px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg); color: var(--text); font-size: 0.8rem; padding: 0 8px; font-family: inherit; }
+  .stats-export input[type=date]:focus { outline: none; border-color: var(--accent); }
+
   /* TV */
   @media (min-width: 1400px) {
     body { font-size: 18px; }
@@ -272,6 +286,28 @@
 </div>
 
 <!-- MAIN APP -->
+<div id="stats-modal" class="hidden" onclick="window.closeStats()">
+  <div class="stats-card" onclick="event.stopPropagation()">
+    <div class="lb-header">
+      <span class="lb-title">📊 Stats</span>
+      <button class="lb-close" onclick="window.closeStats()">×</button>
+    </div>
+    <div class="lb-tabs">
+      <button class="lb-tab active" id="stats-tab-week" onclick="window.setStatsTab('week',this)">This week</button>
+      <button class="lb-tab" id="stats-tab-month" onclick="window.setStatsTab('month',this)">This month</button>
+      <button class="lb-tab" id="stats-tab-alltime" onclick="window.setStatsTab('alltime',this)">All time</button>
+    </div>
+    <div id="stats-chart" class="stats-chart"></div>
+    <div class="stats-export">
+      <label>From</label>
+      <input type="date" id="export-from" />
+      <label>to</label>
+      <input type="date" id="export-to" />
+      <button class="btn-sm btn-accent" onclick="window.exportCSV(document.getElementById('export-from').value,document.getElementById('export-to').value)">Export CSV</button>
+    </div>
+  </div>
+</div>
+
 <div id="leaderboard-modal" class="hidden" onclick="window.closeLeaderboard()">
   <div class="lb-card" onclick="event.stopPropagation()">
     <div class="lb-header">
@@ -291,6 +327,7 @@
   <div class="live-dot" title="Live sync"></div>
   <button class="theme-toggle" onclick="toggleTheme()" title="Toggle dark mode" id="theme-btn">🌙</button>
   <button class="theme-toggle" onclick="window.openLeaderboard()" title="Leaderboard">🏆</button>
+  <button class="theme-toggle" onclick="window.openStats()" title="Stats">📊</button>
   <div class="header-stats">
     <div class="hstat"><div class="hstat-val" id="h-total">—</div><div class="hstat-label">Total</div></div>
     <div class="hstat"><div class="hstat-val" id="h-done" style="color:var(--accent)">—</div><div class="hstat-label">Done today</div></div>
@@ -687,6 +724,14 @@ window.toggleTask = async function(id) {
       showToast('Member update failed: ' + err.code);
       console.error('Firebase member update error:', err);
     }
+    const histEntry = { taskId: id, taskName: t.name, person: t.person, completedAt: Date.now(), points: taskPoints(t) };
+    const newHistory = (state.history || []).concat([histEntry]).slice(-500);
+    try {
+      await update(ref(db, 'state'), { history: newHistory });
+    } catch (err) {
+      showToast('History update failed: ' + err.code);
+      console.error('Firebase history update error:', err);
+    }
   }
 };
 
@@ -1022,6 +1067,91 @@ function renderLeaderboard() {
       '</div>';
   }).join('') || '<div class="empty">No members yet.</div>';
 }
+
+// Stats
+let statsTab = 'week';
+
+window.openStats = function() {
+  renderStats();
+  document.getElementById('stats-modal').classList.remove('hidden');
+};
+
+window.closeStats = function() {
+  document.getElementById('stats-modal').classList.add('hidden');
+};
+
+window.setStatsTab = function(tab, btn) {
+  statsTab = tab;
+  document.querySelectorAll('#stats-modal .lb-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderStats();
+};
+
+function getStatsFromTs() {
+  if (statsTab === 'week') {
+    const d = new Date();
+    const day = d.getDay();
+    d.setDate(d.getDate() - (day === 0 ? 6 : day - 1));
+    d.setHours(0, 0, 0, 0);
+    return d.getTime();
+  } else if (statsTab === 'month') {
+    const d = new Date();
+    d.setDate(1);
+    d.setHours(0, 0, 0, 0);
+    return d.getTime();
+  }
+  return 0;
+}
+
+function renderStats() {
+  const from = getStatsFromTs();
+  const history = (state.history || []).filter(e => e.completedAt >= from);
+  const counts = {};
+  history.forEach(e => { if (e.person) counts[e.person] = (counts[e.person] || 0) + 1; });
+  const max = Math.max(1, ...Object.values(counts).concat([0]));
+  const el = document.getElementById('stats-chart');
+  if (!members.length) { el.innerHTML = '<div class="empty">No members yet.</div>'; return; }
+  el.innerHTML = members.map((m, i) => {
+    const c = PCOLS[i % PCOLS.length];
+    const count = counts[m] || 0;
+    const pct = Math.round(count / max * 100);
+    return '<div class="stats-row">' +
+      '<span class="lb-name" style="background:' + c.bg + ';color:' + c.text + ';min-width:80px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:0;">' + esc(m) + '</span>' +
+      '<div class="stats-bar-wrap"><div class="stats-bar" style="width:' + pct + '%"></div></div>' +
+      '<span class="stats-count">' + count + '</span>' +
+    '</div>';
+  }).join('');
+}
+
+window.exportCSV = function(from, to) {
+  const fromTs = from ? new Date(from).getTime() : 0;
+  const toTs   = to   ? new Date(to).getTime() + 86399999 : Date.now();
+  const rows = (state.history || []).filter(e => e.completedAt >= fromTs && e.completedAt <= toTs);
+  function csvField(s) {
+    s = String(s);
+    return s.includes(',') || s.includes('"') ? '"' + s.replace(/"/g, '""') + '"' : s;
+  }
+  let csv = 'date,person,task,frequency,difficulty,points\n';
+  rows.forEach(e => {
+    const task = state.tasks[e.taskId];
+    const freq = task ? (task.freq || '') : '';
+    const diff = task ? (task.difficulty || 'easy') : '';
+    csv += [
+      csvField(new Date(e.completedAt).toLocaleDateString()),
+      csvField(e.person || ''),
+      csvField(e.taskName || ''),
+      csvField(freq),
+      csvField(diff),
+      csvField(e.points || 0),
+    ].join(',') + '\n';
+  });
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  a.download = 'chores-export.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+};
 
 // Drag-and-drop reorder
 let draggedId = null;
