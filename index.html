@@ -22,7 +22,7 @@
     --radius: 12px;
     --radius-sm: 8px;
   }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: 16px; }
 
   /* PIN SCREEN */
@@ -83,7 +83,7 @@
   .chip-del { cursor: pointer; opacity: 0.5; font-size: 1rem; line-height: 1; }
   .chip-del:hover { opacity: 1; }
   .member-add { display: flex; gap: 6px; margin-left: auto; }
-  .member-add input { height: 32px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg); color: var(--text); font-size: 0.85rem; padding: 0 10px; width: 130px; font-family: inherit; }
+  .member-add input { height: 32px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg); color: var(--text); font-size: 0.85rem; padding: 0 10px; width: auto; flex: 1; min-width: 80px; font-family: inherit; }
   .member-add input:focus { outline: none; border-color: var(--accent); }
   .btn-sm { height: 32px; padding: 0 14px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); font-size: 0.8rem; cursor: pointer; font-family: inherit; white-space: nowrap; }
   .btn-sm:hover { background: var(--bg); }
@@ -99,7 +99,8 @@
   .btn-lg { height: 40px; padding: 0 20px; border-radius: var(--radius-sm); font-size: 0.9rem; font-family: inherit; cursor: pointer; border: 1px solid; white-space: nowrap; }
 
   /* FILTERS */
-  .filters { display: flex; gap: 8px; margin-bottom: 1.25rem; flex-wrap: wrap; }
+  .filters { display: flex; gap: 8px; margin-bottom: 1.25rem; flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; padding-bottom: 4px; }
+  .filters::-webkit-scrollbar { display: none; }
   .filter-pill { height: 32px; padding: 0 16px; border-radius: 20px; border: 1px solid var(--border); background: var(--surface); color: var(--muted); font-size: 0.8rem; cursor: pointer; font-family: inherit; display: flex; align-items: center; gap: 6px; }
   .filter-pill:hover { border-color: var(--accent); color: var(--accent); }
   .filter-pill.active { background: var(--accent); color: #fff; border-color: var(--accent); }
@@ -282,6 +283,11 @@
   .tpl-item-name { font-size: 0.95rem; font-weight: 500; }
   .tpl-item-count { font-size: 0.8rem; color: var(--muted); }
 
+  /* Touch devices: always show edit/delete buttons (no hover available) */
+  @media (hover: none) {
+    .del, .edit-btn { opacity: 0.45; }
+  }
+
   /* TV */
   @media (min-width: 1400px) {
     body { font-size: 18px; }
@@ -298,6 +304,18 @@
     .header-stats { gap: 1rem; }
     .task-card { padding: 12px; }
     .check { width: 28px; height: 28px; }
+    .theme-toggle { width: 32px; height: 32px; font-size: 0.95rem; }
+    #btn-select { font-size: 0.75rem; padding: 0 8px; }
+    .lb-card, .summary-card, .stats-card, .tpl-card { width: calc(100% - 2rem); margin: 0 1rem; }
+  }
+  /* Mobile */
+  @media (max-width: 480px) {
+    .members-bar { flex-direction: column; align-items: flex-start; }
+    .member-add { flex-wrap: wrap; width: 100%; margin-left: 0; }
+    .add-bar { gap: 6px; }
+    .pin-card { padding: 2rem 1.25rem; }
+    .header-stats { gap: 0.75rem; }
+    .hstat-val { font-size: 1.25rem; }
   }
 </style>
 <script>
@@ -797,6 +815,8 @@ function checkTaskResets() {
   Object.values(state.tasks).forEach(t => {
     if (t.done && now - (t.lastDone || 0) >= freqDays(t.freq) * 86400000) {
       t.done = false;
+      t.lastDoneBy = null;
+      t.lastDonePoints = null;
       changed = true;
     }
   });
@@ -1091,12 +1111,39 @@ window.toggleTask = async function(id) {
     return;
   }
   const done = !t.done;
+  const taskUpdate = { done, lastDone: done ? Date.now() : t.lastDone };
+  if (done && t.person) {
+    taskUpdate.lastDoneBy = t.person;
+    taskUpdate.lastDonePoints = taskPoints(t);
+  } else if (!done) {
+    taskUpdate.lastDoneBy = null;
+    taskUpdate.lastDonePoints = null;
+  }
   try {
-    await update(ref(db, 'state/tasks/' + id), { done, lastDone: done ? Date.now() : t.lastDone });
+    await update(ref(db, 'state/tasks/' + id), taskUpdate);
   } catch (err) {
     showToast('Update failed: ' + err.code);
     console.error('Firebase toggle error:', err);
     return;
+  }
+  // Reverse points when unchecking a previously completed task
+  if (!done && t.lastDoneBy && t.lastDonePoints) {
+    const person = t.lastDoneBy;
+    const m = state.members[person];
+    if (m) {
+      const weekStart = getWeekStart();
+      try {
+        await update(ref(db, 'state/members/' + person), {
+          points: Math.max(0, (m.points || 0) - t.lastDonePoints),
+          completedCount: Math.max(0, (m.completedCount || 0) - 1),
+          weekPoints: Math.max(0, (m.weekStart === weekStart ? (m.weekPoints || 0) : 0) - t.lastDonePoints),
+          weekStart: weekStart,
+        });
+      } catch (err) {
+        showToast('Member update failed: ' + err.code);
+        console.error('Firebase member update error:', err);
+      }
+    }
   }
   if (done && t.person) {
     const person = t.person;
@@ -1520,10 +1567,12 @@ let lbTab = 'alltime';
 window.openLeaderboard = function() {
   renderLeaderboard();
   document.getElementById('leaderboard-modal').classList.remove('hidden');
+  history.pushState({ fcModal: 'leaderboard-modal' }, '');
 };
 
 window.closeLeaderboard = function() {
   document.getElementById('leaderboard-modal').classList.add('hidden');
+  if (history.state && history.state.fcModal === 'leaderboard-modal') history.back();
 };
 
 window.setLbTab = function(tab, btn) {
@@ -1562,10 +1611,12 @@ let statsTab = 'week';
 window.openStats = function() {
   renderStats();
   document.getElementById('stats-modal').classList.remove('hidden');
+  history.pushState({ fcModal: 'stats-modal' }, '');
 };
 
 window.closeStats = function() {
   document.getElementById('stats-modal').classList.add('hidden');
+  if (history.state && history.state.fcModal === 'stats-modal') history.back();
 };
 
 // ── Phase 11: Task Templates ──────────────────────────────────────────────────
@@ -1588,11 +1639,22 @@ function renderTemplates() {
 window.openTemplates = function() {
   renderTemplates();
   document.getElementById('templates-modal').classList.remove('hidden');
+  history.pushState({ fcModal: 'templates-modal' }, '');
 };
 
 window.closeTemplates = function() {
   document.getElementById('templates-modal').classList.add('hidden');
+  if (history.state && history.state.fcModal === 'templates-modal') history.back();
 };
+
+// Browser back-button closes any open modal instead of navigating away
+window.addEventListener('popstate', function(e) {
+  if (e.state && e.state.fcModal) {
+    ['leaderboard-modal', 'stats-modal', 'templates-modal', 'summary-modal'].forEach(function(id) {
+      document.getElementById(id).classList.add('hidden');
+    });
+  }
+});
 
 window.saveTemplate = function() {
   const input = document.getElementById('tpl-name-input');
