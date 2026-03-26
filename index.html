@@ -355,8 +355,8 @@ const PCOLS = [
   {bg:'#EEF0FE',text:'#2D2E8F'},{bg:'#F0FAE8',text:'#2A5210'},
 ];
 
-let state = { members: [], tasks: {}, nextId: 1 };
-let members = [];
+let state = { members: {}, tasks: {}, history: [], nextId: 1 };
+let members = [];   // convenience array of name strings, derived from state.members
 let filter = 'all';
 
 function freqDays(f) { return {daily:1,weekly:7,fortnightly:14,monthly:30}[f] || 7; }
@@ -385,11 +385,32 @@ function esc(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
+// Migrate legacy members array ["Alice","Bob"] → new object format
+function migrateLegacyMembers(raw) {
+  if (!raw) return {};
+  if (Array.isArray(raw)) {
+    const obj = {};
+    raw.forEach((name, i) => {
+      if (name) obj[name] = { name, role: i === 0 ? 'admin' : 'member', pinHash: '', points: 0, streak: 0, lastStreakDate: null, badges: [], completedCount: 0 };
+    });
+    return obj;
+  }
+  // Already object format — fill in any missing fields
+  const obj = {};
+  Object.values(raw).forEach((m, i) => {
+    if (!m || !m.name) return;
+    obj[m.name] = { points: 0, streak: 0, lastStreakDate: null, badges: [], completedCount: 0, role: 'member', pinHash: '', ...m };
+    if (i === 0 && !m.role) obj[m.name].role = 'admin';
+  });
+  return obj;
+}
+
 // Firebase live listener
 onValue(ref(db, 'state'), snap => {
   const val = snap.val() || {};
-  members = val.members || [];
-  state = { members, tasks: val.tasks || {}, nextId: val.nextId || 1 };
+  const memberObj = migrateLegacyMembers(val.members);
+  state = { members: memberObj, tasks: val.tasks || {}, history: val.history || [], nextId: val.nextId || 1 };
+  members = Object.values(state.members).map(m => m.name);
   render();
 }, err => {
   showToast('DB error: ' + err.code);
@@ -398,7 +419,12 @@ onValue(ref(db, 'state'), snap => {
 
 async function writeState() {
   try {
-    await set(ref(db, 'state'), { members, tasks: state.tasks, nextId: state.nextId });
+    await set(ref(db, 'state'), {
+      members: Object.keys(state.members).length ? state.members : null,
+      tasks: Object.keys(state.tasks).length ? state.tasks : null,
+      history: state.history.length ? state.history : null,
+      nextId: state.nextId
+    });
     showToast('Saved');
   } catch (err) {
     showToast('Save failed: ' + err.code);
@@ -422,17 +448,16 @@ window.addTask = async function() {
 window.addMember = async function() {
   const inp  = document.getElementById('new-member');
   const name = inp.value.trim();
-  if (!name || members.includes(name)) return;
-  members.push(name);
-  state.members = members;
+  if (!name || state.members[name]) return;
+  const isFirst = Object.keys(state.members).length === 0;
+  state.members[name] = { name, role: isFirst ? 'admin' : 'member', pinHash: '', points: 0, streak: 0, lastStreakDate: null, badges: [], completedCount: 0 };
   inp.value = '';
   await writeState();
 };
 
 window.removeMember = async function(name) {
-  members = members.filter(m => m !== name);
+  delete state.members[name];
   Object.values(state.tasks).forEach(t => { if (t.person === name) t.person = ''; });
-  state.members = members;
   await writeState();
 };
 
