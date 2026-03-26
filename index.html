@@ -92,6 +92,7 @@
   .section { margin-bottom: 1.5rem; }
   .section-head { font-size: 0.7rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; }
   .section-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+  .dot-available { background: var(--muted); }
   .dot-overdue { background: var(--warn); }
   .dot-soon { background: var(--soon); }
   .dot-ok { background: var(--accent); }
@@ -128,6 +129,8 @@
   .edit-actions { display: flex; gap: 8px; margin-top: 8px; justify-content: flex-end; }
   .task-card.editing { flex-direction: column; align-items: stretch; cursor: default; }
   .empty { font-size: 0.9rem; color: var(--muted); padding: 1rem 0; }
+  .btn-claim { font-size: 0.72rem; font-weight: 500; padding: 3px 10px; border-radius: 20px; white-space: nowrap; background: var(--bg); color: var(--muted); border: 1px solid var(--border); cursor: pointer; font-family: inherit; }
+  .btn-claim:hover { border-color: var(--accent); color: var(--accent); }
 
   /* NOTES */
   .note-toggle { font-size: 0.8rem; color: var(--accent); cursor: pointer; text-decoration: none; white-space: nowrap; }
@@ -763,17 +766,21 @@ function renderTasks() {
   else if (filter === 'overdue') tasks = tasks.filter(t => dueStatus(t) === 'overdue');
   else if (filter === 'done') tasks = tasks.filter(t => t.done);
 
+  const available = tasks.filter(t => !t.done && !t.person);
+  const rest = tasks.filter(t => t.done || t.person);
+
   const statusOrder = {overdue:0, soon:1, ok:2, done:3};
-  tasks.sort((a, b) => {
+  rest.sort((a, b) => {
     const sd = (statusOrder[dueStatus(a)] || 2) - (statusOrder[dueStatus(b)] || 2);
     if (sd !== 0) return sd;
     return (a.order || 0) - (b.order || 0);
   });
 
-  const sections = {overdue:[], soon:[], ok:[], done:[]};
-  tasks.forEach(t => sections[dueStatus(t)].push(t));
+  const sections = {available, overdue:[], soon:[], ok:[], done:[]};
+  rest.forEach(t => sections[dueStatus(t)].push(t));
 
   const defs = [
+    {k:'available', label:'Available',  dot:'dot-available'},
     {k:'overdue', label:'Overdue',   dot:'dot-overdue'},
     {k:'soon',    label:'Due soon',  dot:'dot-soon'},
     {k:'ok',      label:'Upcoming',  dot:'dot-ok'},
@@ -794,9 +801,9 @@ function renderTasks() {
 function cardHTML(t) {
   const s  = dueStatus(t);
   const pc = t.person ? pColor(t.person) : null;
-  const personTag = pc
-    ? '<span class="tag" style="background:' + pc.bg + ';color:' + pc.text + ';">' + esc(t.person) + '</span>'
-    : '';
+  const personTag = t.person
+    ? (pc ? '<span class="tag" style="background:' + pc.bg + ';color:' + pc.text + ';">' + esc(t.person) + '</span>' : '')
+    : '<button class="btn-claim" onclick="claimTask(\'' + t.id + '\')">Claim</button>';
   const dueTag = s === 'overdue' ? '<span class="tag tag-overdue">Overdue</span>'
                : s === 'soon'    ? '<span class="tag tag-soon">Due soon</span>'
                : s === 'ok'      ? '<span class="tag tag-ok">On track</span>' : '';
@@ -859,6 +866,15 @@ function cardHTML(t) {
     '<div class="subtask-section">' + subtaskSection + '</div>' +
   '</div>';
 }
+
+window.claimTask = async function(id) {
+  const member = sessionStorage.getItem('fc_member') || '';
+  if (!member) { showToast('Select a member first'); return; }
+  const t = state.tasks[id];
+  if (!t) return;
+  state.tasks[id].person = member;
+  await writeState();
+};
 
 document.getElementById('new-task').addEventListener('keydown', e => { if (e.key === 'Enter') addTask(); });
 document.getElementById('new-member').addEventListener('keydown', e => { if (e.key === 'Enter') addMember(); });
