@@ -268,6 +268,20 @@
   .stats-export input[type=date] { height: 32px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg); color: var(--text); font-size: 0.8rem; padding: 0 8px; font-family: inherit; }
   .stats-export input[type=date]:focus { outline: none; border-color: var(--accent); }
 
+  /* TEMPLATES MODAL */
+  #templates-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; z-index: 998; }
+  #templates-modal.hidden { display: none; }
+  .tpl-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; width: 100%; max-width: 480px; max-height: 85vh; overflow-y: auto; }
+  .tpl-save-row { display: flex; gap: 8px; align-items: center; margin: 1rem 0; }
+  .tpl-save-row input { flex: 1; height: 36px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg); color: var(--text); font-size: 0.9rem; padding: 0 10px; font-family: inherit; }
+  .tpl-save-row input:focus { outline: none; border-color: var(--accent); }
+  .tpl-section-label { font-size: 0.75rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin: 1rem 0 0.5rem; }
+  .tpl-item { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .tpl-item:last-child { border-bottom: none; }
+  .tpl-item-info { flex: 1; }
+  .tpl-item-name { font-size: 0.95rem; font-weight: 500; }
+  .tpl-item-count { font-size: 0.8rem; color: var(--muted); }
+
   /* TV */
   @media (min-width: 1400px) {
     body { font-size: 18px; }
@@ -406,12 +420,29 @@
   </div>
 </div>
 
+<div id="templates-modal" class="hidden" onclick="window.closeTemplates()">
+  <div class="tpl-card" onclick="event.stopPropagation()">
+    <div class="lb-header">
+      <span class="lb-title">📋 Templates</span>
+      <button class="lb-close" onclick="window.closeTemplates()">×</button>
+    </div>
+    <div class="tpl-section-label">Save current tasks as template</div>
+    <div class="tpl-save-row">
+      <input type="text" id="tpl-name-input" placeholder="Template name…" maxlength="60" />
+      <button class="btn-sm btn-accent" onclick="window.saveTemplate()">Save</button>
+    </div>
+    <div class="tpl-section-label">Saved templates</div>
+    <div id="tpl-list"></div>
+  </div>
+</div>
+
 <header>
   <div class="logo">Family<span>Chores</span></div>
   <div class="live-dot" title="Live sync"></div>
   <button class="theme-toggle" onclick="toggleTheme()" title="Toggle dark mode" id="theme-btn">🌙</button>
   <button class="theme-toggle" onclick="window.openLeaderboard()" title="Leaderboard">🏆</button>
   <button class="theme-toggle" onclick="window.openStats()" title="Stats">📊</button>
+  <button class="theme-toggle" onclick="window.openTemplates()" title="Templates">📋</button>
   <button class="theme-toggle" id="btn-select" onclick="toggleSelectMode()" title="Select tasks">Select</button>
   <div class="header-stats">
     <div class="hstat"><div class="hstat-val" id="h-total">—</div><div class="hstat-label">Total</div></div>
@@ -842,7 +873,7 @@ let _firstStateLoad = true;
 onValue(ref(db, 'state'), snap => {
   const val = snap.val() || {};
   const memberObj = migrateLegacyMembers(val.members);
-  state = { members: memberObj, tasks: val.tasks || {}, history: val.history || [], nextId: val.nextId || 1 };
+  state = { members: memberObj, tasks: val.tasks || {}, history: val.history || [], nextId: val.nextId || 1, templates: val.templates || {} };
   members = Object.values(state.members).map(m => m.name);
   checkTaskResets();
   render();
@@ -881,7 +912,8 @@ async function writeState() {
       members: Object.keys(state.members).length ? state.members : null,
       tasks: Object.keys(state.tasks).length ? state.tasks : null,
       history: state.history.length ? state.history : null,
-      nextId: state.nextId
+      nextId: state.nextId,
+      templates: Object.keys(state.templates || {}).length ? state.templates : null
     });
     showToast('Saved');
   } catch (err) {
@@ -1534,6 +1566,79 @@ window.openStats = function() {
 
 window.closeStats = function() {
   document.getElementById('stats-modal').classList.add('hidden');
+};
+
+// ── Phase 11: Task Templates ──────────────────────────────────────────────────
+function renderTemplates() {
+  const tmpls = Object.values(state.templates || {});
+  document.getElementById('tpl-list').innerHTML = tmpls.length
+    ? tmpls.map(tpl =>
+        '<div class="tpl-item">' +
+          '<div class="tpl-item-info">' +
+            '<div class="tpl-item-name">' + esc(tpl.name) + '</div>' +
+            '<div class="tpl-item-count">' + tpl.tasks.length + ' task' + (tpl.tasks.length !== 1 ? 's' : '') + '</div>' +
+          '</div>' +
+          '<button class="btn-sm btn-accent" onclick="window.applyTemplate(\'' + tpl.id + '\')">Apply</button>' +
+          '<button class="btn-sm" onclick="window.deleteTemplate(\'' + tpl.id + '\')">Delete</button>' +
+        '</div>'
+      ).join('')
+    : '<div class="empty">No templates saved yet.</div>';
+}
+
+window.openTemplates = function() {
+  renderTemplates();
+  document.getElementById('templates-modal').classList.remove('hidden');
+};
+
+window.closeTemplates = function() {
+  document.getElementById('templates-modal').classList.add('hidden');
+};
+
+window.saveTemplate = function() {
+  const input = document.getElementById('tpl-name-input');
+  const name = input.value.trim();
+  if (!name) { showToast('Enter a template name'); return; }
+  const id = 'tpl' + Date.now();
+  state.templates[id] = {
+    id,
+    name,
+    tasks: Object.values(state.tasks).map(t => ({ name: t.name, freq: t.freq, difficulty: t.difficulty || 'easy' }))
+  };
+  input.value = '';
+  writeState();
+  showToast('Template saved');
+  renderTemplates();
+};
+
+window.applyTemplate = function(id) {
+  const tpl = (state.templates || {})[id];
+  if (!tpl) return;
+  let added = 0;
+  tpl.tasks.forEach(t => {
+    const taskId = 't' + Date.now() + Math.random().toString(36).slice(2);
+    state.tasks[taskId] = {
+      id: taskId,
+      name: t.name,
+      freq: t.freq,
+      difficulty: t.difficulty || 'easy',
+      done: false,
+      lastDone: Date.now() - freqDays(t.freq) * 86400000,
+      person: '',
+      order: Date.now() + added
+    };
+    state.nextId++;
+    added++;
+  });
+  writeState();
+  showToast(added + ' task' + (added !== 1 ? 's' : '') + ' added from template');
+  renderTemplates();
+};
+
+window.deleteTemplate = function(id) {
+  if (!confirm('Delete this template?')) return;
+  delete state.templates[id];
+  writeState();
+  renderTemplates();
 };
 
 window.setStatsTab = function(tab, btn) {
