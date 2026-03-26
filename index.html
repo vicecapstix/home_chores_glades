@@ -383,6 +383,17 @@ let filter = 'all';
 
 function freqDays(f) { return {daily:1,weekly:7,fortnightly:14,monthly:30}[f] || 7; }
 function daysSince(ts) { return Math.floor((Date.now() - ts) / 86400000); }
+function checkTaskResets() {
+  let changed = false;
+  const now = Date.now();
+  Object.values(state.tasks).forEach(t => {
+    if (t.done && now - (t.lastDone || 0) >= freqDays(t.freq) * 86400000) {
+      t.done = false;
+      changed = true;
+    }
+  });
+  if (changed) writeState();
+}
 function dueStatus(t) {
   if (t.done) return 'done';
   const d = freqDays(t.freq), s = daysSince(t.lastDone || 0);
@@ -455,6 +466,7 @@ onValue(ref(db, 'state'), snap => {
   const memberObj = migrateLegacyMembers(val.members);
   state = { members: memberObj, tasks: val.tasks || {}, history: val.history || [], nextId: val.nextId || 1 };
   members = Object.values(state.members).map(m => m.name);
+  checkTaskResets();
   render();
 }, err => {
   showToast('DB error: ' + err.code);
