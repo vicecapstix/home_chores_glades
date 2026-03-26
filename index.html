@@ -98,7 +98,7 @@
   .dot-done { background: var(--muted); }
 
   /* TASK CARD */
-  .task-card { display: flex; align-items: center; gap: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 8px; transition: opacity 0.2s, transform 0.15s; cursor: default; }
+  .task-card { display: flex; flex-direction: column; gap: 0; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 8px; transition: opacity 0.2s, transform 0.15s; cursor: default; }
   .task-card:hover { transform: translateY(-1px); border-color: rgba(26,26,24,0.18); }
   .task-card.done { opacity: 0.4; }
   .task-card.done .task-name { text-decoration: line-through; }
@@ -128,6 +128,53 @@
   .edit-actions { display: flex; gap: 8px; margin-top: 8px; justify-content: flex-end; }
   .task-card.editing { flex-direction: column; align-items: stretch; cursor: default; }
   .empty { font-size: 0.9rem; color: var(--muted); padding: 1rem 0; }
+
+  /* NOTES */
+  .note-toggle { font-size: 0.8rem; color: var(--accent); cursor: pointer; text-decoration: none; white-space: nowrap; }
+  .note-toggle:hover { text-decoration: underline; }
+  .note-input { flex-basis: 100%; min-height: 48px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg); color: var(--text); font-size: 0.85rem; padding: 8px 12px; font-family: inherit; resize: vertical; }
+  .note-input:focus { outline: none; border-color: var(--accent); }
+  .task-note { font-size: 0.8rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+  .edit-notes { width: 100%; min-height: 48px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); font-size: 0.85rem; font-family: inherit; background: var(--bg); color: var(--text); padding: 6px 8px; resize: vertical; margin-top: 6px; }
+  .edit-notes:focus { outline: none; border-color: var(--accent); }
+
+  /* DIFFICULTY TAGS */
+  .tag-easy { background: var(--accent-light); color: var(--accent); }
+  .tag-medium { background: var(--soon-light); color: var(--soon); }
+  .tag-hard { background: var(--warn-light); color: var(--warn); }
+
+  /* SUBTASKS */
+  .subtask-badge { font-size: 0.72rem; font-weight: 500; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 2px 8px; margin-left: 6px; white-space: nowrap; }
+  .subtask-toggle { width: 24px; height: 24px; border: none; background: none; cursor: pointer; color: var(--muted); font-size: 0.7rem; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border-radius: 4px; transition: transform 0.15s; }
+  .subtask-toggle:hover { background: var(--bg); }
+  .subtask-toggle.open { transform: rotate(90deg); }
+  .subtask-section { width: 100%; }
+  .subtask-list { display: none; padding: 8px 0 4px 36px; }
+  .subtask-list.open { display: block; }
+  .subtask-row { display: flex; align-items: center; gap: 8px; padding: 4px 0; font-size: 0.85rem; }
+  .subtask-check { width: 18px; height: 18px; border-radius: 4px; flex-shrink: 0; border: 1.5px solid var(--border); background: var(--bg); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.15s; }
+  .subtask-check:hover { border-color: var(--accent); }
+  .subtask-check.checked { background: var(--accent); border-color: var(--accent); }
+  .subtask-check svg { display: none; }
+  .subtask-check.checked svg { display: block; }
+  .subtask-name { flex: 1; }
+  .subtask-name.done { text-decoration: line-through; color: var(--muted); }
+  .subtask-del { border: none; background: none; cursor: pointer; color: var(--muted); font-size: 0.9rem; opacity: 0.4; padding: 0 4px; }
+  .subtask-del:hover { opacity: 1; }
+  .subtask-add { display: flex; gap: 6px; padding-top: 4px; }
+  .subtask-add input { flex: 1; height: 28px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg); color: var(--text); font-size: 0.8rem; padding: 0 8px; font-family: inherit; }
+  .subtask-add input:focus { outline: none; border-color: var(--accent); }
+  .subtask-add button { height: 28px; padding: 0 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); font-size: 0.75rem; cursor: pointer; font-family: inherit; white-space: nowrap; }
+  .subtask-add button:hover { background: var(--bg); }
+
+  /* DRAG & DROP */
+  .task-card[draggable="true"] { cursor: grab; }
+  .task-card.dragging { opacity: 0.4; }
+  .task-card.drag-over { border-top: 2px solid var(--accent); }
+
+  /* CARD LAYOUT for subtasks */
+  .card-main { display: flex; align-items: center; gap: 12px; width: 100%; }
+  .card-info { flex: 1; min-width: 0; }
 
   /* TOAST */
   .toast { position: fixed; bottom: 1.5rem; right: 1.5rem; background: var(--done); color: #fff; font-size: 0.8rem; padding: 8px 16px; border-radius: var(--radius-sm); opacity: 0; transform: translateY(8px); transition: all 0.25s; pointer-events: none; z-index: 100; }
@@ -234,8 +281,15 @@
       <option value="fortnightly">Fortnightly</option>
       <option value="monthly">Monthly</option>
     </select>
+    <select id="new-diff">
+      <option value="easy" selected>Easy</option>
+      <option value="medium">Medium</option>
+      <option value="hard">Hard</option>
+    </select>
     <select id="new-person"></select>
     <button class="btn-lg btn-accent" onclick="addTask()">+ Add chore</button>
+    <a class="note-toggle" onclick="toggleNewNote()">+ note</a>
+    <textarea id="new-notes" class="note-input" placeholder="Add a note..." maxlength="300" style="display:none"></textarea>
   </div>
 
   <div class="filters" id="filters"></div>
@@ -489,15 +543,26 @@ async function writeState() {
 }
 
 // Exposed to HTML onclick
+window.toggleNewNote = function() {
+  const ta = document.getElementById('new-notes');
+  ta.style.display = ta.style.display === 'none' ? '' : 'none';
+  if (ta.style.display !== 'none') ta.focus();
+};
+
 window.addTask = async function() {
   const name = document.getElementById('new-task').value.trim();
   if (!name) return;
   const freq   = document.getElementById('new-freq').value;
   const person = document.getElementById('new-person').value;
+  const diff   = document.getElementById('new-diff').value;
+  const notesEl = document.getElementById('new-notes');
+  const notes  = notesEl.value.trim();
   const id = 't' + Date.now();
-  state.tasks[id] = { id, name, freq, person, done: false, lastDone: Date.now() - freqDays(freq) * 86400000 };
+  state.tasks[id] = { id, name, freq, person, done: false, lastDone: Date.now() - freqDays(freq) * 86400000, notes: notes || '', difficulty: diff, subtasks: {}, order: Date.now() };
   state.nextId++;
   document.getElementById('new-task').value = '';
+  notesEl.value = '';
+  notesEl.style.display = 'none';
   await writeState();
 };
 
@@ -547,6 +612,9 @@ window.editTask = function(id) {
   const freqOpts = ['daily','weekly','fortnightly','monthly'].map(f =>
     '<option value="' + f + '"' + (t.freq === f ? ' selected' : '') + '>' + f + '</option>'
   ).join('');
+  const diffOpts = ['easy','medium','hard'].map(d =>
+    '<option value="' + d + '"' + ((t.difficulty || 'easy') === d ? ' selected' : '') + '>' + d + '</option>'
+  ).join('');
   const personOpts = '<option value="">Anyone</option>' +
     members.map(m => '<option value="' + esc(m) + '"' + (t.person === m ? ' selected' : '') + '>' + esc(m) + '</option>').join('');
   card.className = 'task-card editing';
@@ -554,8 +622,10 @@ window.editTask = function(id) {
     '<input class="edit-name" value="' + esc(t.name) + '" maxlength="60" />' +
     '<div class="edit-row">' +
       '<select class="edit-freq">' + freqOpts + '</select>' +
+      '<select class="edit-diff">' + diffOpts + '</select>' +
       '<select class="edit-person">' + personOpts + '</select>' +
     '</div>' +
+    '<textarea class="edit-notes" placeholder="Notes..." maxlength="300">' + esc(t.notes || '') + '</textarea>' +
     '<div class="edit-actions">' +
       '<button class="btn-sm btn-accent" onclick="saveTask(\'' + id + '\')">Save</button>' +
       '<button class="btn-sm" onclick="cancelEdit(\'' + id + '\')">Cancel</button>' +
@@ -568,9 +638,11 @@ window.saveTask = async function(id) {
   if (!card) return;
   const name = card.querySelector('.edit-name').value.trim();
   if (!name) return;
-  state.tasks[id].name   = name;
-  state.tasks[id].freq   = card.querySelector('.edit-freq').value;
-  state.tasks[id].person = card.querySelector('.edit-person').value;
+  state.tasks[id].name       = name;
+  state.tasks[id].freq       = card.querySelector('.edit-freq').value;
+  state.tasks[id].difficulty = card.querySelector('.edit-diff').value;
+  state.tasks[id].person     = card.querySelector('.edit-person').value;
+  state.tasks[id].notes      = card.querySelector('.edit-notes').value.trim();
   await writeState();
 };
 
@@ -578,6 +650,47 @@ window.cancelEdit = function(id) {
   const t = state.tasks[id];
   const card = document.getElementById('tc-' + id);
   if (t && card) card.outerHTML = cardHTML(t);
+};
+
+window.toggleSubtasks = function(taskId) {
+  const card = document.getElementById('tc-' + taskId);
+  if (!card) return;
+  const btn = card.querySelector('.subtask-toggle');
+  const list = card.querySelector('.subtask-list');
+  if (btn) btn.classList.toggle('open');
+  if (list) list.classList.toggle('open');
+};
+
+window.toggleSubtask = async function(taskId, subId) {
+  const t = state.tasks[taskId];
+  if (!t || !t.subtasks || !t.subtasks[subId]) return;
+  try {
+    await update(ref(db, 'state/tasks/' + taskId + '/subtasks/' + subId), { done: !t.subtasks[subId].done });
+  } catch (err) {
+    showToast('Update failed: ' + err.code);
+  }
+};
+
+window.addSubtask = async function(taskId) {
+  const card = document.getElementById('tc-' + taskId);
+  if (!card) return;
+  const inp = card.querySelector('.subtask-add input');
+  if (!inp) return;
+  const name = inp.value.trim();
+  if (!name) return;
+  const t = state.tasks[taskId];
+  if (!t) return;
+  if (!t.subtasks) t.subtasks = {};
+  const subId = 's' + Date.now();
+  t.subtasks[subId] = { id: subId, name, done: false };
+  await writeState();
+};
+
+window.removeSubtask = async function(taskId, subId) {
+  const t = state.tasks[taskId];
+  if (!t || !t.subtasks) return;
+  delete t.subtasks[subId];
+  await writeState();
 };
 
 window.setFilter = function(f, el) {
@@ -650,8 +763,12 @@ function renderTasks() {
   else if (filter === 'overdue') tasks = tasks.filter(t => dueStatus(t) === 'overdue');
   else if (filter === 'done') tasks = tasks.filter(t => t.done);
 
-  const order = {overdue:0, soon:1, ok:2, done:3};
-  tasks.sort((a, b) => (order[dueStatus(a)] || 2) - (order[dueStatus(b)] || 2));
+  const statusOrder = {overdue:0, soon:1, ok:2, done:3};
+  tasks.sort((a, b) => {
+    const sd = (statusOrder[dueStatus(a)] || 2) - (statusOrder[dueStatus(b)] || 2);
+    if (sd !== 0) return sd;
+    return (a.order || 0) - (b.order || 0);
+  });
 
   const sections = {overdue:[], soon:[], ok:[], done:[]};
   tasks.forEach(t => sections[dueStatus(t)].push(t));
@@ -683,22 +800,116 @@ function cardHTML(t) {
   const dueTag = s === 'overdue' ? '<span class="tag tag-overdue">Overdue</span>'
                : s === 'soon'    ? '<span class="tag tag-soon">Due soon</span>'
                : s === 'ok'      ? '<span class="tag tag-ok">On track</span>' : '';
+  const diff = t.difficulty || 'easy';
+  const diffTag = '<span class="tag tag-' + diff + '">' + diff + '</span>';
 
-  return '<div class="task-card ' + s + '" id="tc-' + t.id + '">' +
-    '<div class="check' + (t.done ? ' checked' : '') + '" onclick="toggleTask(\'' + t.id + '\')">' +
-      '<svg width="12" height="12" viewBox="0 0 12 12" fill="none">' +
-        '<polyline points="2,6 5,9 10,3" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>' +
-      '</svg>' +
+  // Notes line
+  const notesLine = t.notes
+    ? '<div class="task-note">' + esc(t.notes.length > 80 ? t.notes.slice(0, 80) + '…' : t.notes) + '</div>'
+    : '';
+
+  // Subtasks
+  const subs = t.subtasks ? Object.values(t.subtasks) : [];
+  const subsDone = subs.filter(st => st.done).length;
+  const subsBadge = subs.length
+    ? '<span class="subtask-badge">' + subsDone + '/' + subs.length + '</span>'
+    : '';
+  const hasSubtasks = subs.length > 0;
+  const chevronBtn = '<button class="subtask-toggle" onclick="toggleSubtasks(\'' + t.id + '\')" title="Subtasks">&#9654;</button>';
+
+  let subtaskSection = '';
+  if (true) { // always render subtask area for add-subtask input
+    let subRows = '';
+    subs.forEach(st => {
+      subRows +=
+        '<div class="subtask-row">' +
+          '<div class="subtask-check' + (st.done ? ' checked' : '') + '" onclick="toggleSubtask(\'' + t.id + '\',\'' + st.id + '\')">' +
+            '<svg width="10" height="10" viewBox="0 0 12 12" fill="none"><polyline points="2,6 5,9 10,3" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
+          '</div>' +
+          '<span class="subtask-name' + (st.done ? ' done' : '') + '">' + esc(st.name) + '</span>' +
+          '<button class="subtask-del" onclick="removeSubtask(\'' + t.id + '\',\'' + st.id + '\')" title="Remove">×</button>' +
+        '</div>';
+    });
+    subtaskSection =
+      '<div class="subtask-list">' +
+        subRows +
+        '<div class="subtask-add">' +
+          '<input type="text" placeholder="Add subtask..." maxlength="60" onkeydown="if(event.key===\'Enter\')addSubtask(\'' + t.id + '\')" />' +
+          '<button onclick="addSubtask(\'' + t.id + '\')">+ Add</button>' +
+        '</div>' +
+      '</div>';
+  }
+
+  return '<div class="task-card ' + s + '" id="tc-' + t.id + '" draggable="true" data-id="' + t.id + '">' +
+    '<div class="card-main">' +
+      '<div class="check' + (t.done ? ' checked' : '') + '" onclick="toggleTask(\'' + t.id + '\')">' +
+        '<svg width="12" height="12" viewBox="0 0 12 12" fill="none">' +
+          '<polyline points="2,6 5,9 10,3" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>' +
+        '</svg>' +
+      '</div>' +
+      '<div class="card-info">' +
+        '<span class="task-name">' + esc(t.name) + subsBadge + '</span>' +
+        notesLine +
+      '</div>' +
+      '<div class="task-meta">' + dueTag + diffTag + '<span class="tag tag-freq">' + t.freq + '</span>' + personTag + '</div>' +
+      chevronBtn +
+      '<button class="edit-btn" onclick="editTask(\'' + t.id + '\')" title="Edit">✎</button>' +
+      '<button class="del" onclick="deleteTask(\'' + t.id + '\')" title="Remove">×</button>' +
     '</div>' +
-    '<span class="task-name">' + esc(t.name) + '</span>' +
-    '<div class="task-meta">' + dueTag + '<span class="tag tag-freq">' + t.freq + '</span>' + personTag + '</div>' +
-    '<button class="edit-btn" onclick="editTask(\'' + t.id + '\')" title="Edit">✎</button>' +
-    '<button class="del" onclick="deleteTask(\'' + t.id + '\')" title="Remove">×</button>' +
+    '<div class="subtask-section">' + subtaskSection + '</div>' +
   '</div>';
 }
 
 document.getElementById('new-task').addEventListener('keydown', e => { if (e.key === 'Enter') addTask(); });
 document.getElementById('new-member').addEventListener('keydown', e => { if (e.key === 'Enter') addMember(); });
+
+// Drag-and-drop reorder
+let draggedId = null;
+const taskList = document.getElementById('task-list');
+
+taskList.addEventListener('dragstart', function(e) {
+  const card = e.target.closest('.task-card');
+  if (!card) return;
+  draggedId = card.dataset.id;
+  card.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+});
+
+taskList.addEventListener('dragend', function(e) {
+  const card = e.target.closest('.task-card');
+  if (card) card.classList.remove('dragging');
+  draggedId = null;
+  taskList.querySelectorAll('.drag-over').forEach(c => c.classList.remove('drag-over'));
+});
+
+taskList.addEventListener('dragover', function(e) {
+  e.preventDefault();
+  const card = e.target.closest('.task-card');
+  if (!card || card.dataset.id === draggedId) return;
+  taskList.querySelectorAll('.drag-over').forEach(c => c.classList.remove('drag-over'));
+  card.classList.add('drag-over');
+});
+
+taskList.addEventListener('dragleave', function(e) {
+  const card = e.target.closest('.task-card');
+  if (card) card.classList.remove('drag-over');
+});
+
+taskList.addEventListener('drop', async function(e) {
+  e.preventDefault();
+  taskList.querySelectorAll('.drag-over').forEach(c => c.classList.remove('drag-over'));
+  const card = e.target.closest('.task-card');
+  if (!card || !draggedId) return;
+  const targetId = card.dataset.id;
+  if (targetId === draggedId) return;
+  const a = state.tasks[draggedId], b = state.tasks[targetId];
+  if (!a || !b) return;
+  const tmpOrder = a.order || 0;
+  a.order = b.order || 0;
+  b.order = tmpOrder;
+  draggedId = null;
+  await writeState();
+});
 </script>
 
 </body>
