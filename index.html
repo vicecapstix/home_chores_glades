@@ -234,6 +234,9 @@
   /* LEADERBOARD MODAL */
   #leaderboard-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; z-index: 998; }
   #leaderboard-modal.hidden { display: none; }
+  /* SET PIN MODAL */
+  #setpin-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; z-index: 998; }
+  #setpin-modal.hidden { display: none; }
   .lb-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; width: 100%; max-width: 480px; max-height: 80vh; overflow-y: auto; }
   .lb-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
   .lb-title { font-family: 'DM Serif Display', serif; font-size: 1.4rem; }
@@ -526,7 +529,7 @@
 </div>
 
 <!-- SET PIN MODAL (admin) -->
-<div id="setpin-modal" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;z-index:998;" onclick="window.closeSetPin()">
+<div id="setpin-modal" class="hidden" onclick="window.closeSetPin()">
   <div class="pin-card" onclick="event.stopPropagation()">
     <div class="pin-title" id="setpin-title">Set PIN</div>
     <div class="pin-sub">Enter a new 4-digit PIN</div>
