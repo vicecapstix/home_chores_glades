@@ -484,16 +484,28 @@
 
   <div class="add-bar">
     <input type="text" id="new-task" placeholder="Add a chore..." maxlength="60" />
-    <select id="new-freq">
+    <select id="new-freq" onchange="document.getElementById('new-duedate').style.display=this.value==='once'?'':'none'">
       <option value="daily">Daily</option>
       <option value="weekly" selected>Weekly</option>
       <option value="fortnightly">Fortnightly</option>
       <option value="monthly">Monthly</option>
+      <option value="once">One-off</option>
     </select>
+    <input type="date" id="new-duedate" style="display:none;height:40px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg);color:var(--text);font-size:0.9rem;padding:0 10px;font-family:inherit;" />
     <select id="new-diff">
       <option value="easy" selected>Easy</option>
       <option value="medium">Medium</option>
       <option value="hard">Hard</option>
+    </select>
+    <select id="new-cat">
+      <option value="">No category</option>
+      <option>Kitchen</option>
+      <option>Bathroom</option>
+      <option>Bedroom</option>
+      <option>Garden</option>
+      <option>Living Room</option>
+      <option>Outdoor</option>
+      <option>Other</option>
     </select>
     <select id="new-person"></select>
     <button class="btn-lg btn-accent" onclick="addTask()">+ Add chore</button>
@@ -513,7 +525,36 @@
   <button onclick="toggleSelectMode()">Cancel</button>
 </div>
 
+<!-- SET PIN MODAL (admin) -->
+<div id="setpin-modal" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;z-index:998;" onclick="window.closeSetPin()">
+  <div class="pin-card" onclick="event.stopPropagation()">
+    <div class="pin-title" id="setpin-title">Set PIN</div>
+    <div class="pin-sub">Enter a new 4-digit PIN</div>
+    <div class="pin-dots" id="setpin-dots">
+      <div class="pin-dot"></div><div class="pin-dot"></div>
+      <div class="pin-dot"></div><div class="pin-dot"></div>
+    </div>
+    <div class="pin-pad">
+      <button class="pin-key" onclick="window.setPinKey('1')">1</button>
+      <button class="pin-key" onclick="window.setPinKey('2')">2</button>
+      <button class="pin-key" onclick="window.setPinKey('3')">3</button>
+      <button class="pin-key" onclick="window.setPinKey('4')">4</button>
+      <button class="pin-key" onclick="window.setPinKey('5')">5</button>
+      <button class="pin-key" onclick="window.setPinKey('6')">6</button>
+      <button class="pin-key" onclick="window.setPinKey('7')">7</button>
+      <button class="pin-key" onclick="window.setPinKey('8')">8</button>
+      <button class="pin-key" onclick="window.setPinKey('9')">9</button>
+      <button class="pin-key" style="visibility:hidden" disabled></button>
+      <button class="pin-key" onclick="window.setPinKey('0')">0</button>
+      <button class="pin-key del" onclick="window.setPinDel()">&#9003;</button>
+    </div>
+    <div class="pin-error" id="setpin-error"></div>
+    <button class="btn-sm" style="margin-top:1rem;width:100%" onclick="window.closeSetPin()">Cancel</button>
+  </div>
+</div>
+
 <div class="toast" id="toast">Saved</div>
+<div class="toast" id="undo-toast" style="right:auto;left:1.5rem;">Deleted — <span style="text-decoration:underline;cursor:pointer;color:#fff;" onclick="window.undoDelete()">Undo</span></div>
 
 <!-- PIN LOGIC (plain script, runs first) -->
 <script>
@@ -674,7 +715,7 @@ const BADGES = [
 ];
 
 function taskPoints(t) {
-  const base = { daily: 1, weekly: 3, fortnightly: 5, monthly: 8 }[t.freq] || 1;
+  const base = { daily: 1, weekly: 3, fortnightly: 5, monthly: 8, once: 8 }[t.freq] || 1;
   const mult = { easy: 1, medium: 2, hard: 3 }[t.difficulty || 'easy'];
   return base * mult;
 }
@@ -689,8 +730,13 @@ function getWeekStart() {
 let state = { members: {}, tasks: {}, history: [], nextId: 1 };
 let members = [];   // convenience array of name strings, derived from state.members
 let filter = 'all';
+let filterCat = '';
 let selectMode = false;
 let selectedIds = new Set();
+let _deletedTask = null;
+let _deletedTaskTimer = null;
+let _setPinTarget = '';
+let _setPinBuffer = '';
 
 // ── Phase 9: Per-member login, roles, read-only ───────────────────────────────
 const READONLY = new URLSearchParams(location.search).get('readonly') === '1';
@@ -822,6 +868,7 @@ function checkTaskResets() {
   let changed = false;
   const now = Date.now();
   Object.values(state.tasks).forEach(t => {
+    if (t.freq === 'once') return; // one-off tasks never auto-reset
     if (t.done && now - (t.lastDone || 0) >= freqDays(t.freq) * 86400000) {
       t.done = false;
       t.lastDoneBy = null;
@@ -833,6 +880,14 @@ function checkTaskResets() {
 }
 function dueStatus(t) {
   if (t.done) return 'done';
+  if (t.freq === 'once') {
+    if (!t.dueDate) return 'ok';
+    const today = new Date().toISOString().slice(0, 10);
+    const soon  = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+    if (t.dueDate < today) return 'overdue';
+    if (t.dueDate <= soon) return 'soon';
+    return 'ok';
+  }
   const d = freqDays(t.freq), s = daysSince(t.lastDone || 0);
   if (s >= d) return 'overdue';
   if (s >= d - 1) return 'soon';
@@ -1068,15 +1123,20 @@ window.addTask = async function() {
   if (READONLY) return;
   const name = document.getElementById('new-task').value.trim();
   if (!name) return;
-  const freq   = document.getElementById('new-freq').value;
-  const person = document.getElementById('new-person').value;
-  const diff   = document.getElementById('new-diff').value;
+  const freq    = document.getElementById('new-freq').value;
+  const person  = document.getElementById('new-person').value;
+  const diff    = document.getElementById('new-diff').value;
+  const cat     = document.getElementById('new-cat').value;
+  const dueDate = freq === 'once' ? document.getElementById('new-duedate').value : '';
   const notesEl = document.getElementById('new-notes');
-  const notes  = notesEl.value.trim();
+  const notes   = notesEl.value.trim();
   const id = 't' + Date.now();
-  state.tasks[id] = { id, name, freq, person, done: false, lastDone: Date.now() - freqDays(freq) * 86400000, notes: notes || '', difficulty: diff, subtasks: {}, order: Date.now() };
+  state.tasks[id] = { id, name, freq, person, done: false, lastDone: Date.now() - freqDays(freq) * 86400000, notes: notes || '', difficulty: diff, category: cat || '', dueDate: dueDate || '', subtasks: {}, order: Date.now() };
   state.nextId++;
   document.getElementById('new-task').value = '';
+  document.getElementById('new-duedate').value = '';
+  document.getElementById('new-duedate').style.display = 'none';
+  document.getElementById('new-freq').value = 'weekly';
   notesEl.value = '';
   notesEl.style.display = 'none';
   await writeState();
@@ -1098,6 +1158,48 @@ window.removeMember = async function(name) {
   delete state.members[name];
   Object.values(state.tasks).forEach(t => { if (t.person === name) t.person = ''; });
   await writeState();
+};
+
+window.openSetPin = function(name) {
+  if (!isAdmin()) return;
+  _setPinTarget = name;
+  _setPinBuffer = '';
+  document.getElementById('setpin-title').textContent = 'Set PIN — ' + name;
+  document.getElementById('setpin-error').textContent = '';
+  document.querySelectorAll('#setpin-dots .pin-dot').forEach(d => { d.classList.remove('filled','error'); });
+  document.getElementById('setpin-modal').classList.remove('hidden');
+};
+
+window.closeSetPin = function() {
+  document.getElementById('setpin-modal').classList.add('hidden');
+  _setPinBuffer = '';
+  _setPinTarget = '';
+};
+
+window.setPinKey = async function(digit) {
+  if (_setPinBuffer.length >= 4) return;
+  _setPinBuffer += digit;
+  document.querySelectorAll('#setpin-dots .pin-dot').forEach((d, i) => {
+    d.classList.toggle('filled', i < _setPinBuffer.length);
+  });
+  if (_setPinBuffer.length === 4) {
+    const hash = await moduleSha256(_setPinBuffer);
+    _setPinBuffer = '';
+    try {
+      await update(ref(db, 'state/members/' + _setPinTarget), { pinHash: hash });
+      window.closeSetPin();
+      showToast('PIN saved for ' + _setPinTarget);
+    } catch (err) {
+      document.getElementById('setpin-error').textContent = 'Save failed: ' + err.code;
+    }
+  }
+};
+
+window.setPinDel = function() {
+  _setPinBuffer = _setPinBuffer.slice(0, -1);
+  document.querySelectorAll('#setpin-dots .pin-dot').forEach((d, i) => {
+    d.classList.toggle('filled', i < _setPinBuffer.length);
+  });
 };
 
 window.toggleRole = async function(name) {
@@ -1204,12 +1306,31 @@ window.toggleTask = async function(id) {
 
 window.deleteTask = async function(id) {
   if (READONLY) return;
+  _deletedTask = { id, data: { ...state.tasks[id] } };
   try {
     await remove(ref(db, 'state/tasks/' + id));
-    showToast('Removed');
+    const ut = document.getElementById('undo-toast');
+    ut.classList.add('show');
+    clearTimeout(_deletedTaskTimer);
+    _deletedTaskTimer = setTimeout(() => { ut.classList.remove('show'); _deletedTask = null; }, 5000);
   } catch (err) {
     showToast('Delete failed: ' + err.code);
     console.error('Firebase delete error:', err);
+  }
+};
+
+window.undoDelete = async function() {
+  if (!_deletedTask) return;
+  const { id, data } = _deletedTask;
+  _deletedTask = null;
+  clearTimeout(_deletedTaskTimer);
+  document.getElementById('undo-toast').classList.remove('show');
+  try {
+    await set(ref(db, 'state/tasks/' + id), data);
+    showToast('Restored');
+  } catch (err) {
+    showToast('Restore failed: ' + err.code);
+    console.error('Firebase restore error:', err);
   }
 };
 
@@ -1218,11 +1339,14 @@ window.editTask = function(id) {
   if (!t) return;
   const card = document.getElementById('tc-' + id);
   if (!card) return;
-  const freqOpts = ['daily','weekly','fortnightly','monthly'].map(f =>
-    '<option value="' + f + '"' + (t.freq === f ? ' selected' : '') + '>' + f + '</option>'
+  const freqOpts = ['daily','weekly','fortnightly','monthly','once'].map(f =>
+    '<option value="' + f + '"' + (t.freq === f ? ' selected' : '') + '>' + (f === 'once' ? 'One-off' : f) + '</option>'
   ).join('');
   const diffOpts = ['easy','medium','hard'].map(d =>
     '<option value="' + d + '"' + ((t.difficulty || 'easy') === d ? ' selected' : '') + '>' + d + '</option>'
+  ).join('');
+  const catOpts = ['','Kitchen','Bathroom','Bedroom','Garden','Living Room','Outdoor','Other'].map(c =>
+    '<option value="' + esc(c) + '"' + ((t.category || '') === c ? ' selected' : '') + '>' + (c || 'No category') + '</option>'
   ).join('');
   const personOpts = '<option value="">Anyone</option>' +
     members.map(m => '<option value="' + esc(m) + '"' + (t.person === m ? ' selected' : '') + '>' + esc(m) + '</option>').join('');
@@ -1230,8 +1354,10 @@ window.editTask = function(id) {
   card.innerHTML =
     '<input class="edit-name" value="' + esc(t.name) + '" maxlength="60" />' +
     '<div class="edit-row">' +
-      '<select class="edit-freq">' + freqOpts + '</select>' +
+      '<select class="edit-freq" onchange="this.closest(\'.task-card\').querySelector(\'.edit-duedate\').style.display=this.value===\'once\'?\'\':\'none\'">' + freqOpts + '</select>' +
+      '<input type="date" class="edit-duedate" value="' + esc(t.dueDate || '') + '" style="flex:1;padding:6px 8px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:0.85rem;font-family:inherit;background:var(--bg);color:var(--text);display:' + (t.freq === 'once' ? '' : 'none') + '" />' +
       '<select class="edit-diff">' + diffOpts + '</select>' +
+      '<select class="edit-cat">' + catOpts + '</select>' +
       '<select class="edit-person">' + personOpts + '</select>' +
     '</div>' +
     '<textarea class="edit-notes" placeholder="Notes..." maxlength="300">' + esc(t.notes || '') + '</textarea>' +
@@ -1250,7 +1376,9 @@ window.saveTask = async function(id) {
   if (!name) return;
   state.tasks[id].name       = name;
   state.tasks[id].freq       = card.querySelector('.edit-freq').value;
+  state.tasks[id].dueDate    = card.querySelector('.edit-freq').value === 'once' ? (card.querySelector('.edit-duedate').value || '') : '';
   state.tasks[id].difficulty = card.querySelector('.edit-diff').value;
+  state.tasks[id].category   = card.querySelector('.edit-cat').value;
   state.tasks[id].person     = card.querySelector('.edit-person').value;
   state.tasks[id].notes      = card.querySelector('.edit-notes').value.trim();
   await writeState();
@@ -1308,8 +1436,16 @@ window.removeSubtask = async function(taskId, subId) {
 
 window.setFilter = function(f, el) {
   filter = f;
+  filterCat = '';
   document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
   el.classList.add('active');
+  renderTasks();
+};
+
+window.setCatFilter = function(c, el) {
+  filterCat = filterCat === c ? '' : c;
+  filter = 'all';
+  renderFilters();
   renderTasks();
 };
 
@@ -1351,6 +1487,7 @@ function renderMembers() {
       (streak >= 2 ? ' 🔥' + streak : '') +
       (badgeIcons ? ' ' + badgeIcons : '') +
       (isAdmin() ? ' <span class="chip-role" title="Toggle role (' + esc(mem.role || 'member') + ')" onclick="window.toggleRole(\'' + esc(m) + '\')">🛡</span>' : '') +
+      (isAdmin() ? ' <span class="chip-role" title="Set PIN" onclick="window.openSetPin(\'' + esc(m) + '\')">🔑</span>' : '') +
       ' <span class="chip-del">×</span></span>';
   }).join('');
 }
@@ -1377,10 +1514,18 @@ function renderFilters() {
     done:    tasks.filter(t => t.done).length,
   };
   const defs = [{k:'all',label:'All'},{k:'pending',label:'Pending'},{k:'overdue',label:'Overdue'},{k:'done',label:'Done today'}];
-  document.getElementById('filters').innerHTML = defs.map(d =>
-    '<button class="filter-pill' + (filter === d.k ? ' active' : '') + '" onclick="setFilter(\'' + d.k + '\',this)">' +
+  let html = defs.map(d =>
+    '<button class="filter-pill' + (filter === d.k ? ' active' : '') + '" onclick="window.setFilter(\'' + d.k + '\',this)">' +
     d.label + '<span class="count">' + counts[d.k] + '</span></button>'
   ).join('');
+  const cats = [...new Set(tasks.map(t => t.category).filter(Boolean))].sort();
+  if (cats.length) {
+    html += '<span style="width:1px;background:var(--border);margin:0 4px;align-self:stretch;flex-shrink:0;display:inline-block;"></span>';
+    html += cats.map(c =>
+      '<button class="filter-pill' + (filterCat === c ? ' active' : '') + '" onclick="window.setCatFilter(\'' + esc(c) + '\',this)">' + esc(c) + '</button>'
+    ).join('');
+  }
+  document.getElementById('filters').innerHTML = html;
 }
 
 function renderTasks() {
@@ -1388,6 +1533,7 @@ function renderTasks() {
   if (filter === 'pending') tasks = tasks.filter(t => !t.done);
   else if (filter === 'overdue') tasks = tasks.filter(t => dueStatus(t) === 'overdue');
   else if (filter === 'done') tasks = tasks.filter(t => t.done);
+  if (filterCat) tasks = tasks.filter(t => t.category === filterCat);
 
   const available = tasks.filter(t => !t.done && !t.person);
   const rest = tasks.filter(t => t.done || t.person);
@@ -1434,6 +1580,10 @@ function cardHTML(t) {
                : s === 'ok'      ? '<span class="tag tag-ok">On track</span>' : '';
   const diff = t.difficulty || 'easy';
   const diffTag = '<span class="tag tag-' + diff + '">' + diff + '</span>';
+  const freqTag = t.freq === 'once'
+    ? '<span class="tag tag-freq">📅 ' + (t.dueDate || 'One-off') + '</span>'
+    : '<span class="tag tag-freq">' + t.freq + '</span>';
+  const catTag = t.category ? '<span class="tag tag-freq">' + esc(t.category) + '</span>' : '';
 
   // Notes line
   const notesLine = t.notes
@@ -1490,7 +1640,7 @@ function cardHTML(t) {
         '<span class="task-name">' + esc(t.name) + subsBadge + '</span>' +
         notesLine +
       '</div>' +
-      '<div class="task-meta">' + dueTag + diffTag + '<span class="tag tag-freq">' + t.freq + '</span>' + personTag + '</div>' +
+      '<div class="task-meta">' + dueTag + diffTag + freqTag + catTag + personTag + '</div>' +
       chevronBtn +
       '<button class="edit-btn" onclick="editTask(\'' + t.id + '\')" title="Edit">✎</button>' +
       '<button class="del" onclick="deleteTask(\'' + t.id + '\')" title="Remove">×</button>' +
