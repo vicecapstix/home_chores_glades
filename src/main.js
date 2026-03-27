@@ -20,6 +20,7 @@ import {
 import {
   currentMember, isAdmin, handleFirstLoad,
   memberSelect, memberPinKey, memberPinDel, memberPinBack,
+  switchUser,
 } from './auth.js';
 
 import {
@@ -116,6 +117,7 @@ window.memberSelect  = name  => memberSelect(name);
 window.memberPinKey  = digit => memberPinKey(digit);
 window.memberPinDel  = ()    => memberPinDel();
 window.memberPinBack = ()    => memberPinBack();
+window.switchUser    = ()    => switchUser(window._fcLoginCallback);
 
 // Theme & misc
 window.toggleTheme   = ()    => toggleTheme();
