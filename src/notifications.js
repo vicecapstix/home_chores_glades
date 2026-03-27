@@ -31,7 +31,7 @@ function runOverdueCheck() {
   Object.values(state.tasks).forEach(t => {
     if (dueStatus(t) === 'overdue' && !t.done && !_notifiedIds.has(t.id)) {
       _notifiedIds.add(t.id);
-      new Notification('FamilyChores', { body: t.name + ' is overdue', icon: '' });
+      new Notification('FamilyFlow', { body: t.name + ' is overdue', icon: '' });
     }
   });
 }
