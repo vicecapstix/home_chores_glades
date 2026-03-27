@@ -2800,7 +2800,7 @@ FIREBASE: `))}restoreState_(){this.tryAuth(),this.tryAppCheck();for(const e of t
   <button class="theme-toggle" onclick="window.openStats()" title="Stats">📊</button>
   <button class="theme-toggle" onclick="window.openTemplates()" title="Templates">📋</button>
   <button class="theme-toggle" id="btn-select" onclick="window.toggleSelectMode()" title="Select tasks">Select</button>
-  <button class="theme-toggle" id="btn-switch-user" onclick="window.switchUser()" title="Switch user">👤</button>
+  <button class="theme-toggle" id="btn-switch-user" onclick="window.openPersonMenu()" title="Profile / Admin">👤</button>
   <div class="header-stats">
     <div class="hstat"><div class="hstat-val" id="h-total">—</div><div class="hstat-label">Total</div></div>
     <div class="hstat"><div class="hstat-val" id="h-done" style="color:var(--accent)">—</div><div class="hstat-label">Done today</div></div>
@@ -2864,6 +2864,48 @@ FIREBASE: `))}restoreState_(){this.tryAuth(),this.tryAppCheck();for(const e of t
   <button onclick="window.bulkDelete()">Delete</button>
   <button onclick="window.toggleSelectMode()">Cancel</button>
 </div>
+
+<!-- ADMIN PANEL MODAL -->
+<div id="admin-panel-modal" class="hidden" onclick="window.closeAdminPanel()">
+  <div class="lb-card" onclick="event.stopPropagation()" style="max-width:360px;">
+    <div class="lb-header">
+      <span class="lb-title">Admin Panel</span>
+      <button class="lb-close" onclick="window.closeAdminPanel()">×</button>
+    </div>
+    <div style="text-align:center;padding:1rem 0 0.5rem;">
+      <div id="admin-panel-name" style="font-family:'DM Serif Display',serif;font-size:1.4rem;"></div>
+      <div style="margin-top:0.25rem;color:var(--accent);font-size:0.8rem;font-weight:600;letter-spacing:0.05em;">ADMIN</div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--muted);text-align:center;margin:0.5rem 0 1rem;">Admin controls are in the main view — use member chips to toggle roles and set PINs, and the Add Chore bar to manage tasks.</p>
+    <button class="btn-lg" style="width:100%;margin-top:0.5rem;" onclick="window.adminPanelSwitchUser()">Switch User</button>
+  </div>
+</div>
+
+<style>
+#admin-panel-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; z-index: 998; }
+#admin-panel-modal.hidden { display: none; }
+</style>
+
+<script>
+window.openPersonMenu = function() {
+  var isAdmin = document.body.getAttribute('data-role') === 'admin';
+  if (isAdmin) {
+    var name = '';
+    try { name = sessionStorage.getItem('fc_member') || ''; } catch(e) {}
+    document.getElementById('admin-panel-name').textContent = name || 'Admin';
+    document.getElementById('admin-panel-modal').classList.remove('hidden');
+  } else {
+    window.switchUser();
+  }
+};
+window.closeAdminPanel = function() {
+  document.getElementById('admin-panel-modal').classList.add('hidden');
+};
+window.adminPanelSwitchUser = function() {
+  window.closeAdminPanel();
+  window.switchUser();
+};
+</script>
 
 <!-- TOASTS -->
 <div class="toast" id="toast">Saved</div>
