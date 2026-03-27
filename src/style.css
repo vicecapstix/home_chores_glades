@@ -218,12 +218,25 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
 #stats-modal,
 #summary-modal,
 #templates-modal,
-#setpin-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; z-index: 998; }
+#setpin-modal,
+#admin-panel-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; z-index: 998; }
 #leaderboard-modal.hidden,
 #stats-modal.hidden,
 #summary-modal.hidden,
 #templates-modal.hidden,
-#setpin-modal.hidden { display: none; }
+#setpin-modal.hidden,
+#admin-panel-modal.hidden { display: none; }
+
+/* ADMIN BUTTON (visible only for admins) */
+#btn-admin { display: none; width: auto; padding: 0 10px; font-size: 0.85rem; gap: 4px; }
+body[data-role="admin"] #btn-admin { display: flex; }
+
+/* ADMIN PANEL MEMBER LIST */
+.admin-member-row { display: flex; align-items: center; gap: 0.5rem; padding: 0.4rem 0; border-bottom: 1px solid var(--border); }
+.admin-member-row:last-child { border-bottom: none; }
+.admin-member-name { flex: 1; font-size: 0.95rem; }
+.admin-member-role { font-size: 0.75rem; color: var(--muted); }
+.admin-member-role.is-admin { color: var(--accent); font-weight: 600; }
 
 /* TOAST */
 .toast { position: fixed; bottom: var(--space-lg); right: var(--space-lg); background: var(--done); color: #fff; font-size: 0.8rem; padding: var(--space-sm) 16px; border-radius: var(--radius-sm); opacity: 0; transform: translateY(8px); transition: all 0.25s; pointer-events: none; z-index: 100; }

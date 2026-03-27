@@ -154,6 +154,7 @@
   <button class="theme-toggle" onclick="window.openStats()" title="Stats">📊</button>
   <button class="theme-toggle" onclick="window.openTemplates()" title="Templates">📋</button>
   <button class="theme-toggle" id="btn-select" onclick="window.toggleSelectMode()" title="Select tasks">Select</button>
+  <button class="theme-toggle" id="btn-admin" onclick="window.openAdminPanel()" title="Admin Panel">⚙️ Admin</button>
   <button class="theme-toggle" id="btn-switch-user" onclick="window.switchUser()" title="Switch user">👤</button>
   <div class="header-stats">
     <div class="hstat"><div class="hstat-val" id="h-total">—</div><div class="hstat-label">Total</div></div>
@@ -217,6 +218,22 @@
   <button onclick="window.bulkAssign()">Assign</button>
   <button onclick="window.bulkDelete()">Delete</button>
   <button onclick="window.toggleSelectMode()">Cancel</button>
+</div>
+
+<!-- ADMIN PANEL MODAL -->
+<div id="admin-panel-modal" class="hidden" onclick="window.closeAdminPanel()">
+  <div class="lb-card" onclick="event.stopPropagation()" style="max-width:360px;">
+    <div class="lb-header">
+      <span class="lb-title">Admin Panel</span>
+      <button class="lb-close" onclick="window.closeAdminPanel()">×</button>
+    </div>
+    <div style="text-align:center;padding:1rem 0 0.5rem;">
+      <div id="admin-panel-name" style="font-family:'DM Serif Display',serif;font-size:1.4rem;"></div>
+      <div style="margin-top:0.25rem;color:var(--accent);font-size:0.8rem;font-weight:600;letter-spacing:0.05em;">ADMIN</div>
+    </div>
+    <div id="admin-member-list" style="margin:0.5rem 0;"></div>
+    <button class="btn-lg" style="width:100%;margin-top:0.5rem;" onclick="window.adminPanelSwitchUser()">Switch User</button>
+  </div>
 </div>
 
 <!-- TOASTS -->
