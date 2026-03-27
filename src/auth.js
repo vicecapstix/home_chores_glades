@@ -22,6 +22,7 @@ export function isAdmin() {
 
 // Called once Firebase state first loads. Shows member selector or restores session.
 export function handleFirstLoad(onLoginComplete) {
+  window._fcLoginCallback = onLoginComplete;
   const saved = currentMember();
   if (READONLY) {
     onLoginComplete();
@@ -130,4 +131,17 @@ export function memberPinBack() {
   _pendingMemberName = '';
   _memberPinBuffer = '';
   showMemberSelector(window._fcLoginCallback);
+}
+
+// ── Switch user (logout current session) ──────────────────────────────────────
+
+export function switchUser(onLoginComplete) {
+  try { sessionStorage.removeItem('fc_member'); } catch(e) {}
+  const members = getMembers();
+  document.getElementById('pin-screen').classList.remove('hidden');
+  if (members.length === 0) {
+    completeLogin(null, onLoginComplete);
+  } else {
+    showMemberSelector(onLoginComplete);
+  }
 }
