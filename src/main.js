@@ -3,7 +3,8 @@ import './style.css';
 import { onValue, ref } from 'firebase/database';
 
 import { FB_URL, READONLY } from './config.js';
-import { state, applySnapshot, migrateLegacyMembers } from './state.js';
+import { state, getMembers, applySnapshot, migrateLegacyMembers } from './state.js';
+import { esc } from './utils.js';
 import { initFirebase, initAuth } from './firebase.js';
 import { initModalBackButton, closeModal } from './modals.js';
 import { popUndo } from './undo.js';
@@ -160,7 +161,32 @@ window.bulkDelete       = ()      => bulkDelete();
 // Members
 window.addMember     = ()         => addMember(_isAdmin);
 window.removeMember  = name       => removeMember(name, _isAdmin);
-window.toggleRole    = name       => toggleRole(name);
+window.toggleRole    = name       => toggleRole(name, _isAdmin);
+
+// Admin panel
+window.openAdminPanel = function() {
+  if (READONLY || !_isAdmin()) return;
+  document.getElementById('admin-panel-name').textContent = _currentMember() || 'Admin';
+  const members = getMembers();
+  document.getElementById('admin-member-list').innerHTML = members.map(m => {
+    const role = state.members[m]?.role || 'member';
+    const isAdm = role === 'admin';
+    return '<div class="admin-member-row">' +
+      '<span class="admin-member-name">' + esc(m) + '</span>' +
+      '<span class="admin-member-role' + (isAdm ? ' is-admin' : '') + '">' + (isAdm ? '👑 Admin' : 'Member') + '</span>' +
+      '<button class="btn-sm" onclick="window.toggleRole(\'' + esc(m) + '\');window.openAdminPanel()">Toggle</button>' +
+      '<button class="btn-sm" onclick="window.closeAdminPanel();window.openSetPin(\'' + esc(m) + '\')">Set PIN</button>' +
+      '</div>';
+  }).join('');
+  document.getElementById('admin-panel-modal').classList.remove('hidden');
+};
+window.closeAdminPanel = function() {
+  document.getElementById('admin-panel-modal').classList.add('hidden');
+};
+window.adminPanelSwitchUser = function() {
+  window.closeAdminPanel();
+  window.switchUser();
+};
 
 // Modals
 window.closeModal    = id         => closeModal(id);

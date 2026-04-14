@@ -152,8 +152,6 @@ function _renderMembers() {
       ' <span style="opacity:0.55;font-size:0.75em">' + (mem.points || 0) + '</span>' +
       (streak >= 2 ? ' 🔥' + streak : '') +
       (badgeIcons ? ' ' + badgeIcons : '') +
-      (admin ? ' <span class="chip-role" title="Toggle role (' + esc(mem.role || 'member') + ')" onclick="window.toggleRole(\'' + esc(m) + '\')">🛡</span>' : '') +
-      (admin ? ' <span class="chip-role" title="Set PIN" onclick="window.openSetPin(\'' + esc(m) + '\')">🔑</span>' : '') +
       ' <span class="chip-del">×</span></span>';
   }).join('');
 }

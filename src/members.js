@@ -35,8 +35,8 @@ export async function removeMember(name, isAdminFn) {
   }
 }
 
-export async function toggleRole(name) {
-  if (READONLY) return;
+export async function toggleRole(name, isAdminFn) {
+  if (READONLY || !isAdminFn()) return;
   const m = state.members[name];
   if (!m) return;
   try {
