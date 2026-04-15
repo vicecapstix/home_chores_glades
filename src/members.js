@@ -2,6 +2,7 @@ import { state, getMembers } from './state.js';
 import { READONLY } from './config.js';
 import { writeState, patchMember } from './firebase.js';
 import { showToast } from './ui.js';
+import { getWeekStart } from './utils.js';
 
 // ── Add / Remove ──────────────────────────────────────────────────────────────
 
@@ -13,7 +14,8 @@ export async function addMember(isAdminFn) {
   const isFirst = Object.keys(state.members).length === 0;
   state.members[name] = {
     name, role: isFirst ? 'admin' : 'member',
-    pinHash: '', points: 0, streak: 0, lastStreakDate: null,
+    pinHash: '', points: 0, weekPoints: 0, weekStart: getWeekStart(),
+    streak: 0, lastStreakDate: null,
     badges: [], completedCount: 0,
   };
   inp.value = '';
