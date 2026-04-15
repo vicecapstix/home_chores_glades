@@ -36,7 +36,7 @@ function _showUndoToast(label) {
   clearTimeout(_toastTimer);
   _toastTimer = setTimeout(() => {
     el.classList.remove('show');
-    _stack.pop(); // expire the oldest pending command
+    _stack.splice(0); // expire all pending commands — the undo window has closed
   }, 5000);
 }
 
