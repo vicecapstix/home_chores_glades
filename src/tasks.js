@@ -1,5 +1,5 @@
 import { state, getMembers } from './state.js';
-import { READONLY, BADGES } from './config.js';
+import { READONLY, BADGES, CATEGORIES } from './config.js';
 import { writeState, patchTask, patchMember, patchRoot, removeTask, restoreTask, patchSubtask } from './firebase.js';
 import { showToast } from './ui.js';
 import { pushUndo } from './undo.js';
@@ -69,7 +69,7 @@ export function editTask(id) {
   const diffOpts = ['easy','medium','hard'].map(d =>
     '<option value="' + d + '"' + ((t.difficulty || 'easy') === d ? ' selected' : '') + '>' + d + '</option>'
   ).join('');
-  const catOpts = ['','Kitchen','Bathroom','Bedroom','Garden','Living Room','Outdoor','Other'].map(c =>
+  const catOpts = ['', ...CATEGORIES].map(c =>
     '<option value="' + esc(c) + '"' + ((t.category || '') === c ? ' selected' : '') + '>' + (c || 'No category') + '</option>'
   ).join('');
   const personOpts = '<option value="">Anyone</option>' +
