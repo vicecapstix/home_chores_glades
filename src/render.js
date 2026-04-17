@@ -87,7 +87,7 @@ export async function bulkAssign() {
 }
 
 export async function bulkDelete() {
-  if (READONLY || !selectedIds.size) return;
+  if (READONLY || !_isAdmin() || !selectedIds.size) return;
   const n = selectedIds.size;
   if (!confirm('Delete ' + n + ' task' + (n > 1 ? 's' : '') + '?')) return;
   const { removeTask, restoreTask } = await import('./firebase.js');
