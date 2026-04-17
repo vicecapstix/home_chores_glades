@@ -1,8 +1,9 @@
 import { state, getMembers } from './state.js';
-import { PCOLS, BADGES } from './config.js';
+import { PCOLS, BADGES, READONLY } from './config.js';
 import { openModal, closeModal } from './modals.js';
 import { writeState } from './firebase.js';
 import { esc, sha256, freqDays, dueStatus } from './utils.js';
+import { isAdmin } from './auth.js';
 
 // ── pColor helper ─────────────────────────────────────────────────────────────
 
@@ -191,6 +192,7 @@ function renderTemplates() {
 }
 
 export function saveTemplate() {
+  if (READONLY || !isAdmin()) return;
   const input = document.getElementById('tpl-name-input');
   const name = input.value.trim();
   if (!name) { showToast('Enter a template name'); return; }
@@ -206,6 +208,7 @@ export function saveTemplate() {
 }
 
 export function applyTemplate(id) {
+  if (READONLY || !isAdmin()) return;
   const tpl = (state.templates || {})[id];
   if (!tpl) return;
   let added = 0;
@@ -225,6 +228,7 @@ export function applyTemplate(id) {
 }
 
 export function deleteTemplate(id) {
+  if (READONLY || !isAdmin()) return;
   if (!confirm('Delete this template?')) return;
   delete state.templates[id];
   writeState().catch(err => showToast('Save failed: ' + (err.code || err.message)));

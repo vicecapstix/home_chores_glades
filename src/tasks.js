@@ -27,8 +27,8 @@ export function checkTaskResets() {
 
 // ── Add task ──────────────────────────────────────────────────────────────────
 
-export async function addTask() {
-  if (READONLY) return;
+export async function addTask(isAdminFn) {
+  if (READONLY || !isAdminFn()) return;
   const name = document.getElementById('new-task').value.trim();
   if (!name) return;
   const freq    = document.getElementById('new-freq').value;
@@ -92,8 +92,8 @@ export function editTask(id) {
   card.querySelector('.edit-name').focus();
 }
 
-export async function saveTask(id) {
-  if (READONLY) return;
+export async function saveTask(id, isAdminFn) {
+  if (READONLY || !isAdminFn()) return;
   const card = document.getElementById('tc-' + id);
   if (!card) return;
   const name = card.querySelector('.edit-name').value.trim();
@@ -189,8 +189,8 @@ export async function toggleTask(id, currentMemberFn, isAdminFn) {
 
 // ── Delete ────────────────────────────────────────────────────────────────────
 
-export async function deleteTask(id) {
-  if (READONLY) return;
+export async function deleteTask(id, isAdminFn) {
+  if (READONLY || !isAdminFn()) return;
   const t = state.tasks[id];
   if (!t) return;
   const savedData = { ...t };

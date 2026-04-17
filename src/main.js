@@ -101,7 +101,7 @@ initModalBackButton();
 })();
 
 // ── DOM event listeners ───────────────────────────────────────────────────────
-document.getElementById('new-task').addEventListener('keydown', e => { if (e.key === 'Enter') addTask(); });
+document.getElementById('new-task').addEventListener('keydown', e => { if (e.key === 'Enter') addTask(_isAdmin); });
 document.getElementById('new-member').addEventListener('keydown', e => { if (e.key === 'Enter') addMember(_isAdmin); });
 
 initMemberChipClicks(name => removeMember(name, _isAdmin));
@@ -129,16 +129,16 @@ window.toggleNewNote = function() {
 };
 
 // Tasks
-window.addTask       = ()         => addTask();
+window.addTask       = ()         => addTask(_isAdmin);
 window.editTask      = id         => editTask(id);
-window.saveTask      = id         => saveTask(id);
+window.saveTask      = id         => saveTask(id, _isAdmin);
 window.cancelEdit    = function(id) {
   const t    = state.tasks[id];
   const card = document.getElementById('tc-' + id);
   if (t && card) card.outerHTML = cardHTML(t);
 };
 window.toggleTask    = id         => toggleTask(id, _currentMember, _isAdmin);
-window.deleteTask    = id         => deleteTask(id);
+window.deleteTask    = id         => deleteTask(id, _isAdmin);
 window.toggleSubtasks = id        => toggleSubtasks(id);
 window.toggleSubtask  = (tid,sid) => toggleSubtask(tid, sid);
 window.addSubtask     = id        => addSubtask(id);
@@ -192,7 +192,7 @@ window.adminPanelSwitchUser = function() {
 window.closeModal    = id         => closeModal(id);
 
 // Set PIN
-window.openSetPin    = function(name) { if (!_isAdmin()) return; openSetPin(name); };
+window.openSetPin    = function(name) { if (READONLY || !_isAdmin()) return; openSetPin(name); };
 window.closeSetPin   = ()         => closeSetPin();
 window.setPinKey     = digit      => setPinKey(digit);
 window.setPinDel     = ()         => setPinDel();
