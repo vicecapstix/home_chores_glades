@@ -1586,7 +1586,7 @@ FIREBASE: `))}restoreState_(){this.tryAuth(),this.tryAppCheck();for(const e of t
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */function np(n){Vu(bt),ht(new $e("database",(e,{instanceIdentifier:t})=>{const s=e.getProvider("app").getImmediate(),i=e.getProvider("auth-internal"),r=e.getProvider("app-check-internal");return Qf(s,i,r,t)},"PUBLIC").setMultipleInstances(!0)),Oe(wr,br,n),Oe(wr,br,"esm2017")}_e.prototype.simpleListen=function(n,e){this.sendRequest("q",{p:n},e)};_e.prototype.echo=function(n,e){this.sendRequest("echo",{d:n},e)};np();const sp="https://home-chores-glades-default-rtdb.asia-southeast1.firebasedatabase.app",Ue=[{bg:"#EAF4FF",text:"#0B3D6B"},{bg:"#E8F5EE",text:"#1A4D35"},{bg:"#FEF6E4",text:"#6B4500"},{bg:"#FCE8F3",text:"#6B1A46"},{bg:"#EEF0FE",text:"#2D2E8F"},{bg:"#F0FAE8",text:"#2A5210"}],Ln=[{id:"first",label:"First Chore",icon:"⭐",check:n=>(n.completedCount||0)>=1},{id:"getting_started",label:"Getting Started",icon:"🌱",check:n=>(n.completedCount||0)>=10},{id:"tenacious",label:"Tenacious",icon:"💪",check:n=>(n.completedCount||0)>=25},{id:"half_century",label:"Fifty Strong",icon:"🎯",check:n=>(n.completedCount||0)>=50},{id:"century",label:"Century",icon:"💯",check:n=>(n.completedCount||0)>=100},{id:"consistent",label:"Consistent",icon:"📅",check:n=>(n.streak||0)>=3},{id:"on_fire",label:"On Fire",icon:"🔥",check:n=>(n.streak||0)>=7},{id:"dedicated",label:"Dedicated",icon:"🏅",check:n=>(n.streak||0)>=30}],R=new URLSearchParams(location.search).get("readonly")==="1",m={members:{},tasks:{},history:[],nextId:1,templates:{}};function Ee(){return Object.values(m.members).map(n=>n.name)}function ip(n){m.members=n.members||{},m.tasks=n.tasks||{},m.history=n.history||[],m.nextId=n.nextId||1,m.templates=n.templates||{}}function rp(n){if(!n)return{};if(Array.isArray(n)){const t={};return n.forEach((s,i)=>{s&&(t[s]={name:s,role:i===0?"admin":"member",pinHash:"",points:0,streak:0,lastStreakDate:null,badges:[],completedCount:0,weekPoints:0,weekStart:null})}),t}const e={};return Object.values(n).forEach((t,s)=>{!t||!t.name||(e[t.name]={points:0,streak:0,lastStreakDate:null,badges:[],completedCount:0,weekPoints:0,weekStart:null,role:"member",pinHash:"",...t},s===0&&!t.role&&(e[t.name].role="admin"))}),e}function T(n){return String(n).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;")}async function Ka(n){const e=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(n));return Array.from(new Uint8Array(e)).map(t=>t.toString(16).padStart(2,"0")).join("")}function is(n){return{daily:1,weekly:7,fortnightly:14,monthly:30}[n]||7}function op(n){return Math.floor((Date.now()-n)/864e5)}function eo(){const n=new Date,e=n.getDay();return n.setDate(n.getDate()-(e===0?6:e-1)),n.toISOString().slice(0,10)}function As(n){const e={daily:1,weekly:3,fortnightly:5,monthly:8,once:8}[n.freq]||1,t={easy:1,medium:2,hard:3}[n.difficulty||"easy"];return e*t}function ie(n){if(n.done)return"done";if(n.freq==="once"){if(!n.dueDate)return"ok";const s=new Date().toISOString().slice(0,10),i=new Date(Date.now()+864e5).toISOString().slice(0,10);return n.dueDate<s?"overdue":n.dueDate<=i?"soon":"ok"}const e=is(n.freq),t=op(n.lastDone||0);return t>=e?"overdue":t>=e-1?"soon":"ok"}var ap="firebase",lp="10.14.1";/**
+ */function np(n){Vu(bt),ht(new $e("database",(e,{instanceIdentifier:t})=>{const s=e.getProvider("app").getImmediate(),i=e.getProvider("auth-internal"),r=e.getProvider("app-check-internal");return Qf(s,i,r,t)},"PUBLIC").setMultipleInstances(!0)),Oe(wr,br,n),Oe(wr,br,"esm2017")}_e.prototype.simpleListen=function(n,e){this.sendRequest("q",{p:n},e)};_e.prototype.echo=function(n,e){this.sendRequest("echo",{d:n},e)};np();const CORRECT_HASH="91b4d142823f7d20c5f08df69122de43f35f057a988d9619f6d3138485c9a203",sp="https://home-chores-glades-default-rtdb.asia-southeast1.firebasedatabase.app",Ue=[{bg:"#EAF4FF",text:"#0B3D6B"},{bg:"#E8F5EE",text:"#1A4D35"},{bg:"#FEF6E4",text:"#6B4500"},{bg:"#FCE8F3",text:"#6B1A46"},{bg:"#EEF0FE",text:"#2D2E8F"},{bg:"#F0FAE8",text:"#2A5210"}],Ln=[{id:"first",label:"First Chore",icon:"⭐",check:n=>(n.completedCount||0)>=1},{id:"getting_started",label:"Getting Started",icon:"🌱",check:n=>(n.completedCount||0)>=10},{id:"tenacious",label:"Tenacious",icon:"💪",check:n=>(n.completedCount||0)>=25},{id:"half_century",label:"Fifty Strong",icon:"🎯",check:n=>(n.completedCount||0)>=50},{id:"century",label:"Century",icon:"💯",check:n=>(n.completedCount||0)>=100},{id:"consistent",label:"Consistent",icon:"📅",check:n=>(n.streak||0)>=3},{id:"on_fire",label:"On Fire",icon:"🔥",check:n=>(n.streak||0)>=7},{id:"dedicated",label:"Dedicated",icon:"🏅",check:n=>(n.streak||0)>=30}],R=new URLSearchParams(location.search).get("readonly")==="1",m={members:{},tasks:{},history:[],nextId:1,templates:{}};function Ee(){return Object.values(m.members).map(n=>n.name)}function ip(n){m.members=n.members||{},m.tasks=n.tasks||{},m.history=n.history||[],m.nextId=n.nextId||1,m.templates=n.templates||{}}function rp(n){if(!n)return{};if(Array.isArray(n)){const t={};return n.forEach((s,i)=>{s&&(t[s]={name:s,role:i===0?"admin":"member",pinHash:"",points:0,streak:0,lastStreakDate:null,badges:[],completedCount:0,weekPoints:0,weekStart:null})}),t}const e={};return Object.values(n).forEach((t,s)=>{!t||!t.name||(e[t.name]={points:0,streak:0,lastStreakDate:null,badges:[],completedCount:0,weekPoints:0,weekStart:null,role:"member",pinHash:"",...t},s===0&&!t.role&&(e[t.name].role="admin"))}),e}function T(n){return String(n).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;")}async function Ka(n){const e=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(n));return Array.from(new Uint8Array(e)).map(t=>t.toString(16).padStart(2,"0")).join("")}function is(n){return{daily:1,weekly:7,fortnightly:14,monthly:30}[n]||7}function op(n){return Math.floor((Date.now()-n)/864e5)}function eo(){const n=new Date,e=n.getDay();return n.setDate(n.getDate()-(e===0?6:e-1)),n.toISOString().slice(0,10)}function As(n){const e={daily:1,weekly:3,fortnightly:5,monthly:8,once:8}[n.freq]||1,t={easy:1,medium:2,hard:3}[n.difficulty||"easy"];return e*t}function ie(n){if(n.done)return"done";if(n.freq==="once"){if(!n.dueDate)return"ok";const s=new Date().toISOString().slice(0,10),i=new Date(Date.now()+864e5).toISOString().slice(0,10);return n.dueDate<s?"overdue":n.dueDate<=i?"soon":"ok"}const e=is(n.freq),t=op(n.lastDone||0);return t>=e?"overdue":t>=e-1?"soon":"ok"}var ap="firebase",lp="10.14.1";/**
  * @license
  * Copyright 2020 Google LLC
  *
@@ -2696,6 +2696,68 @@ button:focus-visible,a:focus-visible,select:focus-visible{outline:2px solid var(
       <div class="pin-error" id="pin-member-error"></div>
       <button class="btn-sm" style="margin-top:1rem;width:100%" onclick="window.memberPinBack()">← Back</button>
     </div>
+
+    <!-- MASTER PIN SECTION (6-digit) -->
+    <div id="pin-master-section" class="hidden">
+      <div class="pin-sub">Enter 6-digit master PIN</div>
+      <div class="pin-dots" id="pin-master-dots">
+        <div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div>
+        <div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div>
+      </div>
+      <div class="pin-pad">
+        <button class="pin-key" onclick="window.masterPinKey('1')">1</button>
+        <button class="pin-key" onclick="window.masterPinKey('2')">2</button>
+        <button class="pin-key" onclick="window.masterPinKey('3')">3</button>
+        <button class="pin-key" onclick="window.masterPinKey('4')">4</button>
+        <button class="pin-key" onclick="window.masterPinKey('5')">5</button>
+        <button class="pin-key" onclick="window.masterPinKey('6')">6</button>
+        <button class="pin-key" onclick="window.masterPinKey('7')">7</button>
+        <button class="pin-key" onclick="window.masterPinKey('8')">8</button>
+        <button class="pin-key" onclick="window.masterPinKey('9')">9</button>
+        <button class="pin-key" style="visibility:hidden" disabled></button>
+        <button class="pin-key" onclick="window.masterPinKey('0')">0</button>
+        <button class="pin-key del" onclick="window.masterPinDel()">&#9003;</button>
+      </div>
+      <div class="pin-error" id="pin-master-error"></div>
+      <button class="btn-sm" style="margin-top:1rem;width:100%" onclick="window.masterPinBack()">← Back</button>
+    </div>
+
+    <!-- SETUP SECTION: first member name -->
+    <div id="pin-setup-section" class="hidden">
+      <div class="pin-sub">Welcome! Enter your name to get started</div>
+      <input id="pin-setup-name" type="text" maxlength="30" placeholder="Your name…" style="width:100%;height:40px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg);color:var(--text);font-size:1rem;padding:0 12px;font-family:inherit;margin-bottom:0.75rem;" onkeydown="if(event.key==='Enter')window.setupNameSubmit()" />
+      <button class="btn-sm btn-accent" style="width:100%;height:40px;font-size:0.95rem" onclick="window.setupNameSubmit()">Next →</button>
+      <div class="pin-error" id="pin-setup-name-error"></div>
+    </div>
+
+    <!-- SETUP PIN SECTION: first member sets 4-digit PIN -->
+    <div id="pin-setup-pin-section" class="hidden">
+      <div class="pin-sub" id="pin-setup-pin-sub">Set a 4-digit PIN</div>
+      <div class="pin-dots" id="pin-setup-dots">
+        <div class="pin-dot"></div><div class="pin-dot"></div>
+        <div class="pin-dot"></div><div class="pin-dot"></div>
+      </div>
+      <div class="pin-pad">
+        <button class="pin-key" onclick="window.setupPinKey('1')">1</button>
+        <button class="pin-key" onclick="window.setupPinKey('2')">2</button>
+        <button class="pin-key" onclick="window.setupPinKey('3')">3</button>
+        <button class="pin-key" onclick="window.setupPinKey('4')">4</button>
+        <button class="pin-key" onclick="window.setupPinKey('5')">5</button>
+        <button class="pin-key" onclick="window.setupPinKey('6')">6</button>
+        <button class="pin-key" onclick="window.setupPinKey('7')">7</button>
+        <button class="pin-key" onclick="window.setupPinKey('8')">8</button>
+        <button class="pin-key" onclick="window.setupPinKey('9')">9</button>
+        <button class="pin-key" style="visibility:hidden" disabled></button>
+        <button class="pin-key" onclick="window.setupPinKey('0')">0</button>
+        <button class="pin-key del" onclick="window.setupPinDel()">&#9003;</button>
+      </div>
+      <div class="pin-error" id="pin-setup-error"></div>
+    </div>
+
+    <!-- Master PIN link (shown with member chips) -->
+    <div id="btn-master-pin-wrap" style="margin-top:1.25rem">
+      <button class="btn-sm" style="font-size:0.75rem;color:var(--muted)" onclick="window.openMasterPin()">🔑 Master PIN</button>
+    </div>
   </div>
 </div>
 
@@ -2892,6 +2954,9 @@ button:focus-visible,a:focus-visible,select:focus-visible{outline:2px solid var(
     </div>
     <div id="admin-member-list" style="margin:0.5rem 0;"></div>
     <button class="btn-lg" style="width:100%;margin-top:0.5rem;" onclick="window.adminPanelSwitchUser()">Switch User</button>
+    <div style="margin-top:1.5rem;border-top:1px solid var(--border);padding-top:1rem;text-align:center;">
+      <button class="btn-sm" style="color:var(--warn);border-color:var(--warn);" onclick="window.resetSite()">Reset site to default</button>
+    </div>
   </div>
 </div>
 
