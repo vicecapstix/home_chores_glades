@@ -2,13 +2,13 @@
   --bg: #F7F5F0;
   --surface: #FFFFFF;
   --text: #1A1A18;
-  --muted: #7A7870;
+  --muted: #6A6860;
   --border: rgba(26,26,24,0.1);
   --accent: #2D6A4F;
   --accent-light: #E8F5EE;
-  --warn: #B5460F;
+  --warn: #943A0B;
   --warn-light: #FDF0EA;
-  --soon: #8B5E00;
+  --soon: #6B4800;
   --soon-light: #FEF6E4;
   --done: #3A3A38;
   --radius: 12px;
@@ -26,6 +26,12 @@
 
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: 16px; }
+
+/* ACCESSIBILITY */
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+.skip-link { position: absolute; top: -999px; left: 0; background: var(--accent); color: #fff; padding: 0.5rem 1rem; z-index: 9999; border-radius: 0 0 var(--radius-sm) 0; font-size: 0.9rem; }
+.skip-link:focus { top: 0; }
+button:focus-visible, a:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 /* PIN / MEMBER SCREEN */
 #pin-screen { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; z-index: 999; }
@@ -139,10 +145,10 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
 .tag-overdue { background: var(--warn-light); color: var(--warn); }
 .tag-soon { background: var(--soon-light); color: var(--soon); }
 .tag-ok { background: var(--accent-light); color: var(--accent); }
-.del { width: 28px; height: 28px; border: none; background: none; cursor: pointer; color: var(--muted); font-size: 1.1rem; border-radius: 6px; display: flex; align-items: center; justify-content: center; opacity: 0; flex-shrink: 0; }
+.del { width: 28px; height: 28px; min-width: 40px; min-height: 40px; border: none; background: none; cursor: pointer; color: var(--muted); font-size: 1.1rem; border-radius: 6px; display: flex; align-items: center; justify-content: center; opacity: 0; flex-shrink: 0; }
 .task-card:hover .del { opacity: 0.5; }
 .del:hover { opacity: 1 !important; background: var(--bg); }
-.edit-btn { width: 28px; height: 28px; border: none; background: none; cursor: pointer; color: var(--muted); font-size: 1rem; border-radius: 6px; display: flex; align-items: center; justify-content: center; opacity: 0; flex-shrink: 0; }
+.edit-btn { width: 28px; height: 28px; min-width: 40px; min-height: 40px; border: none; background: none; cursor: pointer; color: var(--muted); font-size: 1rem; border-radius: 6px; display: flex; align-items: center; justify-content: center; opacity: 0; flex-shrink: 0; }
 .task-card:hover .edit-btn { opacity: 0.5; }
 .edit-btn:hover { opacity: 1 !important; background: var(--bg); }
 .edit-name { flex: 1; padding: 6px 10px; border: 1.5px solid var(--accent); border-radius: var(--radius-sm); font-size: var(--font-md); font-family: inherit; color: var(--text); background: var(--bg); width: 100%; }
@@ -184,7 +190,7 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
 .subtask-check.checked svg { display: block; }
 .subtask-name { flex: 1; }
 .subtask-name.done { text-decoration: line-through; color: var(--muted); }
-.subtask-del { border: none; background: none; cursor: pointer; color: var(--muted); font-size: 0.9rem; opacity: 0.4; padding: 0 4px; }
+.subtask-del { min-width: 36px; min-height: 36px; border: none; background: none; cursor: pointer; color: var(--muted); font-size: 0.9rem; opacity: 0.4; padding: 0 4px; }
 .subtask-del:hover { opacity: 1; }
 .subtask-add { display: flex; gap: 6px; padding-top: 4px; }
 .subtask-add input { flex: 1; height: 28px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg); color: var(--text); font-size: 0.8rem; padding: 0 var(--space-sm); font-family: inherit; }
@@ -250,6 +256,8 @@ body[data-role="admin"] #btn-admin { display: flex; }
   --muted: #8A8880;
   --border: rgba(240,237,230,0.12);
   --accent-light: #1A3D2F;
+  --warn: #F4845F;
+  --soon: #F4BE50;
   --warn-light: #3D1A08;
   --soon-light: #3D2A00;
 }

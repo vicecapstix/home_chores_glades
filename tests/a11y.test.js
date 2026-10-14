@@ -48,8 +48,9 @@ describe('a11y: header, forms, landmarks', () => {
     expect(t.getAttribute('role')).toBe('status');
     expect(t.getAttribute('aria-live')).toBe('polite');
   });
-  it('total aria-* attributes is at least the live build (28)', () => {
-    expect((read('index.html').match(/aria-/g) || []).length).toBeGreaterThanOrEqual(28);
+  // The built bundle has 28 'aria-' hits; 1 comes from the bundled Firebase SDK, so the shell has 27.
+  it('src shell has at least the 27 aria-* attributes of the live build', () => {
+    expect((read('index.html').match(/aria-/g) || []).length).toBeGreaterThanOrEqual(27);
   });
 });
 

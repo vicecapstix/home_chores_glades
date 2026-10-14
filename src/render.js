@@ -237,7 +237,7 @@ function _renderTasks() {
   let html = '';
   for (const d of defs) {
     if (!sections[d.k].length) continue;
-    html += '<div class="section"><div class="section-head"><span class="section-dot ' + d.dot + '"></span>' + d.label + '</div>';
+    html += '<div class="section"><h2 class="section-head"><span class="section-dot ' + d.dot + '"></span>' + d.label + '</h2>';
     sections[d.k].forEach(t => { html += cardHTML(t); });
     html += '</div>';
   }
