@@ -24,6 +24,9 @@ beforeEach(() => {
   state.nextId    = 1;
   state.templates = {};
 
+  // removeMember now asks for confirmation (#27)
+  vi.stubGlobal('confirm', vi.fn(() => true));
+
   // addMember reads the value of #new-member
   document.body.innerHTML = '<input id="new-member" value="" />';
 });
@@ -141,7 +144,8 @@ describe('toggleRole', () => {
     await toggleRole('Bob', isAdmin);
     expect(patchMember).toHaveBeenCalledWith('Bob', { role: 'admin' });
   });
-  it('demotes an admin to member', async () => {
+  it('demotes an admin to member (when another admin exists)', async () => {
+    state.members.Bob.role = 'admin';
     await toggleRole('Alice', isAdmin);
     expect(patchMember).toHaveBeenCalledWith('Alice', { role: 'member' });
   });

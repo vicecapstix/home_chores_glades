@@ -4,6 +4,10 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>FamilyFlow</title>
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="icon" type="image/svg+xml" href="icon.svg" />
+<link rel="apple-touch-icon" href="icon-192.png" />
+<meta name="theme-color" content="#2D6A4F" />
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet" />
 <script>
   try { if (localStorage.getItem('fc_theme') === 'dark') document.documentElement.setAttribute('data-theme','dark'); } catch(e) {}
@@ -15,6 +19,9 @@
 
 <!-- READ-ONLY BANNER -->
 <div id="readonly-banner" class="hidden">👁 View only</div>
+
+<!-- OFFLINE BANNER -->
+<div id="offline-banner" class="hidden" role="status">Offline — changes will sync when you reconnect</div>
 
 <!-- PIN / MEMBER SCREEN -->
 <div id="pin-screen">
@@ -152,6 +159,7 @@
   <div class="logo">Family<span>Flow</span></div>
   <div id="tv-clock" aria-hidden="true"></div>
   <div class="live-dot" title="Live sync"></div>
+  <div id="tv-synced" aria-live="off"></div>
   <button class="theme-toggle hidden" id="btn-notify" onclick="window.enableNotifications()" title="Enable overdue reminders" aria-label="Enable overdue reminders">🔔</button>
   <button class="theme-toggle" onclick="window.toggleTheme()" title="Toggle dark mode" aria-label="Toggle dark mode" id="theme-btn">🌙</button>
   <button class="theme-toggle" onclick="window.openLeaderboard()" title="Leaderboard" aria-label="Leaderboard">🏆</button>
@@ -189,10 +197,14 @@
     <select id="new-freq" onchange="document.getElementById('new-duedate').style.display=this.value==='once'?'':'none'">
       <option value="daily">Daily</option>
       <option value="weekly" selected>Weekly</option>
+      <option value="weekdays">Specific days</option>
       <option value="fortnightly">Fortnightly</option>
       <option value="monthly">Monthly</option>
       <option value="once">One-off</option>
     </select>
+    <div id="new-days" class="day-chips hidden" role="group" aria-label="Days of the week">
+      <label class="day-chip"><input type="checkbox" value="1" /><span>Mon</span></label><label class="day-chip"><input type="checkbox" value="2" /><span>Tue</span></label><label class="day-chip"><input type="checkbox" value="3" /><span>Wed</span></label><label class="day-chip"><input type="checkbox" value="4" /><span>Thu</span></label><label class="day-chip"><input type="checkbox" value="5" /><span>Fri</span></label><label class="day-chip"><input type="checkbox" value="6" /><span>Sat</span></label><label class="day-chip"><input type="checkbox" value="0" /><span>Sun</span></label>
+    </div>
     <input type="date" id="new-duedate" style="display:none;height:40px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg);color:var(--text);font-size:0.9rem;padding:0 10px;font-family:inherit;" />
     <label for="new-diff" class="sr-only">Difficulty</label>
     <select id="new-diff">

@@ -3,7 +3,7 @@ import { READONLY, BADGES, CATEGORIES } from './config.js';
 import { writeState, patchTask, patchMember, patchRoot, removeTask, restoreTask, patchSubtask } from './firebase.js';
 import { showToast } from './ui.js';
 import { pushUndo } from './undo.js';
-import { esc, freqDays, dueStatus, taskPoints, getWeekStart } from './utils.js';
+import { esc, jsq, freqDays, dueStatus, taskPoints, getWeekStart, prevScheduledStart, initialLastDone, DAY_NAMES } from './utils.js';
 
 // Re-export for other modules
 export { dueStatus, taskPoints, freqDays };
@@ -15,7 +15,10 @@ export function checkTaskResets() {
   const now = Date.now();
   Object.values(state.tasks).forEach(t => {
     if (t.freq === 'once') return;
-    if (t.done && now - (t.lastDone || 0) >= freqDays(t.freq) * 86400000) {
+    const due = t.freq === 'weekdays'
+      ? (prevScheduledStart(t.days, now) !== null && prevScheduledStart(t.days, now) > (t.lastDone || 0))
+      : now - (t.lastDone || 0) >= freqDays(t.freq) * 86400000;
+    if (t.done && due) {
       t.done = false;
       t.lastDoneBy = null;
       t.lastDonePoints = null;
@@ -23,6 +26,21 @@ export function checkTaskResets() {
     }
   });
   if (changed) writeState().catch(err => showToast('Save error: ' + (err.code || err.message)));
+}
+
+// ── Weekday chips ─────────────────────────────────────────────────────────────
+
+const DAY_ORDER = [1, 2, 3, 4, 5, 6, 0]; // display Mon..Sun
+
+export function dayChipsHTML(selected = [], cls = 'day-chips') {
+  const sel = (selected || []).map(Number);
+  return '<div class="' + cls + '" role="group" aria-label="Days of the week">' +
+    DAY_ORDER.map(d => '<label class="day-chip"><input type="checkbox" value="' + d + '"' + (sel.includes(d) ? ' checked' : '') + ' /><span>' + DAY_NAMES[d] + '</span></label>').join('') +
+    '</div>';
+}
+
+export function readDays(container) {
+  return [...container.querySelectorAll('input:checked')].map(i => Number(i.value)).sort((a, b) => a - b);
 }
 
 // ── Add task ──────────────────────────────────────────────────────────────────
@@ -36,12 +54,15 @@ export async function addTask(isAdminFn) {
   const diff    = document.getElementById('new-diff').value;
   const cat     = document.getElementById('new-cat').value;
   const dueDate = freq === 'once' ? document.getElementById('new-duedate').value : '';
+  const days    = freq === 'weekdays' ? readDays(document.getElementById('new-days')) : [];
+  if (freq === 'weekdays' && !days.length) { showToast('Pick at least one day'); return; }
   const notesEl = document.getElementById('new-notes');
   const notes   = notesEl.value.trim();
   const id      = 't' + Date.now();
   state.tasks[id] = {
     id, name, freq, person,
-    done: false, lastDone: Date.now() - freqDays(freq) * 86400000,
+    done: false, lastDone: initialLastDone(freq),
+    ...(freq === 'weekdays' ? { days } : {}),
     notes: notes || '', difficulty: diff, category: cat || '',
     dueDate: dueDate || '', subtasks: {}, order: Date.now(),
   };
@@ -50,6 +71,8 @@ export async function addTask(isAdminFn) {
   document.getElementById('new-duedate').value = '';
   document.getElementById('new-duedate').style.display = 'none';
   document.getElementById('new-freq').value = 'weekly';
+  document.getElementById('new-days').classList.add('hidden');
+  document.querySelectorAll('#new-days input').forEach(i => { i.checked = false; });
   notesEl.value = '';
   notesEl.style.display = 'none';
   try { await writeState(); } catch (err) { showToast('Save failed: ' + (err.code || err.message)); }
@@ -63,8 +86,8 @@ export function editTask(id) {
   const card = document.getElementById('tc-' + id);
   if (!card) return;
   const members = getMembers();
-  const freqOpts = ['daily','weekly','fortnightly','monthly','once'].map(f =>
-    '<option value="' + f + '"' + (t.freq === f ? ' selected' : '') + '>' + (f === 'once' ? 'One-off' : f) + '</option>'
+  const freqOpts = ['daily','weekly','weekdays','fortnightly','monthly','once'].map(f =>
+    '<option value="' + f + '"' + (t.freq === f ? ' selected' : '') + '>' + (f === 'once' ? 'One-off' : f === 'weekdays' ? 'Specific days' : f) + '</option>'
   ).join('');
   const diffOpts = ['easy','medium','hard'].map(d =>
     '<option value="' + d + '"' + ((t.difficulty || 'easy') === d ? ' selected' : '') + '>' + d + '</option>'
@@ -78,16 +101,17 @@ export function editTask(id) {
   card.innerHTML =
     '<input class="edit-name" value="' + esc(t.name) + '" maxlength="60" />' +
     '<div class="edit-row">' +
-      '<select class="edit-freq" onchange="this.closest(\'.task-card\').querySelector(\'.edit-duedate\').style.display=this.value===\'once\'?\'\':\'none\'">' + freqOpts + '</select>' +
+      '<select class="edit-freq" onchange="this.closest(\'.task-card\').querySelector(\'.edit-duedate\').style.display=this.value===\'once\'?\'\':\'none\';this.closest(\'.task-card\').querySelector(\'.edit-days\').classList.toggle(\'hidden\',this.value!==\'weekdays\')">' + freqOpts + '</select>' +
       '<input type="date" class="edit-duedate" value="' + esc(t.dueDate || '') + '" style="flex:1;padding:6px 8px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:0.85rem;font-family:inherit;background:var(--bg);color:var(--text);display:' + (t.freq === 'once' ? '' : 'none') + '" />' +
       '<select class="edit-diff">' + diffOpts + '</select>' +
       '<select class="edit-cat">' + catOpts + '</select>' +
       '<select class="edit-person">' + personOpts + '</select>' +
     '</div>' +
+    dayChipsHTML(t.days, 'day-chips edit-days' + (t.freq === 'weekdays' ? '' : ' hidden')) +
     '<textarea class="edit-notes" placeholder="Notes..." maxlength="300">' + esc(t.notes || '') + '</textarea>' +
     '<div class="edit-actions">' +
-      '<button class="btn-sm btn-accent" onclick="window.saveTask(\'' + id + '\')">Save</button>' +
-      '<button class="btn-sm" onclick="window.cancelEdit(\'' + id + '\')">Cancel</button>' +
+      '<button class="btn-sm btn-accent" onclick="window.saveTask(\'' + jsq(id) + '\')">Save</button>' +
+      '<button class="btn-sm" onclick="window.cancelEdit(\'' + jsq(id) + '\')">Cancel</button>' +
     '</div>';
   card.querySelector('.edit-name').focus();
 }
@@ -98,8 +122,12 @@ export async function saveTask(id, isAdminFn) {
   if (!card) return;
   const name = card.querySelector('.edit-name').value.trim();
   if (!name) return;
+  const newFreq = card.querySelector('.edit-freq').value;
+  const days = newFreq === 'weekdays' ? readDays(card.querySelector('.edit-days')) : [];
+  if (newFreq === 'weekdays' && !days.length) { showToast('Pick at least one day'); return; }
   state.tasks[id].name       = name;
-  state.tasks[id].freq       = card.querySelector('.edit-freq').value;
+  state.tasks[id].freq       = newFreq;
+  if (newFreq === 'weekdays') state.tasks[id].days = days; else delete state.tasks[id].days;
   state.tasks[id].dueDate    = card.querySelector('.edit-freq').value === 'once' ? (card.querySelector('.edit-duedate').value || '') : '';
   state.tasks[id].difficulty = card.querySelector('.edit-diff').value;
   state.tasks[id].category   = card.querySelector('.edit-cat').value;
@@ -220,8 +248,8 @@ export async function toggleSubtask(taskId, subId) {
   } catch (err) { showToast('Update failed: ' + (err.code || err.message)); }
 }
 
-export async function addSubtask(taskId) {
-  if (READONLY) return;
+export async function addSubtask(taskId, isAdminFn) {
+  if (READONLY || !isAdminFn()) return;
   const card = document.getElementById('tc-' + taskId);
   if (!card) return;
   const inp  = card.querySelector('.subtask-add input');
@@ -235,8 +263,8 @@ export async function addSubtask(taskId) {
   try { await writeState(); } catch (err) { showToast('Save failed: ' + (err.code || err.message)); }
 }
 
-export async function removeSubtask(taskId, subId) {
-  if (READONLY) return;
+export async function removeSubtask(taskId, subId, isAdminFn) {
+  if (READONLY || !isAdminFn()) return;
   const t = state.tasks[taskId];
   if (!t?.subtasks) return;
   delete t.subtasks[subId];
@@ -251,19 +279,21 @@ export async function claimTask(id, currentMemberFn) {
   if (!member) { showToast('Select a member first'); return; }
   const t = state.tasks[id];
   if (!t) return;
+  if (t.person) { showToast('Already assigned to ' + t.person); return; }
   state.tasks[id].person = member;
   try { await writeState(); } catch (err) { showToast('Save failed: ' + (err.code || err.message)); }
 }
 
 // ── Drag-and-drop reorder ─────────────────────────────────────────────────────
 
-export function initDragDrop() {
+export function initDragDrop(isAdminFn) {
   let draggedId = null;
   const taskList = document.getElementById('task-list');
 
   taskList.addEventListener('dragstart', e => {
     const card = e.target.closest('.task-card');
     if (!card) return;
+    if (READONLY || !isAdminFn()) { e.preventDefault(); return; }
     draggedId = card.dataset.id;
     card.classList.add('dragging');
     e.dataTransfer.effectAllowed = 'move';
@@ -286,6 +316,7 @@ export function initDragDrop() {
   taskList.addEventListener('drop', async e => {
     e.preventDefault();
     taskList.querySelectorAll('.drag-over').forEach(c => c.classList.remove('drag-over'));
+    if (READONLY || !isAdminFn()) return;
     const card = e.target.closest('.task-card');
     if (!card || !draggedId) return;
     const targetId = card.dataset.id;

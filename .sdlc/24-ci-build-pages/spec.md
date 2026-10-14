@@ -1,0 +1,3 @@
+# Spec — #24 CI + build:pages
+Behaviour: `.github/workflows/ci.yml` (ubuntu-latest, no secrets, no Pages deploy) runs npm ci, npm test, npm run build on pull_request and push to main; a drift step builds fresh and diffs against committed root index.html with continue-on-error until #20 children land. `package.json` gets `build:pages`. CLAUDE.md deploy section corrected (root index.html is the deployed file, dist/ is git-ignored).
+UI states: none (tooling). Data shape: none. RBAC: workflow has `permissions: contents: read`. Cost: free standard runners on a public repo; no paid services. Concern: first runs of the drift step will be red-but-ignored until the root file is rebuilt (draft PR #60).
