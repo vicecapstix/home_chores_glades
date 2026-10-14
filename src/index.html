@@ -11,6 +11,7 @@
 <script type="module" src="./main.js"></script>
 </head>
 <body>
+<a href="#main-content" class="skip-link">Skip to main content</a>
 
 <!-- READ-ONLY BANNER -->
 <div id="readonly-banner" class="hidden">👁 View only</div>
@@ -40,7 +41,7 @@
         <button class="pin-key" onclick="window.memberPinKey('9')">9</button>
         <button class="pin-key" style="visibility:hidden" disabled></button>
         <button class="pin-key" onclick="window.memberPinKey('0')">0</button>
-        <button class="pin-key del" onclick="window.memberPinDel()">&#9003;</button>
+        <button class="pin-key del" aria-label="Delete" onclick="window.memberPinDel()">&#9003;</button>
       </div>
       <div class="pin-error" id="pin-member-error"></div>
       <button class="btn-sm" style="margin-top:1rem;width:100%" onclick="window.memberPinBack()">← Back</button>
@@ -49,11 +50,11 @@
 </div>
 
 <!-- SUMMARY MODAL -->
-<div id="summary-modal" class="hidden" onclick="window.closeSummary()">
+<div id="summary-modal" class="hidden" role="dialog" aria-modal="true" aria-labelledby="summary-title" onclick="window.closeSummary()">
   <div class="summary-card" onclick="event.stopPropagation()">
     <div class="lb-header">
-      <span class="lb-title">👋 Here's your day!</span>
-      <button class="lb-close" onclick="window.closeSummary()">×</button>
+      <span class="lb-title" id="summary-title">👋 Here's your day!</span>
+      <button class="lb-close" aria-label="Close" onclick="window.closeSummary()">×</button>
     </div>
     <div id="summary-body"></div>
     <div class="summary-footer">
@@ -63,11 +64,11 @@
 </div>
 
 <!-- STATS MODAL -->
-<div id="stats-modal" class="hidden" onclick="window.closeModal('stats-modal')">
+<div id="stats-modal" class="hidden" role="dialog" aria-modal="true" aria-labelledby="stats-title" onclick="window.closeModal('stats-modal')">
   <div class="stats-card" onclick="event.stopPropagation()">
     <div class="lb-header">
-      <span class="lb-title">📊 Stats</span>
-      <button class="lb-close" onclick="window.closeModal('stats-modal')">×</button>
+      <span class="lb-title" id="stats-title">📊 Stats</span>
+      <button class="lb-close" aria-label="Close" onclick="window.closeModal('stats-modal')">×</button>
     </div>
     <div class="lb-tabs">
       <button class="lb-tab active" id="stats-tab-week" onclick="window.setStatsTab('week',this)">This week</button>
@@ -76,9 +77,9 @@
     </div>
     <div id="stats-chart" class="stats-chart"></div>
     <div class="stats-export">
-      <label>From</label>
+      <label for="export-from">From</label>
       <input type="date" id="export-from" />
-      <label>to</label>
+      <label for="export-to">to</label>
       <input type="date" id="export-to" />
       <button class="btn-sm btn-accent" onclick="window.exportCSV(document.getElementById('export-from').value,document.getElementById('export-to').value)">Export CSV</button>
     </div>
@@ -86,11 +87,11 @@
 </div>
 
 <!-- LEADERBOARD MODAL -->
-<div id="leaderboard-modal" class="hidden" onclick="window.closeModal('leaderboard-modal')">
+<div id="leaderboard-modal" class="hidden" role="dialog" aria-modal="true" aria-labelledby="leaderboard-title" onclick="window.closeModal('leaderboard-modal')">
   <div class="lb-card" onclick="event.stopPropagation()">
     <div class="lb-header">
-      <span class="lb-title">🏆 Leaderboard</span>
-      <button class="lb-close" onclick="window.closeModal('leaderboard-modal')">×</button>
+      <span class="lb-title" id="leaderboard-title">🏆 Leaderboard</span>
+      <button class="lb-close" aria-label="Close" onclick="window.closeModal('leaderboard-modal')">×</button>
     </div>
     <div class="lb-tabs">
       <button class="lb-tab active" id="lb-tab-alltime" onclick="window.setLbTab('alltime',this)">All time</button>
@@ -101,14 +102,15 @@
 </div>
 
 <!-- TEMPLATES MODAL -->
-<div id="templates-modal" class="hidden" onclick="window.closeModal('templates-modal')">
+<div id="templates-modal" class="hidden" role="dialog" aria-modal="true" aria-labelledby="templates-title" onclick="window.closeModal('templates-modal')">
   <div class="tpl-card" onclick="event.stopPropagation()">
     <div class="lb-header">
-      <span class="lb-title">📋 Templates</span>
-      <button class="lb-close" onclick="window.closeModal('templates-modal')">×</button>
+      <span class="lb-title" id="templates-title">📋 Templates</span>
+      <button class="lb-close" aria-label="Close" onclick="window.closeModal('templates-modal')">×</button>
     </div>
     <div class="tpl-section-label">Save current tasks as template</div>
     <div class="tpl-save-row">
+      <label for="tpl-name-input" class="sr-only">Template name</label>
       <input type="text" id="tpl-name-input" placeholder="Template name…" maxlength="60" />
       <button class="btn-sm btn-accent" onclick="window.saveTemplate()">Save</button>
     </div>
@@ -118,7 +120,7 @@
 </div>
 
 <!-- SET PIN MODAL (admin) -->
-<div id="setpin-modal" class="hidden" onclick="window.closeSetPin()">
+<div id="setpin-modal" class="hidden" role="dialog" aria-modal="true" aria-labelledby="setpin-title" onclick="window.closeSetPin()">
   <div class="pin-card" onclick="event.stopPropagation()">
     <div class="pin-title" id="setpin-title">Set PIN</div>
     <div class="pin-sub">Enter a new 4-digit PIN</div>
@@ -138,7 +140,7 @@
       <button class="pin-key" onclick="window.setPinKey('9')">9</button>
       <button class="pin-key" style="visibility:hidden" disabled></button>
       <button class="pin-key" onclick="window.setPinKey('0')">0</button>
-      <button class="pin-key del" onclick="window.setPinDel()">&#9003;</button>
+      <button class="pin-key del" aria-label="Delete" onclick="window.setPinDel()">&#9003;</button>
     </div>
     <div class="pin-error" id="setpin-error"></div>
     <button class="btn-sm" style="margin-top:1rem;width:100%" onclick="window.closeSetPin()">Cancel</button>
@@ -150,13 +152,13 @@
   <div class="logo">Family<span>Flow</span></div>
   <div id="tv-clock" aria-hidden="true"></div>
   <div class="live-dot" title="Live sync"></div>
-  <button class="theme-toggle" onclick="window.toggleTheme()" title="Toggle dark mode" id="theme-btn">🌙</button>
-  <button class="theme-toggle" onclick="window.openLeaderboard()" title="Leaderboard">🏆</button>
-  <button class="theme-toggle" onclick="window.openStats()" title="Stats">📊</button>
-  <button class="theme-toggle" onclick="window.openTemplates()" title="Templates">📋</button>
-  <button class="theme-toggle" id="btn-select" onclick="window.toggleSelectMode()" title="Select tasks">Select</button>
-  <button class="theme-toggle" id="btn-admin" onclick="window.openAdminPanel()" title="Admin Panel">⚙️ Admin</button>
-  <button class="theme-toggle" id="btn-switch-user" onclick="window.switchUser()" title="Switch user">👤</button>
+  <button class="theme-toggle" onclick="window.toggleTheme()" title="Toggle dark mode" aria-label="Toggle dark mode" id="theme-btn">🌙</button>
+  <button class="theme-toggle" onclick="window.openLeaderboard()" title="Leaderboard" aria-label="Leaderboard">🏆</button>
+  <button class="theme-toggle" onclick="window.openStats()" title="Stats" aria-label="Stats">📊</button>
+  <button class="theme-toggle" onclick="window.openTemplates()" title="Templates" aria-label="Templates">📋</button>
+  <button class="theme-toggle" id="btn-select" onclick="window.toggleSelectMode()" title="Select tasks" aria-label="Select tasks">Select</button>
+  <button class="theme-toggle" id="btn-admin" onclick="window.openAdminPanel()" title="Admin Panel" aria-label="Admin Panel">⚙️ Admin</button>
+  <button class="theme-toggle" id="btn-switch-user" onclick="window.switchUser()" title="Switch user" aria-label="Switch user">👤</button>
   <div class="header-stats">
     <div class="hstat"><div class="hstat-val" id="h-total">—</div><div class="hstat-label">Total</div></div>
     <div class="hstat"><div class="hstat-val" id="h-done" style="color:var(--accent)">—</div><div class="hstat-label">Done today</div></div>
@@ -168,18 +170,21 @@
 </header>
 
 <!-- MAIN CONTENT -->
-<div class="container">
+<main class="container" id="main-content">
   <div class="members-bar">
     <span class="members-label">Family members</span>
     <div id="member-chips" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
     <div class="member-add">
+      <label for="new-member" class="sr-only">Add family member</label>
       <input type="text" id="new-member" placeholder="Add family member..." maxlength="24" />
       <button class="btn-sm btn-accent" onclick="window.addMember()">+ Add</button>
     </div>
   </div>
 
   <div class="add-bar">
+    <label for="new-task" class="sr-only">Add a chore</label>
     <input type="text" id="new-task" placeholder="Add a chore..." maxlength="60" />
+    <label for="new-freq" class="sr-only">Frequency</label>
     <select id="new-freq" onchange="document.getElementById('new-duedate').style.display=this.value==='once'?'':'none'">
       <option value="daily">Daily</option>
       <option value="weekly" selected>Weekly</option>
@@ -188,11 +193,13 @@
       <option value="once">One-off</option>
     </select>
     <input type="date" id="new-duedate" style="display:none;height:40px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg);color:var(--text);font-size:0.9rem;padding:0 10px;font-family:inherit;" />
+    <label for="new-diff" class="sr-only">Difficulty</label>
     <select id="new-diff">
       <option value="easy" selected>Easy</option>
       <option value="medium">Medium</option>
       <option value="hard">Hard</option>
     </select>
+    <label for="new-cat" class="sr-only">Category</label>
     <select id="new-cat">
       <option value="">No category</option>
       <option>Kitchen</option>
@@ -203,15 +210,17 @@
       <option>Outdoor</option>
       <option>Other</option>
     </select>
+    <label for="new-person" class="sr-only">Assign to</label>
     <select id="new-person"></select>
     <button class="btn-lg btn-accent" onclick="window.addTask()">+ Add chore</button>
     <a class="note-toggle" onclick="window.toggleNewNote()">+ note</a>
+    <label for="new-notes" class="sr-only">Note</label>
     <textarea id="new-notes" class="note-input" placeholder="Add a note..." maxlength="300" style="display:none"></textarea>
   </div>
 
   <div class="filters" id="filters"></div>
   <div id="task-list"></div>
-</div>
+</main>
 
 <!-- BULK ACTION BAR -->
 <div id="bulk-bar">
@@ -223,11 +232,11 @@
 </div>
 
 <!-- ADMIN PANEL MODAL -->
-<div id="admin-panel-modal" class="hidden" onclick="window.closeAdminPanel()">
+<div id="admin-panel-modal" class="hidden" role="dialog" aria-modal="true" aria-labelledby="admin-panel-title" onclick="window.closeAdminPanel()">
   <div class="lb-card" onclick="event.stopPropagation()" style="max-width:360px;">
     <div class="lb-header">
-      <span class="lb-title">Admin Panel</span>
-      <button class="lb-close" onclick="window.closeAdminPanel()">×</button>
+      <span class="lb-title" id="admin-panel-title">Admin Panel</span>
+      <button class="lb-close" aria-label="Close" onclick="window.closeAdminPanel()">×</button>
     </div>
     <div style="text-align:center;padding:1rem 0 0.5rem;">
       <div id="admin-panel-name" style="font-family:'DM Serif Display',serif;font-size:1.4rem;"></div>
@@ -239,7 +248,7 @@
 </div>
 
 <!-- TOASTS -->
-<div class="toast" id="toast">Saved</div>
+<div class="toast" id="toast" role="status" aria-live="polite">Saved</div>
 <div class="toast" id="undo-toast" style="right:auto;left:1.5rem;pointer-events:auto;">
   <span id="undo-label">Deleted</span> — <span style="text-decoration:underline;cursor:pointer;color:#fff;" onclick="window.popUndo()">Undo</span>
 </div>

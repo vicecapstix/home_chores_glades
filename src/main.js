@@ -110,6 +110,17 @@ document.getElementById('new-member').addEventListener('keydown', e => { if (e.k
 initMemberChipClicks(name => removeMember(name, _isAdmin));
 
 // Filter events from summary "Let's go" button
+// Keyboard entry for the PIN pads (digits + Backspace)
+document.addEventListener('keydown', e => {
+  const vis = id => { const el = document.getElementById(id); return !!el && !el.classList.contains('hidden'); };
+  if (vis('pin-member-pin')) {
+    if (/^[0-9]$/.test(e.key)) { e.preventDefault(); window.memberPinKey(e.key); }
+    else if (e.key === 'Backspace') { e.preventDefault(); window.memberPinDel(); }
+  } else if (vis('setpin-modal')) {
+    if (/^[0-9]$/.test(e.key)) { e.preventDefault(); window.setPinKey(e.key); }
+    else if (e.key === 'Backspace') { e.preventDefault(); window.setPinDel(); }
+  }
+});
 window.addEventListener('fc:setfilter', e => setFilter(e.detail));
 
 initDragDrop();
