@@ -61,6 +61,8 @@ if (READONLY) {
 }
 
 import { initTvMode } from './tv.js';
+import { registerServiceWorker } from './pwa.js';
+registerServiceWorker();
 initTvMode();
 
 // ── Theme sync on load ────────────────────────────────────────────────────────
