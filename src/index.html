@@ -148,6 +148,7 @@
 <!-- HEADER -->
 <header>
   <div class="logo">Family<span>Flow</span></div>
+  <div id="tv-clock" aria-hidden="true"></div>
   <div class="live-dot" title="Live sync"></div>
   <button class="theme-toggle" onclick="window.toggleTheme()" title="Toggle dark mode" id="theme-btn">🌙</button>
   <button class="theme-toggle" onclick="window.openLeaderboard()" title="Leaderboard">🏆</button>
@@ -162,6 +163,7 @@
     <div class="hstat"><div class="hstat-val" id="h-overdue" style="color:var(--warn)">—</div><div class="hstat-label">Overdue</div></div>
     <div class="hstat"><div class="hstat-val" id="h-pct">—</div><div class="hstat-label">Progress</div></div>
   </div>
+  <div id="tv-strip" aria-label="Weekly points"></div>
   <div class="progress-bar"><div class="progress-fill" id="prog" style="width:0%"></div></div>
 </header>
 
