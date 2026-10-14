@@ -188,10 +188,14 @@
     <select id="new-freq" onchange="document.getElementById('new-duedate').style.display=this.value==='once'?'':'none'">
       <option value="daily">Daily</option>
       <option value="weekly" selected>Weekly</option>
+      <option value="weekdays">Specific days</option>
       <option value="fortnightly">Fortnightly</option>
       <option value="monthly">Monthly</option>
       <option value="once">One-off</option>
     </select>
+    <div id="new-days" class="day-chips hidden" role="group" aria-label="Days of the week">
+      <label class="day-chip"><input type="checkbox" value="1" /><span>Mon</span></label><label class="day-chip"><input type="checkbox" value="2" /><span>Tue</span></label><label class="day-chip"><input type="checkbox" value="3" /><span>Wed</span></label><label class="day-chip"><input type="checkbox" value="4" /><span>Thu</span></label><label class="day-chip"><input type="checkbox" value="5" /><span>Fri</span></label><label class="day-chip"><input type="checkbox" value="6" /><span>Sat</span></label><label class="day-chip"><input type="checkbox" value="0" /><span>Sun</span></label>
+    </div>
     <input type="date" id="new-duedate" style="display:none;height:40px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg);color:var(--text);font-size:0.9rem;padding:0 10px;font-family:inherit;" />
     <label for="new-diff" class="sr-only">Difficulty</label>
     <select id="new-diff">

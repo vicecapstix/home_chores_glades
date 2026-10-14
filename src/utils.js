@@ -11,6 +11,32 @@ export async function sha256(str) {
   return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
+export const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+// Start (local midnight, ms) of the most recent selected weekday that has begun (today or earlier), or null.
+export function prevScheduledStart(days, now = Date.now()) {
+  const sel = (days || []).map(Number).filter(d => d >= 0 && d <= 6);
+  if (!sel.length) return null;
+  const d = new Date(now);
+  d.setHours(0, 0, 0, 0);
+  for (let i = 0; i < 7; i++) {
+    if (sel.includes(d.getDay())) return d.getTime();
+    d.setDate(d.getDate() - 1);
+  }
+  return null;
+}
+
+// lastDone value for a brand-new task so it is not instantly overdue.
+export function initialLastDone(freq, now = Date.now()) {
+  return freq === 'weekdays' ? now : now - freqDays(freq) * 86400000;
+}
+
+export function freqLabel(t) {
+  return t.freq === 'weekdays'
+    ? (t.days || []).map(Number).sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7)).map(d => DAY_NAMES[d]).join(', ') || 'No days'
+    : t.freq;
+}
+
 export function freqDays(f) {
   return { daily: 1, weekly: 7, fortnightly: 14, monthly: 30 }[f] || 7;
 }
@@ -27,7 +53,7 @@ export function getWeekStart() {
 }
 
 export function taskPoints(t) {
-  const base = { daily: 1, weekly: 3, fortnightly: 5, monthly: 8, once: 8 }[t.freq] || 1;
+  const base = { daily: 1, weekly: 3, weekdays: 3, fortnightly: 5, monthly: 8, once: 8 }[t.freq] || 1;
   const mult = { easy: 1, medium: 2, hard: 3 }[t.difficulty || 'easy'];
   return base * mult;
 }
@@ -41,6 +67,12 @@ export function dueStatus(t) {
     if (t.dueDate < today) return 'overdue';
     if (t.dueDate <= soon) return 'soon';
     return 'ok';
+  }
+  if (t.freq === 'weekdays') {
+    const p = prevScheduledStart(t.days);
+    if (p === null || (t.lastDone || 0) >= p) return 'ok';
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    return p === today.getTime() ? 'soon' : 'overdue';
   }
   const d = freqDays(t.freq), s = daysSince(t.lastDone || 0);
   if (s >= d) return 'overdue';

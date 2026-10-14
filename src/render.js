@@ -1,7 +1,7 @@
 import { state, getMembers } from './state.js';
 import { PCOLS, BADGES, READONLY } from './config.js';
 import { renderTvStrip } from './tv.js';
-import { esc, dueStatus } from './utils.js';
+import { esc, dueStatus, freqLabel } from './utils.js';
 import { pColor } from './ui.js';
 
 // ── Session function references (set once via initRender) ─────────────────────
@@ -264,7 +264,7 @@ export function cardHTML(t) {
   const diffTag = '<span class="tag tag-' + diff + '">' + diff + '</span>';
   const freqTag = t.freq === 'once'
     ? '<span class="tag tag-freq">📅 ' + esc(t.dueDate || 'One-off') + '</span>'
-    : '<span class="tag tag-freq">' + t.freq + '</span>';
+    : '<span class="tag tag-freq">' + esc(freqLabel(t)) + '</span>';
   const catTag = t.category ? '<span class="tag tag-freq">' + esc(t.category) + '</span>' : '';
 
   const notesLine = t.notes
