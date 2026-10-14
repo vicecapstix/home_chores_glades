@@ -1,7 +1,7 @@
 import { state, getMembers } from './state.js';
 import { PCOLS, BADGES, READONLY } from './config.js';
 import { renderTvStrip } from './tv.js';
-import { esc, dueStatus, freqLabel } from './utils.js';
+import { esc, jsq, dueStatus, freqLabel } from './utils.js';
 import { pColor } from './ui.js';
 
 // ── Session function references (set once via initRender) ─────────────────────
@@ -78,7 +78,7 @@ function _updateBulkBar() {
 // ── Bulk actions ──────────────────────────────────────────────────────────────
 
 export async function bulkAssign() {
-  if (READONLY || !selectedIds.size) return;
+  if (READONLY || !_isAdmin() || !selectedIds.size) return;
   const person = document.getElementById('bulk-person').value;
   selectedIds.forEach(id => { if (state.tasks[id]) state.tasks[id].person = person; });
   const { writeState } = await import('./firebase.js');
@@ -202,7 +202,7 @@ function _renderFilters() {
   if (cats.length) {
     html += '<span style="width:1px;background:var(--border);margin:0 4px;align-self:stretch;flex-shrink:0;display:inline-block;"></span>';
     html += cats.map(c =>
-      '<button class="filter-pill' + (filterCat === c ? ' active' : '') + '" onclick="window.setCatFilter(\'' + esc(c) + '\')">' + esc(c) + '</button>'
+      '<button class="filter-pill' + (filterCat === c ? ' active' : '') + '" onclick="window.setCatFilter(\'' + jsq(c) + '\')">' + esc(c) + '</button>'
     ).join('');
   }
   container.innerHTML = html;
@@ -256,12 +256,12 @@ export function cardHTML(t) {
   const pc  = t.person ? pColor(t.person) : null;
   const personTag = t.person
     ? (pc ? '<span class="tag" style="background:' + pc.bg + ';color:' + pc.text + ';">' + esc(t.person) + '</span>' : '')
-    : '<button class="btn-claim" onclick="window.claimTask(\'' + t.id + '\')">Claim</button>';
+    : '<button class="btn-claim" onclick="window.claimTask(\'' + jsq(t.id) + '\')">Claim</button>';
   const dueTag = s === 'overdue' ? '<span class="tag tag-overdue">Overdue</span>'
                : s === 'soon'    ? '<span class="tag tag-soon">Due soon</span>'
                : s === 'ok'      ? '<span class="tag tag-ok">On track</span>' : '';
   const diff = t.difficulty || 'easy';
-  const diffTag = '<span class="tag tag-' + diff + '">' + diff + '</span>';
+  const diffTag = '<span class="tag tag-' + esc(diff) + '">' + esc(diff) + '</span>';
   const freqTag = t.freq === 'once'
     ? '<span class="tag tag-freq">📅 ' + esc(t.dueDate || 'One-off') + '</span>'
     : '<span class="tag tag-freq">' + esc(freqLabel(t)) + '</span>';
@@ -274,38 +274,38 @@ export function cardHTML(t) {
   const subs     = t.subtasks ? Object.values(t.subtasks) : [];
   const subsDone = subs.filter(st => st.done).length;
   const subsBadge = subs.length ? '<span class="subtask-badge">' + subsDone + '/' + subs.length + '</span>' : '';
-  const chevronBtn = '<button class="subtask-toggle" onclick="window.toggleSubtasks(\'' + t.id + '\')" title="Subtasks">&#9654;</button>';
+  const chevronBtn = '<button class="subtask-toggle" onclick="window.toggleSubtasks(\'' + jsq(t.id) + '\')" title="Subtasks">&#9654;</button>';
 
   let subRows = '';
   subs.forEach(st => {
     subRows +=
       '<div class="subtask-row">' +
-        '<div class="subtask-check' + (st.done ? ' checked' : '') + '" onclick="window.toggleSubtask(\'' + t.id + '\',\'' + st.id + '\')">' +
+        '<div class="subtask-check' + (st.done ? ' checked' : '') + '" onclick="window.toggleSubtask(\'' + jsq(t.id) + '\',\'' + jsq(st.id) + '\')">' +
           '<svg width="10" height="10" viewBox="0 0 12 12" fill="none"><polyline points="2,6 5,9 10,3" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
         '</div>' +
         '<span class="subtask-name' + (st.done ? ' done' : '') + '">' + esc(st.name) + '</span>' +
-        '<button class="subtask-del" onclick="window.removeSubtask(\'' + t.id + '\',\'' + st.id + '\')" title="Remove">×</button>' +
+        '<button class="subtask-del" onclick="window.removeSubtask(\'' + jsq(t.id) + '\',\'' + jsq(st.id) + '\')" title="Remove">×</button>' +
       '</div>';
   });
   const subtaskSection =
     '<div class="subtask-list">' +
       subRows +
       '<div class="subtask-add">' +
-        '<input type="text" placeholder="Add subtask..." maxlength="60" onkeydown="if(event.key===\'Enter\')window.addSubtask(\'' + t.id + '\')" />' +
-        '<button onclick="window.addSubtask(\'' + t.id + '\')">+ Add</button>' +
+        '<input type="text" placeholder="Add subtask..." maxlength="60" onkeydown="if(event.key===\'Enter\')window.addSubtask(\'' + jsq(t.id) + '\')" />' +
+        '<button onclick="window.addSubtask(\'' + jsq(t.id) + '\')">+ Add</button>' +
       '</div>' +
     '</div>';
 
   const isSelected = selectMode && selectedIds.has(t.id);
   const cardClass  = 'task-card ' + s + (isSelected ? ' selected' : '');
-  const cardClick  = selectMode ? ' onclick="window.toggleSelect(\'' + t.id + '\')"' : '';
+  const cardClick  = selectMode ? ' onclick="window.toggleSelect(\'' + jsq(t.id) + '\')"' : '';
   const checkEl    = selectMode
-    ? '<div class="sel-box" onclick="event.stopPropagation();window.toggleSelect(\'' + t.id + '\')"><svg width="10" height="10" viewBox="0 0 12 12" fill="none" style="display:' + (isSelected ? 'block' : 'none') + '"><polyline points="2,6 5,9 10,3" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>'
-    : '<div class="check' + (t.done ? ' checked' : '') + '" onclick="window.toggleTask(\'' + t.id + '\')">' +
+    ? '<div class="sel-box" onclick="event.stopPropagation();window.toggleSelect(\'' + jsq(t.id) + '\')"><svg width="10" height="10" viewBox="0 0 12 12" fill="none" style="display:' + (isSelected ? 'block' : 'none') + '"><polyline points="2,6 5,9 10,3" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>'
+    : '<div class="check' + (t.done ? ' checked' : '') + '" onclick="window.toggleTask(\'' + jsq(t.id) + '\')">' +
         '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><polyline points="2,6 5,9 10,3" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
       '</div>';
 
-  return '<div class="' + cardClass + '" id="tc-' + t.id + '" draggable="' + (!selectMode) + '" data-id="' + t.id + '"' + cardClick + '>' +
+  return '<div class="' + cardClass + '" id="tc-' + esc(t.id) + '" draggable="' + (!selectMode) + '" data-id="' + esc(t.id) + '"' + cardClick + '>' +
     '<div class="card-main">' +
       checkEl +
       '<div class="card-info">' +
@@ -314,8 +314,8 @@ export function cardHTML(t) {
       '</div>' +
       '<div class="task-meta">' + dueTag + diffTag + freqTag + catTag + personTag + '</div>' +
       chevronBtn +
-      '<button class="edit-btn" onclick="window.editTask(\'' + t.id + '\')" title="Edit">✎</button>' +
-      '<button class="del" onclick="window.deleteTask(\'' + t.id + '\')" title="Remove">×</button>' +
+      '<button class="edit-btn" onclick="window.editTask(\'' + jsq(t.id) + '\')" title="Edit">✎</button>' +
+      '<button class="del" onclick="window.deleteTask(\'' + jsq(t.id) + '\')" title="Remove">×</button>' +
     '</div>' +
     '<div class="subtask-section">' + subtaskSection + '</div>' +
   '</div>';

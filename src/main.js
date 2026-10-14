@@ -1,10 +1,11 @@
 import './style.css';
 
 import { onValue, ref } from 'firebase/database';
+import { watchConnection, markSynced } from './connection.js';
 
 import { FB_URL, READONLY } from './config.js';
 import { state, getMembers, applySnapshot, migrateLegacyMembers } from './state.js';
-import { esc } from './utils.js';
+import { esc, jsq } from './utils.js';
 import { initFirebase, initAuth } from './firebase.js';
 import { initModalBackButton, closeModal } from './modals.js';
 import { popUndo } from './undo.js';
@@ -60,6 +61,8 @@ if (READONLY) {
 }
 
 import { initTvMode } from './tv.js';
+import { registerServiceWorker } from './pwa.js';
+registerServiceWorker();
 initTvMode();
 
 // ── Theme sync on load ────────────────────────────────────────────────────────
@@ -73,6 +76,7 @@ initModalBackButton();
   const { app, db } = initFirebase();
   await initAuth(); // anonymous auth (gracefully degrades if not enabled)
   let firstLoad = true;
+  watchConnection(db, { onValue, ref });
 
   onValue(ref(db, 'state'), snap => {
     const val = snap.val() || {};
@@ -86,6 +90,7 @@ initModalBackButton();
 
     checkTaskResets();
     render();
+    markSynced();
 
     if (firstLoad) {
       firstLoad = false;
@@ -124,7 +129,7 @@ document.addEventListener('keydown', e => {
 });
 window.addEventListener('fc:setfilter', e => setFilter(e.detail));
 
-initDragDrop();
+initDragDrop(_isAdmin);
 
 // ── window handlers (called from inline onclick in HTML strings) ───────────────
 
@@ -156,8 +161,8 @@ window.toggleTask    = id         => toggleTask(id, _currentMember, _isAdmin);
 window.deleteTask    = id         => deleteTask(id, _isAdmin);
 window.toggleSubtasks = id        => toggleSubtasks(id);
 window.toggleSubtask  = (tid,sid) => toggleSubtask(tid, sid);
-window.addSubtask     = id        => addSubtask(id);
-window.removeSubtask  = (tid,sid) => removeSubtask(tid, sid);
+window.addSubtask     = id        => addSubtask(id, _isAdmin);
+window.removeSubtask  = (tid,sid) => removeSubtask(tid, sid, _isAdmin);
 window.claimTask      = id        => claimTask(id, _currentMember);
 
 // Undo
@@ -189,8 +194,8 @@ window.openAdminPanel = function() {
     return '<div class="admin-member-row">' +
       '<span class="admin-member-name">' + esc(m) + '</span>' +
       '<span class="admin-member-role' + (isAdm ? ' is-admin' : '') + '">' + (isAdm ? '👑 Admin' : 'Member') + '</span>' +
-      '<button class="btn-sm" onclick="window.toggleRole(\'' + esc(m) + '\');window.openAdminPanel()">Toggle</button>' +
-      '<button class="btn-sm" onclick="window.closeAdminPanel();window.openSetPin(\'' + esc(m) + '\')">Set PIN</button>' +
+      '<button class="btn-sm" onclick="window.toggleRole(\'' + jsq(m) + '\');window.openAdminPanel()">Toggle</button>' +
+      '<button class="btn-sm" onclick="window.closeAdminPanel();window.openSetPin(\'' + jsq(m) + '\')">Set PIN</button>' +
       '</div>';
   }).join('');
   document.getElementById('admin-panel-modal').classList.remove('hidden');
