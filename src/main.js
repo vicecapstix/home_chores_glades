@@ -1,6 +1,7 @@
 import './style.css';
 
 import { onValue, ref } from 'firebase/database';
+import { watchConnection, markSynced } from './connection.js';
 
 import { FB_URL, READONLY } from './config.js';
 import { state, getMembers, applySnapshot, migrateLegacyMembers } from './state.js';
@@ -73,6 +74,7 @@ initModalBackButton();
   const { app, db } = initFirebase();
   await initAuth(); // anonymous auth (gracefully degrades if not enabled)
   let firstLoad = true;
+  watchConnection(db, { onValue, ref });
 
   onValue(ref(db, 'state'), snap => {
     const val = snap.val() || {};
@@ -86,6 +88,7 @@ initModalBackButton();
 
     checkTaskResets();
     render();
+    markSynced();
 
     if (firstLoad) {
       firstLoad = false;
