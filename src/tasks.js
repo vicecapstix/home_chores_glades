@@ -3,7 +3,7 @@ import { READONLY, BADGES, CATEGORIES } from './config.js';
 import { writeState, patchTask, patchMember, patchRoot, removeTask, restoreTask, patchSubtask } from './firebase.js';
 import { showToast } from './ui.js';
 import { pushUndo } from './undo.js';
-import { esc, freqDays, dueStatus, taskPoints, getWeekStart } from './utils.js';
+import { esc, jsq, freqDays, dueStatus, taskPoints, getWeekStart } from './utils.js';
 
 // Re-export for other modules
 export { dueStatus, taskPoints, freqDays };
@@ -86,8 +86,8 @@ export function editTask(id) {
     '</div>' +
     '<textarea class="edit-notes" placeholder="Notes..." maxlength="300">' + esc(t.notes || '') + '</textarea>' +
     '<div class="edit-actions">' +
-      '<button class="btn-sm btn-accent" onclick="window.saveTask(\'' + id + '\')">Save</button>' +
-      '<button class="btn-sm" onclick="window.cancelEdit(\'' + id + '\')">Cancel</button>' +
+      '<button class="btn-sm btn-accent" onclick="window.saveTask(\'' + jsq(id) + '\')">Save</button>' +
+      '<button class="btn-sm" onclick="window.cancelEdit(\'' + jsq(id) + '\')">Cancel</button>' +
     '</div>';
   card.querySelector('.edit-name').focus();
 }
@@ -220,8 +220,8 @@ export async function toggleSubtask(taskId, subId) {
   } catch (err) { showToast('Update failed: ' + (err.code || err.message)); }
 }
 
-export async function addSubtask(taskId) {
-  if (READONLY) return;
+export async function addSubtask(taskId, isAdminFn) {
+  if (READONLY || !isAdminFn()) return;
   const card = document.getElementById('tc-' + taskId);
   if (!card) return;
   const inp  = card.querySelector('.subtask-add input');
@@ -235,8 +235,8 @@ export async function addSubtask(taskId) {
   try { await writeState(); } catch (err) { showToast('Save failed: ' + (err.code || err.message)); }
 }
 
-export async function removeSubtask(taskId, subId) {
-  if (READONLY) return;
+export async function removeSubtask(taskId, subId, isAdminFn) {
+  if (READONLY || !isAdminFn()) return;
   const t = state.tasks[taskId];
   if (!t?.subtasks) return;
   delete t.subtasks[subId];
@@ -251,19 +251,21 @@ export async function claimTask(id, currentMemberFn) {
   if (!member) { showToast('Select a member first'); return; }
   const t = state.tasks[id];
   if (!t) return;
+  if (t.person) { showToast('Already assigned to ' + t.person); return; }
   state.tasks[id].person = member;
   try { await writeState(); } catch (err) { showToast('Save failed: ' + (err.code || err.message)); }
 }
 
 // ── Drag-and-drop reorder ─────────────────────────────────────────────────────
 
-export function initDragDrop() {
+export function initDragDrop(isAdminFn) {
   let draggedId = null;
   const taskList = document.getElementById('task-list');
 
   taskList.addEventListener('dragstart', e => {
     const card = e.target.closest('.task-card');
     if (!card) return;
+    if (READONLY || !isAdminFn()) { e.preventDefault(); return; }
     draggedId = card.dataset.id;
     card.classList.add('dragging');
     e.dataTransfer.effectAllowed = 'move';
@@ -286,6 +288,7 @@ export function initDragDrop() {
   taskList.addEventListener('drop', async e => {
     e.preventDefault();
     taskList.querySelectorAll('.drag-over').forEach(c => c.classList.remove('drag-over'));
+    if (READONLY || !isAdminFn()) return;
     const card = e.target.closest('.task-card');
     if (!card || !draggedId) return;
     const targetId = card.dataset.id;

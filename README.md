@@ -17,7 +17,7 @@ A real-time chore tracker for families — assign tasks, track progress, earn po
 - **Status tracking** — Overdue / Due soon / On track / Done today sections
 - **Inline editing** — edit a task's name, frequency, assignee, or difficulty without deleting it
 - **Points & leaderboard** — members earn points for completing chores; see all-time and weekly rankings
-- **Badges** — First Chore, Century, On Fire (7-day streak), Dedicated (30-day streak)
+- **Badges** — First Chore (1), Getting Started (10), Tenacious (25), Fifty Strong (50), Century (100 completions); Consistent (3-day streak), On Fire (7), Dedicated (30)
 - **Templates** — save the current task list as a reusable template
 - **Stats** — completion charts by week, month, or all time; export to CSV
 - **Browser notifications** — get an alert when a chore goes overdue (requires permission)

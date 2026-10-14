@@ -28,6 +28,7 @@ export async function addMember(isAdminFn) {
 
 export async function removeMember(name, isAdminFn) {
   if (READONLY || !isAdminFn()) return;
+  if (!confirm('Remove ' + name + '? Their chores become unassigned.')) return;
   delete state.members[name];
   Object.values(state.tasks).forEach(t => { if (t.person === name) t.person = ''; });
   try {
@@ -41,6 +42,10 @@ export async function toggleRole(name, isAdminFn) {
   if (READONLY || !isAdminFn()) return;
   const m = state.members[name];
   if (!m) return;
+  if (m.role === 'admin' && Object.values(state.members).filter(x => x.role === 'admin').length <= 1) {
+    showToast('Cannot demote the last admin');
+    return;
+  }
   try {
     await patchMember(name, { role: m.role === 'admin' ? 'member' : 'admin' });
   } catch (err) {
