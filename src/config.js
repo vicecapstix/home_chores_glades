@@ -13,7 +13,11 @@ export const CATEGORIES = ['Kitchen', 'Bathroom', 'Bedroom', 'Garden', 'Living R
 
 export const BADGES = [
   { id: 'first',     label: 'First Chore', icon: '⭐', check: m => (m.completedCount || 0) >= 1 },
+  { id: 'getting_started', label: 'Getting Started', icon: '🌱', check: m => (m.completedCount || 0) >= 10 },
+  { id: 'tenacious',       label: 'Tenacious',       icon: '💪', check: m => (m.completedCount || 0) >= 25 },
+  { id: 'half_century',    label: 'Fifty Strong',    icon: '🎯', check: m => (m.completedCount || 0) >= 50 },
   { id: 'century',   label: 'Century',     icon: '💯', check: m => (m.completedCount || 0) >= 100 },
+  { id: 'consistent',      label: 'Consistent',      icon: '📅', check: m => (m.streak || 0) >= 3 },
   { id: 'on_fire',   label: 'On Fire',     icon: '🔥', check: m => (m.streak || 0) >= 7 },
   { id: 'dedicated', label: 'Dedicated',   icon: '🏅', check: m => (m.streak || 0) >= 30 },
 ];

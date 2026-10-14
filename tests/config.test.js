@@ -45,8 +45,18 @@ describe('CATEGORIES', () => {
 });
 
 describe('BADGES', () => {
-  it('has exactly 4 badge definitions', () => {
-    expect(BADGES).toHaveLength(4);
+  it('has exactly 8 badge definitions in live-build order', () => {
+    expect(BADGES.map(b => b.id)).toEqual(
+      ['first', 'getting_started', 'tenacious', 'half_century', 'century', 'consistent', 'on_fire', 'dedicated']);
+  });
+  it.each([
+    ['getting_started', 'completedCount', 10], ['tenacious', 'completedCount', 25],
+    ['half_century', 'completedCount', 50], ['consistent', 'streak', 3],
+  ])('"%s" badge unlocks at %s >= %i', (id, field, n) => {
+    const b = BADGES.find(x => x.id === id);
+    expect(b.check({ [field]: n - 1 })).toBe(false);
+    expect(b.check({ [field]: n })).toBe(true);
+    expect(b.check({})).toBe(false);
   });
   it('each badge has id, label, icon, and check function', () => {
     BADGES.forEach(b => {
