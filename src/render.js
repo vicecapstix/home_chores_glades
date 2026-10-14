@@ -1,7 +1,7 @@
 import { state, getMembers } from './state.js';
 import { PCOLS, BADGES, READONLY } from './config.js';
 import { renderTvStrip } from './tv.js';
-import { esc, dueStatus } from './utils.js';
+import { esc, dueStatus, isMine } from './utils.js';
 import { pColor } from './ui.js';
 
 // ── Session function references (set once via initRender) ─────────────────────
@@ -20,6 +20,15 @@ let selectMode = false;
 let selectedIds = new Set();
 
 // ── Filter setters ────────────────────────────────────────────────────────────
+
+let _mineDefaulted = false;
+function _applyMineDefault() {
+  const me = _currentMember();
+  if (_mineDefaulted || READONLY || !me) return;
+  _mineDefaulted = true;
+  const phone = typeof window.matchMedia === 'function' && window.matchMedia('(max-width: 700px)').matches;
+  if (phone) filter = 'mine';
+}
 
 export function setFilter(f) {
   filter    = f;
@@ -111,6 +120,7 @@ export async function bulkDelete() {
 // ── Main render entry point ───────────────────────────────────────────────────
 
 export function render() {
+  _applyMineDefault();
   _renderHeader();
   _renderMembers();
   _renderMemberSelect();
@@ -187,8 +197,11 @@ function _renderFilters() {
     pending: tasks.filter(t => !t.done).length,
     overdue: tasks.filter(t => dueStatus(t) === 'overdue').length,
     done:    tasks.filter(t => t.done).length,
+    mine:    tasks.filter(t => isMine(t, _currentMember())).length,
   };
+  const me = !READONLY && _currentMember();
   const defs = [
+    ...(me ? [{ k: 'mine', label: 'Mine' }] : []),
     { k: 'all',     label: 'All' },
     { k: 'pending', label: 'Pending' },
     { k: 'overdue', label: 'Overdue' },
@@ -212,7 +225,8 @@ function _renderFilters() {
 
 function _renderTasks() {
   let tasks = _visibleTasks();
-  if (filter === 'pending') tasks = tasks.filter(t => !t.done);
+  if (filter === 'mine') tasks = tasks.filter(t => isMine(t, _currentMember()));
+  else if (filter === 'pending') tasks = tasks.filter(t => !t.done);
   else if (filter === 'overdue') tasks = tasks.filter(t => dueStatus(t) === 'overdue');
   else if (filter === 'done') tasks = tasks.filter(t => t.done);
   if (filterCat) tasks = tasks.filter(t => t.category === filterCat);

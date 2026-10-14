@@ -78,6 +78,7 @@ body[data-readonly] #filters { display: none !important; }
 header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 1.25rem var(--space-xl); display: flex; align-items: center; gap: var(--space-lg); flex-wrap: wrap; }
 .logo { font-family: 'DM Serif Display', serif; font-size: 1.6rem; color: var(--text); flex-shrink: 0; }
 .logo span { color: var(--accent); }
+.theme-toggle.hidden { display: none; }
 .live-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); animation: pulse 2s infinite; flex-shrink: 0; }
 @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
 .header-stats { display: flex; gap: var(--space-lg); margin-left: auto; flex-wrap: wrap; }
