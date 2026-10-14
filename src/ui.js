@@ -2,7 +2,7 @@ import { state, getMembers } from './state.js';
 import { PCOLS, BADGES, READONLY } from './config.js';
 import { openModal, closeModal } from './modals.js';
 import { writeState } from './firebase.js';
-import { esc, sha256, freqDays, dueStatus } from './utils.js';
+import { esc, jsq, sha256, initialLastDone, dueStatus } from './utils.js';
 import { isAdmin } from './auth.js';
 
 // ── pColor helper ─────────────────────────────────────────────────────────────
@@ -184,8 +184,8 @@ function renderTemplates() {
             '<div class="tpl-item-name">' + esc(tpl.name) + '</div>' +
             '<div class="tpl-item-count">' + tpl.tasks.length + ' task' + (tpl.tasks.length !== 1 ? 's' : '') + '</div>' +
           '</div>' +
-          '<button class="btn-sm btn-accent" onclick="window.applyTemplate(\'' + tpl.id + '\')">Apply</button>' +
-          '<button class="btn-sm" onclick="window.deleteTemplate(\'' + tpl.id + '\')">Delete</button>' +
+          '<button class="btn-sm btn-accent" onclick="window.applyTemplate(\'' + jsq(tpl.id) + '\')">Apply</button>' +
+          '<button class="btn-sm" onclick="window.deleteTemplate(\'' + jsq(tpl.id) + '\')">Delete</button>' +
         '</div>'
       ).join('')
     : '<div class="empty">No templates saved yet.</div>';
@@ -199,7 +199,7 @@ export function saveTemplate() {
   const id = 'tpl' + Date.now();
   state.templates[id] = {
     id, name,
-    tasks: Object.values(state.tasks).map(t => ({ name: t.name, freq: t.freq, difficulty: t.difficulty || 'easy' })),
+    tasks: Object.values(state.tasks).map(t => ({ name: t.name, freq: t.freq, difficulty: t.difficulty || 'easy', ...(t.freq === 'weekdays' ? { days: t.days || [] } : {}) })),
   };
   input.value = '';
   writeState().catch(err => showToast('Save failed: ' + (err.code || err.message)));
@@ -216,7 +216,8 @@ export function applyTemplate(id) {
     const taskId = 't' + Date.now() + Math.random().toString(36).slice(2);
     state.tasks[taskId] = {
       id: taskId, name: t.name, freq: t.freq, difficulty: t.difficulty || 'easy',
-      done: false, lastDone: Date.now() - freqDays(t.freq) * 86400000,
+      ...(t.freq === 'weekdays' ? { days: t.days || [] } : {}),
+      done: false, lastDone: initialLastDone(t.freq),
       person: '', order: Date.now() + added,
     };
     state.nextId++;
