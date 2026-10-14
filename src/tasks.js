@@ -3,7 +3,7 @@ import { READONLY, BADGES, CATEGORIES } from './config.js';
 import { writeState, patchTask, patchMember, patchRoot, removeTask, restoreTask, patchSubtask } from './firebase.js';
 import { showToast } from './ui.js';
 import { pushUndo } from './undo.js';
-import { esc, freqDays, dueStatus, taskPoints, getWeekStart } from './utils.js';
+import { esc, jsq, freqDays, dueStatus, taskPoints, getWeekStart } from './utils.js';
 
 // Re-export for other modules
 export { dueStatus, taskPoints, freqDays };
@@ -86,8 +86,8 @@ export function editTask(id) {
     '</div>' +
     '<textarea class="edit-notes" placeholder="Notes..." maxlength="300">' + esc(t.notes || '') + '</textarea>' +
     '<div class="edit-actions">' +
-      '<button class="btn-sm btn-accent" onclick="window.saveTask(\'' + id + '\')">Save</button>' +
-      '<button class="btn-sm" onclick="window.cancelEdit(\'' + id + '\')">Cancel</button>' +
+      '<button class="btn-sm btn-accent" onclick="window.saveTask(\'' + jsq(id) + '\')">Save</button>' +
+      '<button class="btn-sm" onclick="window.cancelEdit(\'' + jsq(id) + '\')">Cancel</button>' +
     '</div>';
   card.querySelector('.edit-name').focus();
 }
