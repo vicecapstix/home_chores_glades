@@ -1,5 +1,6 @@
 import { state, getMembers } from './state.js';
 import { PCOLS, BADGES, READONLY } from './config.js';
+import { renderTvStrip } from './tv.js';
 import { esc, dueStatus } from './utils.js';
 import { pColor } from './ui.js';
 
@@ -115,6 +116,7 @@ export function render() {
   _renderMemberSelect();
   _renderFilters();
   _renderTasks();
+  renderTvStrip();
   if (!READONLY) {
     document.body.setAttribute('data-role', _isAdmin() ? 'admin' : 'member');
   }
@@ -237,7 +239,7 @@ function _renderTasks() {
   let html = '';
   for (const d of defs) {
     if (!sections[d.k].length) continue;
-    html += '<div class="section"><h2 class="section-head"><span class="section-dot ' + d.dot + '"></span>' + d.label + '</h2>';
+    html += '<div class="section" data-k="' + d.k + '"><h2 class="section-head"><span class="section-dot ' + d.dot + '"></span>' + d.label + '</h2>';
     sections[d.k].forEach(t => { html += cardHTML(t); });
     html += '</div>';
   }

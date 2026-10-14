@@ -59,6 +59,9 @@ if (READONLY) {
   document.getElementById('readonly-banner').classList.remove('hidden');
 }
 
+import { initTvMode } from './tv.js';
+initTvMode();
+
 // ── Theme sync on load ────────────────────────────────────────────────────────
 syncThemeButton();
 

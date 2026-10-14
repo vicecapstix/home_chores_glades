@@ -68,6 +68,11 @@ body[data-readonly] .chip-del,
 body[data-readonly] .chip-role { display: none !important; }
 #readonly-banner { position: fixed; top: 0; left: 0; right: 0; z-index: 1000; background: var(--surface); color: var(--muted); font-size: 0.8rem; text-align: center; padding: 6px var(--space-md); border-bottom: 1px solid var(--border); pointer-events: none; }
 #readonly-banner.hidden { display: none; }
+body[data-readonly] #readonly-banner { position: static; }
+body[data-readonly] .add-bar, body[data-readonly] .member-add, body[data-readonly] #btn-select,
+body[data-readonly] #btn-admin, body[data-readonly] #btn-switch-user, body[data-readonly] #bulk-bar,
+body[data-readonly] #filters { display: none !important; }
+#tv-clock, #tv-strip { display: none; }
 
 /* HEADER */
 header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 1.25rem var(--space-xl); display: flex; align-items: center; gap: var(--space-lg); flex-wrap: wrap; }
@@ -346,4 +351,19 @@ body[data-role="admin"] #btn-admin { display: flex; }
   .pin-card { padding: 2rem 1.25rem; }
   .header-stats { gap: 0.75rem; }
   .hstat-val { font-size: 1.25rem; }
+}
+
+/* TV DASHBOARD (readonly, >=1200px) */
+@media (min-width: 1200px) {
+  body[data-readonly] #tv-clock { display: flex; flex-direction: column; margin-left: auto; text-align: right; }
+  body[data-readonly] .tv-time { font-family: 'DM Serif Display', serif; font-size: 3rem; line-height: 1; }
+  body[data-readonly] .tv-date { font-size: 1.1rem; color: var(--muted); }
+  body[data-readonly] #tv-strip { display: flex; flex-wrap: wrap; gap: var(--space-sm); width: 100%; order: 10; }
+  body[data-readonly] .tv-chip { padding: 6px 16px; border-radius: 20px; font-size: 1.1rem; }
+  body[data-readonly] #task-list { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-lg); align-items: start; }
+  body[data-readonly] .section[data-k="overdue"] { grid-column: 1; grid-row: 1; }
+  body[data-readonly] .section[data-k="soon"] { grid-column: 2; grid-row: 1; }
+  body[data-readonly] .section[data-k="done"] { grid-column: 3; grid-row: 1; }
+  body[data-readonly] .section[data-k="available"] { grid-column: 1 / -1; grid-row: 2; }
+  body[data-readonly] .section[data-k="ok"] { grid-column: 1 / -1; grid-row: 3; }
 }
