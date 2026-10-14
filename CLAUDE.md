@@ -41,11 +41,12 @@ vite.config.js
 ```bash
 npm install          # install deps (Vite + firebase + vite-plugin-singlefile)
 npm run dev          # Vite dev server at http://localhost:5173 (hot reload)
-npm run build        # bundle → dist/index.html (deploy this to GitHub Pages)
+npm run build        # bundle → dist/index.html (git-ignored build output)
+npm run build:pages  # build, then copy dist/index.html → ./index.html (the deployed file)
 npm run preview      # serve the built dist/ locally
 ```
 
-GitHub Pages is configured to serve from `main` / `/ (root)` — the built `dist/index.html` must be committed and pushed to deploy.
+GitHub Pages is configured to serve from `main` / `/ (root)`. The deployed file is the **root `index.html`**; `dist/` is git-ignored. To deploy, run `npm run build:pages` and commit the updated root `index.html` (via a PR; merging deploys). CI (`.github/workflows/ci.yml`) runs tests + build on every PR and reports (non-blocking) when root `index.html` has drifted from `src/`.
 
 ## Key constants / configuration
 
