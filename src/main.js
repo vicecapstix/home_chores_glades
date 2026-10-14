@@ -43,7 +43,7 @@ import {
   initMemberChipClicks,
 } from './render.js';
 
-import { requestNotificationPermission } from './notifications.js';
+import { initNotifications, enableNotifications } from './notifications.js';
 
 // ── Bound session helpers ─────────────────────────────────────────────────────
 const _isAdmin       = () => isAdmin();
@@ -96,7 +96,7 @@ initModalBackButton();
       firstLoad = false;
       if (!READONLY) {
         handleFirstLoad(() => {
-          requestNotificationPermission();
+          initNotifications(_currentMember);
           maybeShowDailySummary();
           render(); // re-render with correct role
         });
@@ -149,6 +149,7 @@ window.toggleNewNote = function() {
 };
 
 // Tasks
+window.enableNotifications = () => enableNotifications();
 window.addTask       = ()         => addTask(_isAdmin);
 window.editTask      = id         => editTask(id);
 window.saveTask      = id         => saveTask(id, _isAdmin);

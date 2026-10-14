@@ -31,7 +31,7 @@ describe('a11y: modals', () => {
 describe('a11y: header, forms, landmarks', () => {
   it('icon-only header buttons have aria-label', () => {
     const btns = [...doc.querySelectorAll('header .theme-toggle')];
-    expect(btns.length).toBe(7);
+    expect(btns.length).toBe(8); // 7 + the reminders bell (#48)
     btns.forEach(b => expect(b.getAttribute('aria-label')).toBeTruthy());
   });
   it.each(['new-member', 'new-task', 'new-freq', 'new-diff', 'new-cat', 'new-person', 'new-notes',

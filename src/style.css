@@ -81,6 +81,7 @@ body[data-readonly] #filters { display: none !important; }
 header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 1.25rem var(--space-xl); display: flex; align-items: center; gap: var(--space-lg); flex-wrap: wrap; }
 .logo { font-family: 'DM Serif Display', serif; font-size: 1.6rem; color: var(--text); flex-shrink: 0; }
 .logo span { color: var(--accent); }
+.theme-toggle.hidden { display: none; }
 .live-dot.offline { background: var(--warn); animation: none; }
 #tv-synced { display: none; font-size: 0.8rem; color: var(--muted); }
 body[data-readonly] #tv-synced { display: block; }

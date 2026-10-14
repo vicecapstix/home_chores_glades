@@ -85,3 +85,10 @@ export function dueStatus(t) {
   if (s >= d - 1) return 'soon';
   return 'ok';
 }
+
+// "Mine" = assigned to me, or unclaimed; future (on-track) chores are left out.
+export function isMine(t, me) {
+  if (!me) return false;
+  if (t.done) return t.person === me;
+  return (!t.person || t.person === me) && dueStatus(t) !== 'ok';
+}
