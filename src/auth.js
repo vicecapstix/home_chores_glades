@@ -1,6 +1,6 @@
 import { state, getMembers } from './state.js';
 import { PCOLS, READONLY } from './config.js';
-import { esc, sha256 } from './utils.js';
+import { esc, jsq, sha256 } from './utils.js';
 
 let _pendingMemberName = '';
 let _memberPinBuffer   = '';
@@ -58,7 +58,7 @@ export function showMemberSelector(onLoginComplete) {
   document.getElementById('pin-member-chips').innerHTML = members.map((m, i) => {
     const c = PCOLS[i % PCOLS.length];
     return '<button class="pin-member-chip" style="background:' + c.bg + ';color:' + c.text + ';" ' +
-      'onclick="window.memberSelect(\'' + esc(m) + '\')">' + esc(m) + '</button>';
+      'onclick="window.memberSelect(\'' + jsq(m) + '\')">' + esc(m) + '</button>';
   }).join('');
   // Store callback for after login
   window._fcLoginCallback = onLoginComplete;

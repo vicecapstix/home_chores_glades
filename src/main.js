@@ -4,7 +4,7 @@ import { onValue, ref } from 'firebase/database';
 
 import { FB_URL, READONLY } from './config.js';
 import { state, getMembers, applySnapshot, migrateLegacyMembers } from './state.js';
-import { esc } from './utils.js';
+import { esc, jsq } from './utils.js';
 import { initFirebase, initAuth } from './firebase.js';
 import { initModalBackButton, closeModal } from './modals.js';
 import { popUndo } from './undo.js';
@@ -188,8 +188,8 @@ window.openAdminPanel = function() {
     return '<div class="admin-member-row">' +
       '<span class="admin-member-name">' + esc(m) + '</span>' +
       '<span class="admin-member-role' + (isAdm ? ' is-admin' : '') + '">' + (isAdm ? '👑 Admin' : 'Member') + '</span>' +
-      '<button class="btn-sm" onclick="window.toggleRole(\'' + esc(m) + '\');window.openAdminPanel()">Toggle</button>' +
-      '<button class="btn-sm" onclick="window.closeAdminPanel();window.openSetPin(\'' + esc(m) + '\')">Set PIN</button>' +
+      '<button class="btn-sm" onclick="window.toggleRole(\'' + jsq(m) + '\');window.openAdminPanel()">Toggle</button>' +
+      '<button class="btn-sm" onclick="window.closeAdminPanel();window.openSetPin(\'' + jsq(m) + '\')">Set PIN</button>' +
       '</div>';
   }).join('');
   document.getElementById('admin-panel-modal').classList.remove('hidden');
