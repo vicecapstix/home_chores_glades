@@ -78,7 +78,7 @@ function _updateBulkBar() {
 // ── Bulk actions ──────────────────────────────────────────────────────────────
 
 export async function bulkAssign() {
-  if (READONLY || !selectedIds.size) return;
+  if (READONLY || !_isAdmin() || !selectedIds.size) return;
   const person = document.getElementById('bulk-person').value;
   selectedIds.forEach(id => { if (state.tasks[id]) state.tasks[id].person = person; });
   const { writeState } = await import('./firebase.js');

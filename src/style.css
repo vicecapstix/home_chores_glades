@@ -57,6 +57,9 @@ button:focus-visible, a:focus-visible, select:focus-visible { outline: 2px solid
 .chip-role:hover { opacity: 1; }
 
 /* ROLE-BASED VISIBILITY */
+body[data-role="member"] #btn-select,
+body[data-role="member"] .subtask-del,
+body[data-role="member"] .subtask-add,
 body[data-role="member"] .add-bar,
 body[data-role="member"] .member-add,
 body[data-role="member"] .chip-del,

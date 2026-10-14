@@ -123,7 +123,7 @@ document.addEventListener('keydown', e => {
 });
 window.addEventListener('fc:setfilter', e => setFilter(e.detail));
 
-initDragDrop();
+initDragDrop(_isAdmin);
 
 // ── window handlers (called from inline onclick in HTML strings) ───────────────
 
@@ -155,8 +155,8 @@ window.toggleTask    = id         => toggleTask(id, _currentMember, _isAdmin);
 window.deleteTask    = id         => deleteTask(id, _isAdmin);
 window.toggleSubtasks = id        => toggleSubtasks(id);
 window.toggleSubtask  = (tid,sid) => toggleSubtask(tid, sid);
-window.addSubtask     = id        => addSubtask(id);
-window.removeSubtask  = (tid,sid) => removeSubtask(tid, sid);
+window.addSubtask     = id        => addSubtask(id, _isAdmin);
+window.removeSubtask  = (tid,sid) => removeSubtask(tid, sid, _isAdmin);
 window.claimTask      = id        => claimTask(id, _currentMember);
 
 // Undo
