@@ -3,7 +3,7 @@ import { state } from '../src/state.js';
 import { dueStatus, taskPoints, prevScheduledStart, initialLastDone, freqLabel } from '../src/utils.js';
 
 vi.mock('../src/firebase.js', () => ({
-  writeState: vi.fn().mockResolvedValue(undefined), patchTask: vi.fn(), patchMember: vi.fn(), patchRoot: vi.fn(),
+  writeState: vi.fn().mockResolvedValue(undefined), patchTask: vi.fn(), patchMember: vi.fn(), patchRoot: vi.fn().mockResolvedValue(undefined),
   removeTask: vi.fn(), restoreTask: vi.fn(), patchSubtask: vi.fn(),
 }));
 vi.mock('../src/ui.js', () => ({ showToast: vi.fn() }));

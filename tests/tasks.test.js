@@ -77,10 +77,10 @@ describe('checkTaskResets', () => {
     expect(state.tasks.t1.lastDoneBy).toBeNull();
     expect(state.tasks.t1.lastDonePoints).toBeNull();
   });
-  it('calls writeState when at least one task was reset', () => {
+  it('patches the reset leaves when at least one task was reset', () => {
     state.tasks.t1 = makeTask({ done: true, lastDone: FIXED_DATE.getTime() - 8 * 86400000 });
     checkTaskResets();
-    expect(writeState).toHaveBeenCalledOnce();
+    expect(patchRoot).toHaveBeenCalledOnce();
   });
   it('does NOT reset a done task that is still within its period', () => {
     state.tasks.t1 = makeTask({ done: true, lastDone: FIXED_DATE.getTime() - 3 * 86400000 }); // 3d ago, weekly
@@ -237,7 +237,7 @@ describe('claimTask', () => {
   it('assigns the current member as the task owner', async () => {
     state.tasks.t1 = makeTask({ person: '' });
     await claimTask('t1', asAlice);
-    expect(writeState).toHaveBeenCalledOnce();
+    expect(patchTask).toHaveBeenCalledWith('t1', { person: 'Alice' });
     expect(state.tasks.t1.person).toBe('Alice');
   });
   it('shows a toast and does not write when no member is logged in', async () => {
