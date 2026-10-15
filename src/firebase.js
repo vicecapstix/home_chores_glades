@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getDatabase, ref, set, remove, update, onValue } from 'firebase/database';
+import { getDatabase, ref, set, remove, update, onValue, runTransaction } from 'firebase/database';
 import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 import { FB_URL, READONLY } from './config.js';
 import { state } from './state.js';
@@ -44,6 +44,7 @@ export async function writeState() {
       nextId:    state.nextId,
       templates: Object.keys(state.templates || {}).length ? state.templates : null,
       rewards:   Object.keys(state.rewards   || {}).length ? state.rewards   : null,
+      redemptions: Object.keys(state.redemptions || {}).length ? state.redemptions : null,
     });
   } catch (err) {
     throw err; // callers handle with showToast
@@ -78,6 +79,19 @@ export async function restoreTask(id, data) {
 export async function patchSubtask(taskId, subId, fields) {
   if (READONLY || !_db) return;
   await update(ref(_db, 'state/tasks/' + taskId + '/subtasks/' + subId), fields);
+}
+
+// Atomic points spend: aborts (returns false) if the balance is below cost.
+export async function spendPoints(name, cost) {
+  if (READONLY || !_db) return false;
+  const res = await runTransaction(ref(_db, 'state/members/' + name + '/points'),
+    cur => ((cur || 0) >= cost ? (cur || 0) - cost : undefined));
+  return !!res.committed;
+}
+
+export async function refundPoints(name, cost) {
+  if (READONLY || !_db) return;
+  await runTransaction(ref(_db, 'state/members/' + name + '/points'), cur => (cur || 0) + cost);
 }
 
 export { onValue, ref };

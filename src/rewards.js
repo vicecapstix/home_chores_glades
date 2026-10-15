@@ -4,6 +4,7 @@ import { patchRoot } from './firebase.js';
 import { showToast } from './ui.js';
 import { openModal } from './modals.js';
 import { esc, jsq } from './utils.js';
+import { pendingFor } from './redemptions.js';
 
 export const MAX_REWARDS = 50;
 export const MAX_NAME = 40;
@@ -12,6 +13,7 @@ const DEFAULT_ICON = '🎁';
 
 let editingId = '';
 let adminFn = () => false;
+let meFn = () => '';
 
 // Validate raw form input; returns { reward } or { error }.
 export function validateReward(name, cost, icon) {
@@ -29,7 +31,8 @@ export function sortedRewards(rewards) {
     .sort((a, b) => (a.cost - b.cost) || String(a.name).localeCompare(String(b.name)));
 }
 
-export function rewardsHTML(rewards, canEdit) {
+// opts.me / opts.points: when set, each row gets a Request button for that member.
+export function rewardsHTML(rewards, canEdit, opts = {}) {
   const list = sortedRewards(rewards);
   if (!list.length) return '<div class="empty">No rewards yet.' + (canEdit ? ' Add the first one below.' : '') + '</div>';
   return list.map(r =>
@@ -37,6 +40,10 @@ export function rewardsHTML(rewards, canEdit) {
       '<span class="reward-icon" aria-hidden="true">' + esc(r.icon || DEFAULT_ICON) + '</span>' +
       '<span class="reward-name">' + esc(r.name) + '</span>' +
       '<span class="reward-cost">' + esc(String(r.cost)) + ' pts</span>' +
+      (opts.me
+        ? '<button class="btn-sm btn-accent" aria-label="Request ' + esc(r.name) + '"' + ((opts.points || 0) < r.cost ? ' disabled' : '') +
+          ' onclick="window.requestReward(\'' + jsq(r.id) + '\')">Request</button>'
+        : '') +
       (canEdit
         ? '<button class="btn-sm" aria-label="Edit ' + esc(r.name) + '" onclick="window.editReward(\'' + jsq(r.id) + '\')">Edit</button>' +
           '<button class="btn-sm" aria-label="Delete ' + esc(r.name) + '" onclick="window.deleteReward(\'' + jsq(r.id) + '\')">Delete</button>'
@@ -49,7 +56,19 @@ export function renderRewards() {
   const list = document.getElementById('rewards-list');
   if (!list) return;
   const canEdit = !READONLY && adminFn();
-  list.innerHTML = rewardsHTML(state.rewards, canEdit);
+  const me = READONLY ? '' : meFn();
+  const member = me && state.members[me];
+  list.innerHTML = rewardsHTML(state.rewards, canEdit, member ? { me, points: member.points || 0 } : {});
+  const pend = document.getElementById('rewards-pending');
+  if (pend) {
+    const mine = pendingFor(me);
+    const all = pendingFor('');
+    pend.innerHTML = READONLY ? '' :
+      (member ? '<div class="reward-pts">Your points: ' + esc(String(member.points || 0)) + '</div>' : '') +
+      (mine.length ? '<div class="reward-pending-h">Your pending requests</div>' +
+        mine.map(r => '<div class="reward-row"><span class="reward-name">' + esc(r.rewardName) + '</span><span class="reward-cost">' + esc(String(r.cost)) + ' pts</span></div>').join('') : '') +
+      (canEdit && all.length ? '<div class="reward-pending-h">' + all.length + ' request' + (all.length === 1 ? '' : 's') + ' awaiting approval</div>' : '');
+  }
   document.getElementById('rewards-admin')?.classList.toggle('hidden', !canEdit);
 }
 
@@ -59,8 +78,9 @@ export function refreshRewards() {
   if (m && !m.classList.contains('hidden')) renderRewards();
 }
 
-export function openRewards(isAdminFn) {
+export function openRewards(isAdminFn, currentMemberFn) {
   adminFn = isAdminFn || adminFn;
+  meFn = currentMemberFn || meFn;
   cancelRewardEdit();
   renderRewards();
   openModal('rewards-modal');

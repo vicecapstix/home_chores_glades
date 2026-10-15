@@ -6,10 +6,10 @@ const _stack = [];
 const MAX = 20;
 let _toastTimer = null;
 
-export function pushUndo({ label, undo }) {
+export function pushUndo({ label, undo, verb }) {
   _stack.push({ label, undo });
   if (_stack.length > MAX) _stack.shift();
-  _showUndoToast(label);
+  _showUndoToast(label, verb);
 }
 
 export async function popUndo() {
@@ -27,11 +27,11 @@ export async function popUndo() {
   }
 }
 
-function _showUndoToast(label) {
+function _showUndoToast(label, verb) {
   const el = document.getElementById('undo-toast');
   const labelEl = document.getElementById('undo-label');
   if (!el || !labelEl) return;
-  labelEl.textContent = 'Deleted "' + label + '"';
+  labelEl.textContent = (verb || 'Deleted') + ' "' + label + '"';
   el.classList.add('show');
   clearTimeout(_toastTimer);
   _toastTimer = setTimeout(() => {
