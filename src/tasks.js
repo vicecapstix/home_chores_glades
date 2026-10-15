@@ -11,7 +11,7 @@ export { dueStatus, taskPoints, freqDays };
 // ── Task resets ───────────────────────────────────────────────────────────────
 
 export function checkTaskResets() {
-  let changed = false;
+  const patch = {};
   const now = Date.now();
   Object.values(state.tasks).forEach(t => {
     if (t.freq === 'once') return;
@@ -22,10 +22,14 @@ export function checkTaskResets() {
       t.done = false;
       t.lastDoneBy = null;
       t.lastDonePoints = null;
-      changed = true;
+      patch['tasks/' + t.id + '/done'] = false;
+      patch['tasks/' + t.id + '/lastDoneBy'] = null;
+      patch['tasks/' + t.id + '/lastDonePoints'] = null;
     }
   });
-  if (changed) writeState().catch(err => showToast('Save error: ' + (err.code || err.message)));
+  // One multi-path update touching only the reset leaves (never a full-state set).
+  if (READONLY || !Object.keys(patch).length) return;
+  patchRoot(patch).catch(err => showToast('Save error: ' + (err.code || err.message)));
 }
 
 // ── Weekday chips ─────────────────────────────────────────────────────────────
@@ -259,8 +263,9 @@ export async function addSubtask(taskId, isAdminFn) {
   if (!t) return;
   if (!t.subtasks) t.subtasks = {};
   const subId = 's' + Date.now();
-  t.subtasks[subId] = { id: subId, name, done: false };
-  try { await writeState(); } catch (err) { showToast('Save failed: ' + (err.code || err.message)); }
+  const sub = { id: subId, name, done: false };
+  t.subtasks[subId] = sub;
+  try { await patchSubtask(taskId, subId, sub); } catch (err) { showToast('Save failed: ' + (err.code || err.message)); }
 }
 
 export async function removeSubtask(taskId, subId, isAdminFn) {
@@ -268,7 +273,7 @@ export async function removeSubtask(taskId, subId, isAdminFn) {
   const t = state.tasks[taskId];
   if (!t?.subtasks) return;
   delete t.subtasks[subId];
-  try { await writeState(); } catch (err) { showToast('Save failed: ' + (err.code || err.message)); }
+  try { await patchRoot({ ['tasks/' + taskId + '/subtasks/' + subId]: null }); } catch (err) { showToast('Save failed: ' + (err.code || err.message)); }
 }
 
 // ── Claim ─────────────────────────────────────────────────────────────────────
@@ -281,7 +286,7 @@ export async function claimTask(id, currentMemberFn) {
   if (!t) return;
   if (t.person) { showToast('Already assigned to ' + t.person); return; }
   state.tasks[id].person = member;
-  try { await writeState(); } catch (err) { showToast('Save failed: ' + (err.code || err.message)); }
+  try { await patchTask(id, { person: member }); } catch (err) { showToast('Save failed: ' + (err.code || err.message)); }
 }
 
 // ── Drag-and-drop reorder ─────────────────────────────────────────────────────
