@@ -12,7 +12,7 @@ vi.mock('../src/firebase.js', () => ({
 vi.mock('../src/ui.js', () => ({ showToast: vi.fn(), pColor: vi.fn() }));
 vi.mock('../src/undo.js', () => ({ pushUndo: vi.fn() }));
 
-import { writeState, patchSubtask, patchMember, removeTask } from '../src/firebase.js';
+import { writeState, patchSubtask, patchRoot, patchMember, removeTask } from '../src/firebase.js';
 import { showToast } from '../src/ui.js';
 import { addSubtask, removeSubtask, toggleSubtask, claimTask, initDragDrop } from '../src/tasks.js';
 import { removeMember, toggleRole } from '../src/members.js';
@@ -42,8 +42,9 @@ describe('subtasks', () => {
     expect(writeState).not.toHaveBeenCalled();
     expect(Object.keys(state.tasks.t1.subtasks)).toEqual(['s1']);
     await addSubtask('t1', admin);
-    expect(writeState).toHaveBeenCalledTimes(1);
+    expect(patchSubtask).toHaveBeenCalledTimes(1);
     await removeSubtask('t1', 's1', admin);
+    expect(patchRoot).toHaveBeenCalledWith({ 'tasks/t1/subtasks/s1': null });
     expect(state.tasks.t1.subtasks.s1).toBeUndefined();
   });
   it('toggleSubtask stays allowed for members', async () => {
