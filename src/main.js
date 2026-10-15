@@ -62,6 +62,7 @@ if (READONLY) {
 
 import { initTvMode } from './tv.js';
 import { registerServiceWorker } from './pwa.js';
+import { openHistory, setHistoryFilter } from './history.js';
 registerServiceWorker();
 initTvMode();
 
@@ -226,6 +227,10 @@ window.setLbTab        = (tab,btn)=> setLbTab(tab, btn);
 window.openStats     = ()         => openStats();
 window.setStatsTab   = (tab,btn)  => setStatsTab(tab, btn);
 window.exportCSV     = (f,t)      => exportCSV(f, t);
+
+// Activity history (read-only)
+window.openHistory      = ()      => openHistory();
+window.setHistoryFilter = m       => setHistoryFilter(m);
 
 // Templates
 window.openTemplates  = ()        => openTemplates();
