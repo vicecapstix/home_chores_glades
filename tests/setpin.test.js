@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { state } from '../src/state.js';
 
 let admin = true;
@@ -14,6 +14,7 @@ beforeEach(() => {
   state.members = { Alice: { name: 'Alice', role: 'member' } };
   document.body.innerHTML = '<div id="setpin-modal" class="hidden"><span id="setpin-title"></span><div id="setpin-error"></div><div id="setpin-dots">' + DOTS + '</div></div><div id="toast"></div>';
 });
+afterEach(() => ui.closeSetPin()); // isolation: module-level target/buffer must not leak between tests
 const type = async code => { for (const d of code) await ui.setPinKey(d); };
 
 describe('setPinKey', () => {

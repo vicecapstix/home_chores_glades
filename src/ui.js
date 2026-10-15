@@ -305,19 +305,26 @@ export function closeSetPin() {
 }
 
 export async function setPinKey(digit) {
+  if (READONLY || !isAdmin()) return;
   if (_setPinBuffer.length >= 4) return;
   _setPinBuffer += digit;
   document.querySelectorAll('#setpin-dots .pin-dot').forEach((d, i) => {
     d.classList.toggle('filled', i < _setPinBuffer.length);
   });
   if (_setPinBuffer.length === 4) {
+    const target = _setPinTarget; // capture: closeSetPin() clears it
     const hash = await sha256(_setPinBuffer);
     _setPinBuffer = '';
+    document.querySelectorAll('#setpin-dots .pin-dot').forEach(d => d.classList.remove('filled'));
+    if (!target || !state.members[target]) {
+      document.getElementById('setpin-error').textContent = 'Member not found';
+      return;
+    }
     const { patchMember } = await import('./firebase.js');
     try {
-      await patchMember(_setPinTarget, { pinHash: hash });
+      await patchMember(target, { pinHash: hash });
       closeSetPin();
-      showToast('PIN saved for ' + _setPinTarget);
+      showToast('PIN saved for ' + target);
     } catch (err) {
       document.getElementById('setpin-error').textContent = 'Save failed: ' + (err.code || err.message);
     }
