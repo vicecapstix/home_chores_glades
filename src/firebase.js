@@ -43,6 +43,7 @@ export async function writeState() {
       history:   state.history.length                ? state.history   : null,
       nextId:    state.nextId,
       templates: Object.keys(state.templates || {}).length ? state.templates : null,
+      rewards:   Object.keys(state.rewards   || {}).length ? state.rewards   : null,
     });
   } catch (err) {
     throw err; // callers handle with showToast

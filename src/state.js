@@ -6,6 +6,7 @@ export const state = {
   history:   [],
   nextId:    1,
   templates: {},
+  rewards:   {},
 };
 
 // Derived convenience accessor — always computed fresh from state.members
@@ -20,6 +21,7 @@ export function applySnapshot(val) {
   state.history   = val.history   || [];
   state.nextId    = val.nextId    || 1;
   state.templates = val.templates || {};
+  state.rewards   = val.rewards   || {};
 }
 
 // Migrate legacy members array ["Alice","Bob"] → object format

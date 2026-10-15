@@ -236,6 +236,7 @@ body[data-readonly] #tv-synced { display: block; }
 /* MODALS — shared overlay pattern */
 #leaderboard-modal,
 #history-modal,
+#rewards-modal,
 #stats-modal,
 #summary-modal,
 #templates-modal,
@@ -243,6 +244,7 @@ body[data-readonly] #tv-synced { display: block; }
 #admin-panel-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; z-index: 998; }
 #leaderboard-modal.hidden,
 #history-modal.hidden,
+#rewards-modal.hidden,
 #stats-modal.hidden,
 #summary-modal.hidden,
 #templates-modal.hidden,
@@ -258,6 +260,21 @@ body[data-readonly] #tv-synced { display: block; }
 .hist-task { flex: 1; min-width: 120px; font-size: 0.9rem; }
 .hist-when { font-size: 0.75rem; color: var(--muted); }
 .hist-pts { font-size: 0.8rem; font-weight: 600; color: var(--accent); }
+
+/* REWARDS CATALOG */
+.rewards-card { width: min(480px, 94vw); }
+.reward-row { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+.reward-row:last-child { border-bottom: none; }
+.reward-icon { font-size: 1.3rem; }
+.reward-name { flex: 1; min-width: 120px; font-size: 0.95rem; overflow-wrap: anywhere; }
+.reward-cost { font-size: 0.8rem; font-weight: 600; color: var(--accent); }
+.rewards-admin { display: flex; flex-wrap: wrap; gap: 8px; margin-top: var(--space-md); }
+.rewards-admin input { padding: 6px 8px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); font-family: inherit; font-size: 0.9rem; background: var(--bg); color: var(--text); }
+.rewards-admin #reward-name { flex: 1 1 140px; }
+.rewards-admin #reward-cost { width: 80px; }
+.rewards-admin #reward-icon { width: 56px; text-align: center; }
+body[data-role="member"] .rewards-admin { display: none !important; }
+.rewards-admin.hidden, #reward-cancel.hidden { display: none; }
 
 /* ADMIN BUTTON (visible only for admins) */
 #btn-admin { display: none; width: auto; padding: 0 10px; font-size: 0.85rem; gap: 4px; }
