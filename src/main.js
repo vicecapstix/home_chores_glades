@@ -63,6 +63,7 @@ if (READONLY) {
 import { initTvMode } from './tv.js';
 import { registerServiceWorker } from './pwa.js';
 import { openHistory, setHistoryFilter } from './history.js';
+import { requestReward } from './redemptions.js';
 import { openRewards, saveReward, editReward, deleteReward, cancelRewardEdit, refreshRewards } from './rewards.js';
 registerServiceWorker();
 initTvMode();
@@ -89,6 +90,7 @@ initModalBackButton();
       nextId:    val.nextId    || 1,
       templates: val.templates || {},
       rewards:   val.rewards   || {},
+      redemptions: val.redemptions || {},
     });
 
     checkTaskResets();
@@ -236,7 +238,8 @@ window.openHistory      = ()      => openHistory();
 window.setHistoryFilter = m       => setHistoryFilter(m);
 
 // Rewards catalog (everyone can browse; admin-only edits are guarded in rewards.js)
-window.openRewards       = ()     => openRewards(_isAdmin);
+window.openRewards       = ()     => openRewards(_isAdmin, _currentMember);
+window.requestReward     = id     => requestReward(id, _currentMember);
 window.saveReward        = ()     => saveReward(_isAdmin);
 window.editReward        = id     => editReward(id, _isAdmin);
 window.deleteReward      = id     => deleteReward(id, _isAdmin);

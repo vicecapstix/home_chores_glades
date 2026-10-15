@@ -7,6 +7,7 @@ export const state = {
   nextId:    1,
   templates: {},
   rewards:   {},
+  redemptions: {},
 };
 
 // Derived convenience accessor — always computed fresh from state.members
@@ -22,6 +23,7 @@ export function applySnapshot(val) {
   state.nextId    = val.nextId    || 1;
   state.templates = val.templates || {};
   state.rewards   = val.rewards   || {};
+  state.redemptions = val.redemptions || {};
 }
 
 // Migrate legacy members array ["Alice","Bob"] → object format
