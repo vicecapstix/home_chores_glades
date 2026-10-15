@@ -46,7 +46,7 @@ npm run build:pages  # build, then copy dist/index.html → ./index.html (the de
 npm run preview      # serve the built dist/ locally
 ```
 
-GitHub Pages is configured to serve from `main` / `/ (root)`. The deployed file is the **root `index.html`**; `dist/` is git-ignored. To deploy, run `npm run build:pages` and commit the updated root `index.html` (via a PR; merging deploys). CI (`.github/workflows/ci.yml`) runs tests + build on every PR and reports (non-blocking) when root `index.html` has drifted from `src/`.
+GitHub Pages is configured to serve from `main` / `/ (root)`. The deployed files are the **root** `index.html`, `sw.js`, `manifest.webmanifest` and the icons; `dist/` is git-ignored. Rule: every PR that changes `src/` must run `npm run build:pages` and commit the updated root files (merging deploys). CI (`.github/workflows/ci.yml`) runs tests + build on every PR and **fails** when any root deployed file has drifted from a fresh build.
 
 ## Key constants / configuration
 
