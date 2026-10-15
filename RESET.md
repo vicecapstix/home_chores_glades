@@ -1,109 +1,48 @@
-# Resetting FamilyFlow & Managing the Master PIN
+# Forgotten PINs & Resetting FamilyFlow
 
-## Overview
-
-FamilyFlow has a **6-digit master PIN** that gives emergency admin access without needing any member account. It is used to:
-
-- Bootstrap the site from scratch (add the first admin member)
-- Access the admin panel from any device if you forget your member PIN
+Login is **per member**: each member picks their name and, if one is set, enters their own 4-digit PIN. There is no house/master PIN any more (removed in #23). PINs are stored as SHA-256 hashes in `/state/members/<Name>/pinHash`; an empty `pinHash` means "no PIN" and the member just taps their name.
 
 ---
 
-## Default master PIN
+## I forgot my PIN
 
-The default master PIN shipped with this repository is **`000000`**.
+### Option 1 — another admin resets it (easiest)
 
-**Change this before sharing the URL with anyone** — see [Changing the master PIN](#changing-the-master-pin) below.
+1. The other admin logs in and opens **Admin Panel**.
+2. Find your name → **Set PIN** → enter a new 4-digit PIN.
 
----
+### Option 2 — you are the only admin (Firebase Console)
 
-## Resetting the site to default
+1. Open [Firebase Console](https://console.firebase.google.com/) → your project → **Realtime Database**.
+2. Go to `/state/members/<YourName>/pinHash`.
+3. Either set it to an empty string `""` (no PIN), or paste the hash of a new PIN (see below).
+4. Reload the site, tap your name, then use **Admin Panel → Set PIN** to choose a new PIN if you cleared it.
 
-Resetting wipes all members, tasks, and history from Firebase and returns the site to a blank state. The master PIN in the code is unaffected.
-
-### Via the Admin Panel (recommended)
-
-1. Open the site and log in as an **admin** member (or use the master PIN — see below).
-2. Click the **Admin** button in the header.
-3. Scroll to the bottom of the Admin Panel and click **Reset site to default**.
-4. Confirm the dialog.
-
-The page reloads and shows the login screen with no members.
-
-### Manual Firebase reset (if locked out)
-
-1. Go to [Firebase Console](https://console.firebase.google.com/) → your project → **Realtime Database**.
-2. Navigate to the `/state` node.
-3. Delete the entire `/state` node (hover → three-dot menu → **Delete**).
-4. Reload the site.
-
----
-
-## First login after a reset
-
-After a reset the site has no members. Use the master PIN to create the first admin account:
-
-1. On the login screen, click **🔑 Master PIN** (bottom of the card).
-2. Enter the 6-digit master PIN.
-3. A **"Welcome! Enter your name"** prompt appears — type the first admin's name and press **Next →**.
-4. A 4-digit PIN pad appears — set a personal PIN for that member.
-5. You are logged in automatically and the **Admin Panel** opens.
-
-All subsequent users can be added from the Admin Panel (Members section on the main screen or **+ Add** button).
-
----
-
-## Subsequent master PIN logins
-
-If the site already has members, the master PIN bypasses member selection:
-
-1. On the login screen, click **🔑 Master PIN**.
-2. Enter the 6-digit master PIN.
-3. You are logged in as the first admin member and the **Admin Panel** opens immediately.
-
----
-
-## Changing the master PIN
-
-The master PIN is stored as a SHA-256 hash in `index.html`. To change it:
-
-**Step 1 — Generate the hash of your new PIN.**
-
-Open a browser console (F12 → Console) on any page and run:
+To get the hash of a new 4-digit PIN, run this in a browser console (F12 → Console):
 
 ```js
-crypto.subtle.digest('SHA-256', new TextEncoder().encode('YOUR_NEW_PIN'))
-  .then(b => console.log(
-    Array.from(new Uint8Array(b))
-      .map(x => x.toString(16).padStart(2, '0'))
-      .join('')
-  ));
+crypto.subtle.digest('SHA-256', new TextEncoder().encode('1234'))
+  .then(b => Array.from(new Uint8Array(b)).map(x => x.toString(16).padStart(2, '0')).join(''))
+  .then(hash => console.log(hash));
 ```
 
-Replace `YOUR_NEW_PIN` with your chosen 6-digit number (e.g. `'482951'`). Copy the hex string that appears.
+Replace `1234` with the PIN you want and copy the printed hex string.
 
-**Step 2 — Update `index.html`.**
+---
 
-Find this line near the top of the `<script>` block (search for `CORRECT_HASH`):
+## Starting over (wipe everything)
 
-```js
-const CORRECT_HASH="91b4d142823f7d20c5f08df69122de43f35f057a988d9619f6d3138485c9a203",
-```
+This deletes all members, tasks and history. There is no in-app reset button.
 
-Replace the hash value with the one you copied. The line should look like:
+1. Firebase Console → **Realtime Database** → select the `/state` node → three-dot menu → **Delete**.
+2. Reload the site. With zero members the app is in setup mode: anyone can add the first member, who becomes the **admin**. Add yourself, then set a PIN from **Admin Panel → Set PIN**.
 
-```js
-const CORRECT_HASH="<your-new-hash>",
-```
-
-**Step 3 — Deploy.**
-
-Commit and push to `main`. GitHub Pages will serve the updated file.
+Note: Realtime Database rules must still allow `/state` writes and require `nextId` (see `CLAUDE.md`), so re-add a member/task after the wipe to recreate it.
 
 ---
 
 ## Security notes
 
-- The master PIN hash is visible in the page source. Use a PIN that is not reused elsewhere.
-- After first setup, admins should set personal 4-digit member PINs via the Admin Panel.
+- Client-side PINs are a convenience, not strong security: hashes are readable by anyone who can read the database.
+- Use a 4-digit PIN you don't reuse elsewhere.
 - For sensitive households, consider restricting Firebase rules to authenticated users.

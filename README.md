@@ -23,7 +23,7 @@ A real-time chore tracker for families — assign tasks, track progress, earn po
 - **Browser notifications** — get an alert when a chore goes overdue (requires permission)
 - **Bulk actions** — select multiple tasks to bulk-assign or bulk-delete
 - **Daily summary** — on first visit each day, shows what's overdue or due soon
-- **PIN protection** — 6-digit family PIN with lockout after 5 failed attempts
+- **PIN protection** — optional 4-digit PIN per member (see [RESET.md](RESET.md) if one is forgotten)
 - **Progress header** — live count of total, done, overdue, and completion %
 
 ## Setup
@@ -55,36 +55,9 @@ A real-time chore tracker for families — assign tasks, track progress, earn po
 2. Go to **Settings → Pages** and set source to `main` / `/ (root)`
 3. Your app will be live at `https://<username>.github.io/<repo>/`
 
-### 3. Changing the house PIN
+### 3. Setting per-member PINs
 
-The house PIN is a 6-digit code required to open the app. To set a new one, run this in your browser console (replace `123456` with your desired PIN):
-
-```js
-crypto.subtle.digest('SHA-256', new TextEncoder().encode('123456'))
-  .then(b => console.log(Array.from(new Uint8Array(b)).map(x => x.toString(16).padStart(2,'0')).join('')))
-```
-
-Then replace `CORRECT_HASH` in `index.html` (~line 502) with the output.
-
-### 4. Setting per-member PINs
-
-Each member can have their own 4-digit PIN. To set or update a member's PIN, open the app in your browser, open the developer console, and run:
-
-```js
-// Replace "Alice" and "1234" with the member name and desired PIN
-crypto.subtle.digest('SHA-256', new TextEncoder().encode('1234'))
-  .then(b => b = Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,'0')).join(''))
-  .then(hash => {
-    const { getDatabase, ref, update } = window.__firebaseDB || {};
-    // Or use the Firebase REST API:
-    fetch('<YOUR_DB_URL>/state/members/Alice.json', {
-      method: 'PATCH',
-      body: JSON.stringify({ pinHash: hash })
-    });
-  });
-```
-
-If a member has no PIN set (`pinHash` is empty), they can log in by just tapping their name.
+Each member can have an optional 4-digit PIN. An admin sets or changes it in the app: **Admin Panel → Set PIN** next to the member's name. If a member has no PIN set (`pinHash` is empty), they log in by just tapping their name. Forgotten PIN? See [RESET.md](RESET.md).
 
 ## Usage
 
