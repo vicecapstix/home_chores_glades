@@ -105,6 +105,27 @@
   </div>
 </div>
 
+<!-- REWARDS MODAL -->
+<div id="rewards-modal" class="hidden" role="dialog" aria-modal="true" aria-labelledby="rewards-title" onclick="window.closeModal('rewards-modal')">
+  <div class="lb-card rewards-card" onclick="event.stopPropagation()">
+    <div class="lb-header">
+      <span class="lb-title" id="rewards-title">🎁 Rewards</span>
+      <button class="lb-close" aria-label="Close" onclick="window.closeModal('rewards-modal')">×</button>
+    </div>
+    <div id="rewards-list"></div>
+    <form id="rewards-admin" class="rewards-admin hidden" onsubmit="event.preventDefault();window.saveReward()">
+      <label for="reward-name" class="sr-only">Reward name</label>
+      <input type="text" id="reward-name" placeholder="Reward name…" maxlength="40" />
+      <label for="reward-cost" class="sr-only">Cost in points</label>
+      <input type="number" id="reward-cost" placeholder="Points" min="1" max="999" inputmode="numeric" />
+      <label for="reward-icon" class="sr-only">Icon (emoji)</label>
+      <input type="text" id="reward-icon" placeholder="🎁" maxlength="4" />
+      <button type="submit" class="btn-sm btn-accent" id="reward-save">Add reward</button>
+      <button type="button" class="btn-sm hidden" id="reward-cancel" onclick="window.cancelRewardEdit()">Cancel</button>
+    </form>
+  </div>
+</div>
+
 <!-- LEADERBOARD MODAL -->
 <div id="leaderboard-modal" class="hidden" role="dialog" aria-modal="true" aria-labelledby="leaderboard-title" onclick="window.closeModal('leaderboard-modal')">
   <div class="lb-card" onclick="event.stopPropagation()">
@@ -176,6 +197,7 @@
   <button class="theme-toggle" onclick="window.toggleTheme()" title="Toggle dark mode" aria-label="Toggle dark mode" id="theme-btn">🌙</button>
   <button class="theme-toggle" onclick="window.openLeaderboard()" title="Leaderboard" aria-label="Leaderboard">🏆</button>
   <button class="theme-toggle" onclick="window.openHistory()" title="Activity" aria-label="Activity">🕘</button>
+  <button class="theme-toggle" onclick="window.openRewards()" title="Rewards" aria-label="Rewards">🎁</button>
   <button class="theme-toggle" onclick="window.openStats()" title="Stats" aria-label="Stats">📊</button>
   <button class="theme-toggle" onclick="window.openTemplates()" title="Templates" aria-label="Templates">📋</button>
   <button class="theme-toggle" id="btn-select" onclick="window.toggleSelectMode()" title="Select tasks" aria-label="Select tasks">Select</button>
