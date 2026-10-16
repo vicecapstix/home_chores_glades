@@ -292,49 +292,37 @@ export async function claimTask(id, currentMemberFn) {
   try { await patchTask(id, { person: member }); } catch (err) { showToast('Save failed: ' + (err.code || err.message)); }
 }
 
-// ── Drag-and-drop reorder ─────────────────────────────────────────────────────
+// ── Reorder (move up/down) ────────────────────────────────────────────────────
 
-export function initDragDrop(isAdminFn) {
-  let draggedId = null;
-  const taskList = document.getElementById('task-list');
+// Pure: given the ids of a section in display order, move `id` by `dir` (-1/+1)
+// with insert semantics. Returns { taskId: newOrder } for tasks that changed.
+export function moveOrders(peerIds, tasks, id, dir) {
+  const from = peerIds.indexOf(id), to = from + dir;
+  if (from < 0 || to < 0 || to >= peerIds.length) return {};
+  const vals = peerIds.map(x => tasks[x]?.order || 0).sort((a, b) => a - b);
+  const strict = vals.every((v, i) => i === 0 || v > vals[i - 1]);
+  const slots = strict ? vals : vals.map((_, i) => vals[0] + i);
+  const next = peerIds.slice();
+  next.splice(to, 0, next.splice(from, 1)[0]);
+  const out = {};
+  next.forEach((x, i) => { if ((tasks[x]?.order || 0) !== slots[i]) out[x] = slots[i]; });
+  return out;
+}
 
-  taskList.addEventListener('dragstart', e => {
-    const card = e.target.closest('.task-card');
-    if (!card) return;
-    if (READONLY || !isAdminFn()) { e.preventDefault(); return; }
-    draggedId = card.dataset.id;
-    card.classList.add('dragging');
-    e.dataTransfer.effectAllowed = 'move';
-  });
-  taskList.addEventListener('dragend', e => {
-    e.target.closest('.task-card')?.classList.remove('dragging');
-    draggedId = null;
-    taskList.querySelectorAll('.drag-over').forEach(c => c.classList.remove('drag-over'));
-  });
-  taskList.addEventListener('dragover', e => {
-    e.preventDefault();
-    const card = e.target.closest('.task-card');
-    if (!card || card.dataset.id === draggedId) return;
-    taskList.querySelectorAll('.drag-over').forEach(c => c.classList.remove('drag-over'));
-    card.classList.add('drag-over');
-  });
-  taskList.addEventListener('dragleave', e => {
-    e.target.closest('.task-card')?.classList.remove('drag-over');
-  });
-  taskList.addEventListener('drop', async e => {
-    e.preventDefault();
-    taskList.querySelectorAll('.drag-over').forEach(c => c.classList.remove('drag-over'));
-    if (READONLY || !isAdminFn()) return;
-    const card = e.target.closest('.task-card');
-    if (!card || !draggedId) return;
-    const targetId = card.dataset.id;
-    if (targetId === draggedId) return;
-    const a = state.tasks[draggedId], b = state.tasks[targetId];
-    if (!a || !b) return;
-    const tmp = a.order || 0;
-    a.order = b.order || 0;
-    b.order = tmp;
-    draggedId = null;
-    try { await writeState(); } catch (err) { showToast('Save error: ' + (err.code || err.message)); }
-  });
+export async function moveTask(id, dir, isAdminFn) {
+  if (READONLY || !isAdminFn()) return;
+  if (dir !== -1 && dir !== 1) return;
+  const card = document.getElementById('tc-' + id);
+  const section = card?.closest('.section');
+  if (!section || !state.tasks[id]) return;
+  const peers = [...section.querySelectorAll('.task-card')].map(c => c.dataset.id).filter(x => state.tasks[x]);
+  const changes = moveOrders(peers, state.tasks, id, dir);
+  const ids = Object.keys(changes);
+  if (!ids.length) return;
+  const fields = {};
+  ids.forEach(x => { fields['tasks/' + x + '/order'] = changes[x]; });
+  try {
+    await patchRoot(fields);
+    ids.forEach(x => { state.tasks[x].order = changes[x]; });
+  } catch (err) { showToast('Reorder failed: ' + (err.code || err.message)); }
 }

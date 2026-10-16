@@ -30,7 +30,7 @@ import {
   addTask, editTask, saveTask,
   toggleTask, deleteTask,
   toggleSubtasks, toggleSubtask, addSubtask, removeSubtask,
-  claimTask, initDragDrop,
+  claimTask, moveTask,
 } from './tasks.js';
 
 import { addMember, removeMember, toggleRole } from './members.js';
@@ -135,7 +135,6 @@ document.addEventListener('keydown', e => {
 });
 window.addEventListener('fc:setfilter', e => setFilter(e.detail));
 
-initDragDrop(_isAdmin);
 
 // ── window handlers (called from inline onclick in HTML strings) ───────────────
 
@@ -166,6 +165,11 @@ window.cancelEdit    = function(id) {
 };
 window.toggleTask    = id         => toggleTask(id, _currentMember, _isAdmin);
 window.deleteTask    = id         => deleteTask(id, _isAdmin);
+window.moveTask      = (id, dir)  => moveTask(id, dir, _isAdmin);
+window.toggleReorder = ()         => {
+  const on = document.body.toggleAttribute('data-reorder');
+  document.getElementById('btn-reorder')?.setAttribute('aria-pressed', String(on));
+};
 window.toggleSubtasks = id        => toggleSubtasks(id);
 window.toggleSubtask  = (tid,sid) => toggleSubtask(tid, sid);
 window.addSubtask     = id        => addSubtask(id, _isAdmin);

@@ -14,7 +14,7 @@ vi.mock('../src/undo.js', () => ({ pushUndo: vi.fn() }));
 
 import { writeState, patchSubtask, patchRoot, patchMember, removeTask } from '../src/firebase.js';
 import { showToast } from '../src/ui.js';
-import { addSubtask, removeSubtask, toggleSubtask, claimTask, initDragDrop } from '../src/tasks.js';
+import { addSubtask, removeSubtask, toggleSubtask, claimTask, moveTask } from '../src/tasks.js';
 import { removeMember, toggleRole } from '../src/members.js';
 import { initRender, bulkAssign, bulkDelete, toggleSelect, toggleSelectMode } from '../src/render.js';
 
@@ -83,25 +83,14 @@ describe('bulk actions', () => {
   });
 });
 
-describe('drag-drop reorder', () => {
-  function drag(from, to) {
-    const ev = (type, el) => { const e = new Event(type, { bubbles: true, cancelable: true }); e.dataTransfer = {}; el.dispatchEvent(e); };
-    const cards = document.querySelectorAll('.task-card');
-    ev('dragstart', cards[from]); ev('drop', cards[to]);
-  }
-  it('is ignored for non-admins', async () => {
-    initDragDrop(notAdmin);
-    drag(0, 1);
-    await Promise.resolve();
+describe('reorder', () => {
+  it('moveTask is ignored for non-admins', async () => {
+    document.getElementById('task-list').innerHTML =
+      '<div class="section"><div class="task-card" data-id="t1" id="tc-t1"></div><div class="task-card" data-id="t2" id="tc-t2"></div></div>';
+    await moveTask('t1', 1, notAdmin);
     expect(state.tasks.t1.order).toBe(1);
+    expect(patchRoot).not.toHaveBeenCalled();
     expect(writeState).not.toHaveBeenCalled();
-  });
-  it('swaps order for admins', async () => {
-    initDragDrop(admin);
-    drag(0, 1);
-    await Promise.resolve();
-    expect(state.tasks.t1.order).toBe(2);
-    expect(state.tasks.t2.order).toBe(1);
   });
 });
 
