@@ -64,7 +64,7 @@ describe('task cards escape DB-sourced values', () => {
     wrap.innerHTML = cardHTML(t);
     expect(wrap.querySelector('img, svg[onload]')).toBeNull();
     wrap.querySelectorAll('[onclick]').forEach(el => {
-      const calls = runHandler(el.getAttribute('onclick'), ['claimTask', 'toggleTask', 'editTask', 'deleteTask', 'toggleSubtasks', 'toggleSubtask', 'removeSubtask', 'addSubtask', 'toggleSelect']);
+      const calls = runHandler(el.getAttribute('onclick'), ['claimTask', 'toggleTask', 'editTask', 'deleteTask', 'toggleSubtasks', 'toggleSubtask', 'removeSubtask', 'addSubtask', 'toggleSelect', 'moveTask']);
       calls.forEach(c => expect(c[1]).toBe("t1');alert(1);('"));
     });
     expect(wrap.querySelector('[data-id]').getAttribute('data-id')).toBe(t.id);
