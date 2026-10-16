@@ -152,9 +152,11 @@ export async function toggleTask(id, currentMemberFn, isAdminFn) {
     return;
   }
   const done = !t.done;
+  // 'Anyone' tasks credit the logged-in member who ticks them (if they exist).
+  const awardee = t.person || (me && state.members[me] ? me : '');
   const taskUpdate = { done, lastDone: done ? Date.now() : t.lastDone };
-  if (done && t.person) {
-    taskUpdate.lastDoneBy     = t.person;
+  if (done && awardee) {
+    taskUpdate.lastDoneBy     = awardee;
     taskUpdate.lastDonePoints = taskPoints(t);
   } else if (!done) {
     taskUpdate.lastDoneBy     = null;
@@ -181,8 +183,8 @@ export async function toggleTask(id, currentMemberFn, isAdminFn) {
     }
   }
   // Award points when checking
-  if (done && t.person) {
-    const m = state.members[t.person];
+  if (done && awardee) {
+    const m = state.members[awardee];
     if (!m) return;
     const pts       = taskPoints(t);
     const today     = new Date().toISOString().slice(0, 10);
@@ -204,14 +206,14 @@ export async function toggleTask(id, currentMemberFn, isAdminFn) {
     };
     if (newBadgeIds.length) memberUpdate.badges = [...currentBadges, ...newBadgeIds];
     try {
-      await patchMember(t.person, memberUpdate);
+      await patchMember(awardee, memberUpdate);
       newBadgeIds.forEach(bid => {
         const b = BADGES.find(b => b.id === bid);
         if (b) showToast(b.icon + ' Badge earned: ' + b.label + '!');
       });
     } catch (err) { showToast('Member update failed: ' + (err.code || err.message)); }
     // History
-    const histEntry  = { taskId: id, taskName: t.name, person: t.person, completedAt: Date.now(), points: taskPoints(t) };
+    const histEntry  = { taskId: id, taskName: t.name, person: awardee, completedAt: Date.now(), points: taskPoints(t) };
     const newHistory = (state.history || []).concat([histEntry]).slice(-500);
     try {
       await patchRoot({ history: newHistory });
