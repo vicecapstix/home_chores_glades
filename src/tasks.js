@@ -3,7 +3,7 @@ import { READONLY, BADGES, CATEGORIES } from './config.js';
 import { writeState, patchTask, patchMember, patchRoot, removeTask, restoreTask, patchSubtask } from './firebase.js';
 import { showToast } from './ui.js';
 import { pushUndo } from './undo.js';
-import { esc, jsq, freqDays, dueStatus, taskPoints, getWeekStart, localDateStr, prevScheduledStart, initialLastDone, DAY_NAMES } from './utils.js';
+import { esc, jsq, validTime, freqDays, dueStatus, taskPoints, getWeekStart, localDateStr, prevScheduledStart, initialLastDone, DAY_NAMES } from './utils.js';
 
 // Re-export for other modules
 export { dueStatus, taskPoints, freqDays };
@@ -60,6 +60,7 @@ export async function addTask(isAdminFn) {
   const dueDate = freq === 'once' ? document.getElementById('new-duedate').value : '';
   const days    = freq === 'weekdays' ? readDays(document.getElementById('new-days')) : [];
   if (freq === 'weekdays' && !days.length) { showToast('Pick at least one day'); return; }
+  const dueTime = validTime(document.getElementById('new-duetime')?.value);
   const notesEl = document.getElementById('new-notes');
   const notes   = notesEl.value.trim();
   const id      = 't' + Date.now();
@@ -68,11 +69,12 @@ export async function addTask(isAdminFn) {
     done: false, lastDone: initialLastDone(freq),
     ...(freq === 'weekdays' ? { days } : {}),
     notes: notes || '', difficulty: diff, category: cat || '',
-    dueDate: dueDate || '', subtasks: {}, order: Date.now(),
+    dueDate: dueDate || '', ...(dueTime ? { dueTime } : {}), subtasks: {}, order: Date.now(),
   };
   state.nextId++;
   document.getElementById('new-task').value = '';
   document.getElementById('new-duedate').value = '';
+  if (document.getElementById('new-duetime')) document.getElementById('new-duetime').value = '';
   document.getElementById('new-duedate').style.display = 'none';
   document.getElementById('new-freq').value = 'weekly';
   document.getElementById('new-days').classList.add('hidden');
@@ -107,6 +109,7 @@ export function editTask(id) {
     '<div class="edit-row">' +
       '<select class="edit-freq" onchange="this.closest(\'.task-card\').querySelector(\'.edit-duedate\').style.display=this.value===\'once\'?\'\':\'none\';this.closest(\'.task-card\').querySelector(\'.edit-days\').classList.toggle(\'hidden\',this.value!==\'weekdays\')">' + freqOpts + '</select>' +
       '<input type="date" class="edit-duedate" value="' + esc(t.dueDate || '') + '" style="flex:1;padding:6px 8px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:0.85rem;font-family:inherit;background:var(--bg);color:var(--text);display:' + (t.freq === 'once' ? '' : 'none') + '" />' +
+      '<input type="time" class="edit-duetime" aria-label="Due time" value="' + esc(validTime(t.dueTime)) + '" />' +
       '<select class="edit-diff">' + diffOpts + '</select>' +
       '<select class="edit-cat">' + catOpts + '</select>' +
       '<select class="edit-person">' + personOpts + '</select>' +
@@ -135,6 +138,8 @@ export async function saveTask(id, isAdminFn) {
   state.tasks[id].freq       = newFreq;
   if (newFreq === 'weekdays') state.tasks[id].days = days; else delete state.tasks[id].days;
   state.tasks[id].dueDate    = card.querySelector('.edit-freq').value === 'once' ? (card.querySelector('.edit-duedate').value || '') : '';
+  const dt = validTime(card.querySelector('.edit-duetime')?.value);
+  if (dt) state.tasks[id].dueTime = dt; else delete state.tasks[id].dueTime;
   state.tasks[id].difficulty = card.querySelector('.edit-diff').value;
   state.tasks[id].category   = card.querySelector('.edit-cat').value;
   state.tasks[id].person     = card.querySelector('.edit-person').value;
