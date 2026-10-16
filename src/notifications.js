@@ -1,5 +1,5 @@
 import { state } from './state.js';
-import { dueStatus } from './utils.js';
+import { dueStatus, localDateStr } from './utils.js';
 
 let _notifiedIds = new Set();
 let _started = false;
@@ -46,7 +46,7 @@ function scheduleOverdueCheck() {
 }
 
 export function runOverdueCheck() {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = localDateStr();
   try {
     if (localStorage.getItem('fc_last_notify_date') !== today) {
       _notifiedIds = new Set();

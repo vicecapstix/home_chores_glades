@@ -51,11 +51,21 @@ export function daysSince(ts) {
   return Math.floor((Date.now() - ts) / 86400000);
 }
 
+// YYYY-MM-DD in the device's local time zone (toISOString would be UTC).
+export function localDateStr(d = new Date()) {
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+
 export function getWeekStart() {
   const d = new Date();
   const day = d.getDay();
   d.setDate(d.getDate() - (day === 0 ? 6 : day - 1));
-  return d.toISOString().slice(0, 10);
+  return localDateStr(d);
+}
+
+// Points earned this week; stale (previous-week) totals count as 0.
+export function currentWeekPoints(m) {
+  return m && m.weekStart === getWeekStart() ? (m.weekPoints || 0) : 0;
 }
 
 export function taskPoints(t) {
@@ -68,8 +78,10 @@ export function dueStatus(t) {
   if (t.done) return 'done';
   if (t.freq === 'once') {
     if (!t.dueDate) return 'ok';
-    const today = new Date().toISOString().slice(0, 10);
-    const soon  = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+    const d = new Date();
+    const today = localDateStr(d);
+    d.setDate(d.getDate() + 1);
+    const soon = localDateStr(d);
     if (t.dueDate < today) return 'overdue';
     if (t.dueDate <= soon) return 'soon';
     return 'ok';

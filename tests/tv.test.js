@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { state } from '../src/state.js';
+import { getWeekStart } from '../src/utils.js';
 import { applyTvMode, formatClock, updateClock, tvStripHTML, requestWakeLock } from '../src/tv.js';
 
 const src = f => readFileSync(resolve(__dirname, '../src', f), 'utf8');
@@ -9,10 +10,11 @@ const src = f => readFileSync(resolve(__dirname, '../src', f), 'utf8');
 beforeEach(() => {
   document.body.className = '';
   document.body.innerHTML = '<div id="tv-clock"></div><div id="tv-strip"></div>';
+  const weekStart = getWeekStart();
   state.members = {
-    Ann: { name: 'Ann', weekPoints: 5, streak: 0 },
-    Bo: { name: 'Bo', weekPoints: 12, streak: 3 },
-    '<b>X</b>': { name: '<b>X</b>', weekPoints: 1 },
+    Ann: { name: 'Ann', weekPoints: 5, weekStart, streak: 0 },
+    Bo: { name: 'Bo', weekPoints: 12, weekStart, streak: 3 },
+    '<b>X</b>': { name: '<b>X</b>', weekPoints: 1, weekStart },
   };
 });
 
