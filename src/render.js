@@ -231,7 +231,7 @@ function _renderTasks() {
   else if (filter === 'done') tasks = tasks.filter(t => t.done);
   if (filterCat) tasks = tasks.filter(t => t.category === filterCat);
 
-  const available = tasks.filter(t => !t.done && !t.person);
+  const available = tasks.filter(t => !t.done && !t.person).sort((a, b) => (a.order || 0) - (b.order || 0));
   const rest      = tasks.filter(t => t.done || t.person);
   const statusOrder = { overdue: 0, soon: 1, ok: 2, done: 3 };
   rest.sort((a, b) => {
@@ -319,7 +319,7 @@ export function cardHTML(t) {
         '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><polyline points="2,6 5,9 10,3" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
       '</div>';
 
-  return '<div class="' + cardClass + '" id="tc-' + esc(t.id) + '" draggable="' + (!selectMode) + '" data-id="' + esc(t.id) + '"' + cardClick + '>' +
+  return '<div class="' + cardClass + '" id="tc-' + esc(t.id) + '" data-id="' + esc(t.id) + '"' + cardClick + '>' +
     '<div class="card-main">' +
       checkEl +
       '<div class="card-info">' +
@@ -328,6 +328,10 @@ export function cardHTML(t) {
       '</div>' +
       '<div class="task-meta">' + dueTag + diffTag + freqTag + catTag + personTag + '</div>' +
       chevronBtn +
+      '<span class="move-btns">' +
+        '<button class="move-btn" aria-label="Move ' + esc(t.name) + ' up" onclick="event.stopPropagation();window.moveTask(\'' + jsq(t.id) + '\',-1)">▲</button>' +
+        '<button class="move-btn" aria-label="Move ' + esc(t.name) + ' down" onclick="event.stopPropagation();window.moveTask(\'' + jsq(t.id) + '\',1)">▼</button>' +
+      '</span>' +
       '<button class="edit-btn" onclick="window.editTask(\'' + jsq(t.id) + '\')" title="Edit">✎</button>' +
       '<button class="del" onclick="window.deleteTask(\'' + jsq(t.id) + '\')" title="Remove">×</button>' +
     '</div>' +
