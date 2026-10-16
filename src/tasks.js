@@ -129,6 +129,8 @@ export async function saveTask(id, isAdminFn) {
   const newFreq = card.querySelector('.edit-freq').value;
   const days = newFreq === 'weekdays' ? readDays(card.querySelector('.edit-days')) : [];
   if (newFreq === 'weekdays' && !days.length) { showToast('Pick at least one day'); return; }
+  card.classList.remove('editing');
+  document.activeElement?.blur?.();
   state.tasks[id].name       = name;
   state.tasks[id].freq       = newFreq;
   if (newFreq === 'weekdays') state.tasks[id].days = days; else delete state.tasks[id].days;

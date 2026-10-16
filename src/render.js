@@ -261,8 +261,42 @@ function _renderTasks() {
   }
   if (!html) html = '<div class="empty">Nothing here — all clear!</div>';
   const taskList = document.getElementById('task-list');
+  const kept = _captureInProgress(taskList);
   taskList.innerHTML = html;
+  _restoreInProgress(taskList, kept);
   taskList.classList.toggle('select-mode', selectMode);
+}
+
+// ── Keep in-progress edits across re-renders (#34) ───────────────────────────
+
+// Remember cards being edited / typed into, expanded subtask lists and typed subtask text.
+function _captureInProgress(list) {
+  const active = document.activeElement;
+  const typing = active && list.contains(active) && /^(INPUT|TEXTAREA|SELECT)$/.test(active.tagName) ? active : null;
+  const nodes = [...list.querySelectorAll('.task-card')].filter(c => c.classList.contains('editing') || (typing && c.contains(typing)));
+  const caret = typing && typeof typing.selectionStart === 'number' ? [typing.selectionStart, typing.selectionEnd] : null;
+  return {
+    nodes, typing, caret,
+    open: [...list.querySelectorAll('.task-card')].filter(c => c.querySelector('.subtask-list.open')).map(c => c.dataset.id),
+    typed: [...list.querySelectorAll('.task-card')]
+      .map(c => [c.dataset.id, c.querySelector('.subtask-add input')])
+      .filter(([, i]) => i && i.value).map(([id, i]) => [id, i.value]),
+  };
+}
+
+function _restoreInProgress(list, kept) {
+  const byId = id => [...list.querySelectorAll('.task-card')].find(c => c.dataset.id === id);
+  kept.nodes.forEach(old => { const fresh = byId(old.dataset.id); if (fresh) fresh.replaceWith(old); });
+  kept.open.forEach(id => {
+    const c = byId(id);
+    c?.querySelector('.subtask-toggle')?.classList.add('open');
+    c?.querySelector('.subtask-list')?.classList.add('open');
+  });
+  kept.typed.forEach(([id, v]) => { const i = byId(id)?.querySelector('.subtask-add input'); if (i && !i.value) i.value = v; });
+  if (kept.typing && list.contains(kept.typing)) {
+    kept.typing.focus();
+    if (kept.caret) { try { kept.typing.setSelectionRange(kept.caret[0], kept.caret[1]); } catch (e) { /* non-text input */ } }
+  }
 }
 
 // ── Card HTML ─────────────────────────────────────────────────────────────────
