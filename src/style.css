@@ -426,3 +426,4 @@ body[data-role="admin"] #btn-admin { display: flex; }
   body[data-readonly] .section[data-k="available"] { grid-column: 1 / -1; grid-row: 2; }
   body[data-readonly] .section[data-k="ok"] { grid-column: 1 / -1; grid-row: 3; }
 }
+.edit-duetime { padding: 6px 8px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); font-size: 0.85rem; font-family: inherit; background: var(--bg); color: var(--text); }
