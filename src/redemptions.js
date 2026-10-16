@@ -1,16 +1,25 @@
 import { state } from './state.js';
 import { READONLY } from './config.js';
-import { patchRoot, spendPoints, refundPoints } from './firebase.js';
+import { patchRoot, spendPoints, refundPoints, decideRedemption } from './firebase.js';
 import { showToast } from './ui.js';
 import { pushUndo } from './undo.js';
 
 export const MAX_REDEMPTIONS = 100;
 let busy = false;
+let deciding = false;
 
 export function pendingFor(member) {
   return Object.values(state.redemptions || {})
     .filter(r => r && r.status === 'pending' && (!member || r.member === member))
     .sort((a, b) => b.requestedAt - a.requestedAt);
+}
+
+// Newest-first decided (approved/denied) requests for a member.
+export function decidedFor(member, limit = 5) {
+  return Object.values(state.redemptions || {})
+    .filter(r => r && (r.status === 'approved' || r.status === 'denied') && r.member === member)
+    .sort((a, b) => (b.decidedAt || 0) - (a.decidedAt || 0))
+    .slice(0, limit);
 }
 
 // Ids to drop (oldest non-pending first) so one more entry fits under the cap.
@@ -65,4 +74,25 @@ export async function requestReward(rewardId, currentMemberFn) {
       },
     });
   } finally { busy = false; }
+}
+
+// Admin approves or denies a pending request. Deny refunds the points.
+export async function decideRequest(id, status, isAdminFn, currentMemberFn) {
+  if (READONLY || !isAdminFn()) return;
+  if (status !== 'approved' && status !== 'denied') return;
+  const r = state.redemptions?.[id];
+  if (!r || r.status !== 'pending' || deciding) return;
+  deciding = true;
+  try {
+    let ok;
+    try { ok = await decideRedemption(id, status, currentMemberFn() || 'admin'); }
+    catch (err) { showToast('Update failed: ' + (err.code || err.message)); return; }
+    if (!ok) { showToast('Already decided'); return; }
+    r.status = status; r.decidedAt = Date.now(); r.decidedBy = currentMemberFn() || 'admin';
+    if (status === 'denied' && state.members[r.member]) {
+      try { await refundPoints(r.member, r.cost); }
+      catch (err) { showToast('Denied, but refund failed for ' + r.member + ' (' + r.cost + ' pts) — add manually'); return; }
+    }
+    showToast((status === 'approved' ? 'Approved ' : 'Denied ') + r.rewardName);
+  } finally { deciding = false; }
 }

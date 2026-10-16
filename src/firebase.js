@@ -89,6 +89,15 @@ export async function spendPoints(name, cost) {
   return !!res.committed;
 }
 
+// Atomically move a pending redemption to approved/denied. Returns false if it
+// no longer exists or was already decided (so a request is decided only once).
+export async function decideRedemption(id, status, by) {
+  if (READONLY || !_db) return false;
+  const res = await runTransaction(ref(_db, 'state/redemptions/' + id),
+    cur => (cur && cur.status === 'pending' ? { ...cur, status, decidedAt: Date.now(), decidedBy: by } : undefined));
+  return !!res.committed;
+}
+
 export async function refundPoints(name, cost) {
   if (READONLY || !_db) return;
   await runTransaction(ref(_db, 'state/members/' + name + '/points'), cur => (cur || 0) + cost);

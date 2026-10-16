@@ -271,6 +271,11 @@ body[data-readonly] #tv-synced { display: block; }
 .reward-pts { font-size: 0.85rem; font-weight: 600; margin-top: var(--space-md); }
 .reward-pending-h { font-size: 0.8rem; color: var(--muted); margin-top: var(--space-sm, 8px); }
 .reward-row .btn-sm:disabled { opacity: 0.45; cursor: not-allowed; }
+.rewards-badge { position: absolute; top: -6px; right: -6px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px; background: var(--accent); color: #fff; font-size: 0.65rem; font-weight: 700; line-height: 16px; text-align: center; }
+.rewards-badge.hidden { display: none; }
+.reward-status { font-size: 0.8rem; font-weight: 600; }
+.reward-status.approved { color: var(--ok, #2e7d32); }
+.reward-status.denied { color: var(--muted); }
 .rewards-admin { display: flex; flex-wrap: wrap; gap: 8px; margin-top: var(--space-md); }
 .rewards-admin input { padding: 6px 8px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); font-family: inherit; font-size: 0.9rem; background: var(--bg); color: var(--text); }
 .rewards-admin #reward-name { flex: 1 1 140px; }
