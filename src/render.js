@@ -1,7 +1,7 @@
 import { state, getMembers } from './state.js';
 import { PCOLS, BADGES, READONLY } from './config.js';
 import { renderTvStrip } from './tv.js';
-import { esc, jsq, dueStatus, freqLabel, isMine } from './utils.js';
+import { esc, jsq, validTime, dueStatus, freqLabel, isMine } from './utils.js';
 import { pColor } from './ui.js';
 
 // ── Session function references (set once via initRender) ─────────────────────
@@ -279,6 +279,7 @@ export function cardHTML(t) {
   const freqTag = t.freq === 'once'
     ? '<span class="tag tag-freq">📅 ' + esc(t.dueDate || 'One-off') + '</span>'
     : '<span class="tag tag-freq">' + esc(freqLabel(t)) + '</span>';
+  const timeTag = validTime(t.dueTime) ? '<span class="tag tag-freq">⏰ ' + esc(t.dueTime) + '</span>' : '';
   const catTag = t.category ? '<span class="tag tag-freq">' + esc(t.category) + '</span>' : '';
 
   const notesLine = t.notes
@@ -326,7 +327,7 @@ export function cardHTML(t) {
         '<span class="task-name">' + esc(t.name) + subsBadge + '</span>' +
         notesLine +
       '</div>' +
-      '<div class="task-meta">' + dueTag + diffTag + freqTag + catTag + personTag + '</div>' +
+      '<div class="task-meta">' + dueTag + diffTag + freqTag + timeTag + catTag + personTag + '</div>' +
       chevronBtn +
       '<span class="move-btns">' +
         '<button class="move-btn" aria-label="Move ' + esc(t.name) + ' up" onclick="event.stopPropagation();window.moveTask(\'' + jsq(t.id) + '\',-1)">▲</button>' +

@@ -74,7 +74,38 @@ export function taskPoints(t) {
   return base * mult;
 }
 
-export function dueStatus(t) {
+export const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
+export function validTime(v) { return TIME_RE.test(String(v || '')) ? String(v) : ''; }
+
+// Local timestamp of `HH:MM` on local date `YYYY-MM-DD`.
+function atTime(dateStr, hhmm) {
+  const [y, mo, d] = dateStr.split('-').map(Number);
+  const [h, m] = hhmm.split(':').map(Number);
+  return new Date(y, mo - 1, d, h, m, 0, 0).getTime();
+}
+
+// With a dueTime the deadline is a moment: overdue from then on, due soon in the 24h before.
+export function dueStatus(t, now = Date.now()) {
+  const s = baseStatus(t);
+  if (t.done || !validTime(t.dueTime) || s === 'done') return s;
+  if (t.freq === 'weekdays') {
+    // base 'soon' means a scheduled day that is today
+    return s === 'soon' && now >= atTime(localDateStr(new Date(now)), t.dueTime) ? 'overdue' : s;
+  }
+  let dueDate;
+  if (t.freq === 'once') {
+    if (!t.dueDate) return s;
+    dueDate = t.dueDate;
+  } else {
+    const d = new Date(t.lastDone || 0);
+    d.setDate(d.getDate() + freqDays(t.freq));
+    dueDate = localDateStr(d);
+  }
+  const due = atTime(dueDate, t.dueTime);
+  return now >= due ? 'overdue' : now >= due - 86400000 ? 'soon' : 'ok';
+}
+
+function baseStatus(t) {
   if (t.done) return 'done';
   if (t.freq === 'once') {
     if (!t.dueDate) return 'ok';
