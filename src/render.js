@@ -1,7 +1,7 @@
 import { state, getMembers } from './state.js';
 import { PCOLS, BADGES, READONLY } from './config.js';
 import { renderTvStrip } from './tv.js';
-import { esc, jsq, validTime, dueStatus, freqLabel, isMine } from './utils.js';
+import { esc, jsq, avatarPrefix, validTime, dueStatus, freqLabel, isMine } from './utils.js';
 import { pColor } from './ui.js';
 
 // ── Session function references (set once via initRender) ─────────────────────
@@ -160,7 +160,7 @@ function _renderMembers() {
       const b = BADGES.find(b => b.id === id); return b ? b.icon : '';
     }).join('');
     return '<span class="chip" data-member="' + esc(m) + '" style="background:' + c.bg + ';color:' + c.text + ';">' +
-      esc(m) +
+      esc(avatarPrefix(mem)) + esc(m) +
       ' <span style="opacity:0.55;font-size:0.75em">' + (mem.points || 0) + '</span>' +
       (streak >= 2 ? ' 🔥' + streak : '') +
       (badgeIcons ? ' ' + badgeIcons : '') +

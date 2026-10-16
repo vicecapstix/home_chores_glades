@@ -17,6 +17,13 @@ export async function sha256(str) {
   return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
+export const AVATARS = ['🦁', '🐯', '🐼', '🦊', '🐸', '🐵', '🐧', '🦄', '🐙', '🦖', '🐢', '🦋', '🚀', '⚽', '🎨', '🌈'];
+
+// '<emoji> ' for a member with a valid avatar, else '' (tampered DB values are never rendered).
+export function avatarPrefix(m) {
+  return m && AVATARS.includes(m.avatar) ? m.avatar + ' ' : '';
+}
+
 export const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 // Start (local midnight, ms) of the most recent selected weekday that has begun (today or earlier), or null.
