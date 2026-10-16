@@ -5,7 +5,7 @@ import { watchConnection, markSynced } from './connection.js';
 
 import { FB_URL, READONLY } from './config.js';
 import { state, getMembers, applySnapshot, migrateLegacyMembers } from './state.js';
-import { esc, jsq } from './utils.js';
+import { esc, jsq, avatarPrefix, AVATARS } from './utils.js';
 import { initFirebase, initAuth } from './firebase.js';
 import { initModalBackButton, closeModal } from './modals.js';
 import { popUndo } from './undo.js';
@@ -33,7 +33,7 @@ import {
   claimTask, moveTask,
 } from './tasks.js';
 
-import { addMember, removeMember, toggleRole } from './members.js';
+import { addMember, removeMember, toggleRole, setAvatar } from './members.js';
 
 import {
   initRender, render, cardHTML,
@@ -193,6 +193,7 @@ window.bulkDelete       = ()      => bulkDelete();
 window.addMember     = ()         => addMember(_isAdmin);
 window.removeMember  = name       => removeMember(name, _isAdmin);
 window.toggleRole    = name       => toggleRole(name, _isAdmin);
+window.setAvatar     = (name, a)  => setAvatar(name, a, _isAdmin);
 
 // Admin panel
 window.openAdminPanel = function() {
@@ -203,7 +204,11 @@ window.openAdminPanel = function() {
     const role = state.members[m]?.role || 'member';
     const isAdm = role === 'admin';
     return '<div class="admin-member-row">' +
-      '<span class="admin-member-name">' + esc(m) + '</span>' +
+      '<span class="admin-member-name">' + esc(avatarPrefix(state.members[m])) + esc(m) + '</span>' +
+      '<select class="admin-avatar" aria-label="Avatar for ' + esc(m) + '" onchange="window.setAvatar(\'' + jsq(m) + '\', this.value)">' +
+        '<option value="">No avatar</option>' +
+        AVATARS.map(a => '<option value="' + a + '"' + (state.members[m]?.avatar === a ? ' selected' : '') + '>' + a + '</option>').join('') +
+      '</select>' +
       '<span class="admin-member-role' + (isAdm ? ' is-admin' : '') + '">' + (isAdm ? '👑 Admin' : 'Member') + '</span>' +
       '<button class="btn-sm" onclick="window.toggleRole(\'' + jsq(m) + '\');window.openAdminPanel()">Toggle</button>' +
       '<button class="btn-sm" onclick="window.closeAdminPanel();window.openSetPin(\'' + jsq(m) + '\')">Set PIN</button>' +

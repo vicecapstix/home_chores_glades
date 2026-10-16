@@ -2,7 +2,7 @@ import { state, getMembers } from './state.js';
 import { PCOLS, BADGES, READONLY } from './config.js';
 import { openModal, closeModal } from './modals.js';
 import { writeState } from './firebase.js';
-import { esc, jsq, sha256, initialLastDone, dueStatus, localDateStr, currentWeekPoints } from './utils.js';
+import { esc, jsq, avatarPrefix, sha256, initialLastDone, dueStatus, localDateStr, currentWeekPoints } from './utils.js';
 import { isAdmin } from './auth.js';
 
 // ── pColor helper ─────────────────────────────────────────────────────────────
@@ -78,7 +78,7 @@ function renderLeaderboard() {
     }).join('');
     return '<div class="lb-row">' +
       '<span class="lb-rank">' + (i + 1) + '</span>' +
-      '<span class="lb-name" style="background:' + c.bg + ';color:' + c.text + ';">' + esc(m.name) + '</span>' +
+      '<span class="lb-name" style="background:' + c.bg + ';color:' + c.text + ';">' + esc(avatarPrefix(m)) + esc(m.name) + '</span>' +
       '<span class="lb-pts">' + pts + ' pts</span>' +
       (streak > 0 ? '<span class="lb-streak">🔥 ' + streak + '</span>' : '') +
       (badgeIcons ? '<span class="lb-badges">' + badgeIcons + '</span>' : '') +

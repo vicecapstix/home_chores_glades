@@ -2,7 +2,7 @@ import { state, getMembers } from './state.js';
 import { READONLY } from './config.js';
 import { writeState, patchMember } from './firebase.js';
 import { showToast } from './ui.js';
-import { getWeekStart } from './utils.js';
+import { getWeekStart, AVATARS } from './utils.js';
 
 export const MAX_MEMBER_NAME = 30;
 
@@ -46,6 +46,17 @@ export async function removeMember(name, isAdminFn) {
     await writeState();
   } catch (err) {
     showToast('Save failed: ' + (err.code || err.message));
+  }
+}
+
+export async function setAvatar(name, avatar, isAdminFn) {
+  if (READONLY || !isAdminFn()) return;
+  if (!state.members[name]) return;
+  if (avatar && !AVATARS.includes(avatar)) return;
+  try {
+    await patchMember(name, { avatar: avatar || null });
+  } catch (err) {
+    showToast('Update failed: ' + (err.code || err.message));
   }
 }
 
