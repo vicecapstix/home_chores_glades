@@ -4,6 +4,15 @@ import { writeState, patchMember } from './firebase.js';
 import { showToast } from './ui.js';
 import { getWeekStart } from './utils.js';
 
+export const MAX_MEMBER_NAME = 30;
+
+// Names are Firebase keys, so they can't contain . # $ [ ] /
+export function validateMemberName(name) {
+  if (/[.#$[\]/]/.test(name)) return "Names can't contain . # $ [ ] /";
+  if (name.length > MAX_MEMBER_NAME) return 'Name must be 1–' + MAX_MEMBER_NAME + ' characters';
+  return '';
+}
+
 // ── Add / Remove ──────────────────────────────────────────────────────────────
 
 export async function addMember(isAdminFn) {
@@ -11,6 +20,8 @@ export async function addMember(isAdminFn) {
   const inp  = document.getElementById('new-member');
   const name = inp.value.trim();
   if (!name || state.members[name]) return;
+  const nameError = validateMemberName(name);
+  if (nameError) { showToast(nameError); return; }
   const isFirst = Object.keys(state.members).length === 0;
   state.members[name] = {
     name, role: isFirst ? 'admin' : 'member',
