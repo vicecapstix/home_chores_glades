@@ -2,7 +2,7 @@ import { state, getMembers } from './state.js';
 import { PCOLS, BADGES, READONLY } from './config.js';
 import { openModal, closeModal } from './modals.js';
 import { writeState } from './firebase.js';
-import { esc, jsq, sha256, initialLastDone, dueStatus } from './utils.js';
+import { esc, jsq, sha256, initialLastDone, dueStatus, localDateStr, currentWeekPoints } from './utils.js';
 import { isAdmin } from './auth.js';
 
 // ── pColor helper ─────────────────────────────────────────────────────────────
@@ -65,14 +65,14 @@ export function setLbTab(tab, btn) {
 
 function renderLeaderboard() {
   const sorted = Object.values(state.members).slice().sort((a, b) => {
-    const va = lbTab === 'week' ? (a.weekPoints || 0) : (a.points || 0);
-    const vb = lbTab === 'week' ? (b.weekPoints || 0) : (b.points || 0);
+    const va = lbTab === 'week' ? currentWeekPoints(a) : (a.points || 0);
+    const vb = lbTab === 'week' ? currentWeekPoints(b) : (b.points || 0);
     return vb - va;
   });
   document.getElementById('lb-list').innerHTML = sorted.map((m, i) => {
     const c = pColor(m.name) || { bg: '#EEE', text: '#333' };
     const streak = m.streak || 0;
-    const pts = lbTab === 'week' ? (m.weekPoints || 0) : (m.points || 0);
+    const pts = lbTab === 'week' ? currentWeekPoints(m) : (m.points || 0);
     const badgeIcons = (m.badges || []).map(id => {
       const b = BADGES.find(b => b.id === id); return b ? b.icon : '';
     }).join('');
@@ -141,8 +141,8 @@ function renderStats() {
 }
 
 export function exportCSV(from, to) {
-  const fromTs = from ? new Date(from).getTime() : 0;
-  const toTs   = to   ? new Date(to).getTime() + 86399999 : Date.now();
+  const fromTs = from ? new Date(from + 'T00:00:00').getTime() : 0;
+  const toTs   = to   ? new Date(to + 'T00:00:00').getTime() + 86399999 : Date.now();
   const rows = (state.history || []).filter(e => e.completedAt >= fromTs && e.completedAt <= toTs);
   function csvField(s) {
     s = String(s);
@@ -239,7 +239,7 @@ export function deleteTemplate(id) {
 // ── Daily Summary ─────────────────────────────────────────────────────────────
 
 export function maybeShowDailySummary() {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = localDateStr();
   try {
     if (localStorage.getItem('fc_summary_date') === today) return;
     localStorage.setItem('fc_summary_date', today);

@@ -1,7 +1,7 @@
 // TV dashboard helpers for ?readonly=1 — display only, no Firebase access.
 import { state, getMembers } from './state.js';
 import { PCOLS, READONLY } from './config.js';
-import { esc } from './utils.js';
+import { esc, currentWeekPoints } from './utils.js';
 
 export function applyTvMode(readonly, body = document.body) {
   body.classList.toggle('tv', !!readonly);
@@ -24,12 +24,12 @@ export function updateClock(d = new Date()) {
 
 export function tvStripHTML(members = state.members) {
   const names = getMembers();
-  const sorted = Object.values(members).slice().sort((a, b) => (b.weekPoints || 0) - (a.weekPoints || 0));
+  const sorted = Object.values(members).slice().sort((a, b) => currentWeekPoints(b) - currentWeekPoints(a));
   return sorted.map(m => {
     const i = names.indexOf(m.name);
     const c = PCOLS[(i < 0 ? 0 : i) % PCOLS.length];
     return '<span class="tv-chip" style="background:' + c.bg + ';color:' + c.text + ';">' +
-      esc(m.name) + ' <b>' + (m.weekPoints || 0) + '</b> pts' +
+      esc(m.name) + ' <b>' + currentWeekPoints(m) + '</b> pts' +
       ((m.streak || 0) > 0 ? ' 🔥' + m.streak : '') + '</span>';
   }).join('');
 }

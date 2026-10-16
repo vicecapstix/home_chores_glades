@@ -3,7 +3,7 @@ import { READONLY, BADGES, CATEGORIES } from './config.js';
 import { writeState, patchTask, patchMember, patchRoot, removeTask, restoreTask, patchSubtask } from './firebase.js';
 import { showToast } from './ui.js';
 import { pushUndo } from './undo.js';
-import { esc, jsq, freqDays, dueStatus, taskPoints, getWeekStart, prevScheduledStart, initialLastDone, DAY_NAMES } from './utils.js';
+import { esc, jsq, freqDays, dueStatus, taskPoints, getWeekStart, localDateStr, prevScheduledStart, initialLastDone, DAY_NAMES } from './utils.js';
 
 // Re-export for other modules
 export { dueStatus, taskPoints, freqDays };
@@ -187,8 +187,9 @@ export async function toggleTask(id, currentMemberFn, isAdminFn) {
     const m = state.members[awardee];
     if (!m) return;
     const pts       = taskPoints(t);
-    const today     = new Date().toISOString().slice(0, 10);
-    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+    const today     = localDateStr();
+    const yd        = new Date(); yd.setDate(yd.getDate() - 1);
+    const yesterday = localDateStr(yd);
     const weekStart = getWeekStart();
     const newPoints = (m.points || 0) + pts;
     const newCount  = (m.completedCount || 0) + 1;
