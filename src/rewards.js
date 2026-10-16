@@ -4,7 +4,7 @@ import { patchRoot } from './firebase.js';
 import { showToast } from './ui.js';
 import { openModal } from './modals.js';
 import { esc, jsq } from './utils.js';
-import { pendingFor } from './redemptions.js';
+import { pendingFor, decidedFor } from './redemptions.js';
 
 export const MAX_REWARDS = 50;
 export const MAX_NAME = 40;
@@ -67,13 +67,30 @@ export function renderRewards() {
       (member ? '<div class="reward-pts">Your points: ' + esc(String(member.points || 0)) + '</div>' : '') +
       (mine.length ? '<div class="reward-pending-h">Your pending requests</div>' +
         mine.map(r => '<div class="reward-row"><span class="reward-name">' + esc(r.rewardName) + '</span><span class="reward-cost">' + esc(String(r.cost)) + ' pts</span></div>').join('') : '') +
-      (canEdit && all.length ? '<div class="reward-pending-h">' + all.length + ' request' + (all.length === 1 ? '' : 's') + ' awaiting approval</div>' : '');
+      (member ? decidedFor(me).map(r => '<div class="reward-row"><span class="reward-name">' + esc(r.rewardName) + '</span><span class="reward-status ' + esc(r.status) + '">' +
+        (r.status === 'approved' ? 'Approved' : 'Denied — points refunded') + '</span></div>').join('') : '') +
+      (canEdit && all.length ? '<div class="reward-pending-h">' + all.length + ' request' + (all.length === 1 ? '' : 's') + ' awaiting approval</div>' +
+        all.map(r => '<div class="reward-row"><span class="reward-name">' + esc(r.member) + ' — ' + esc(r.rewardName) + '</span><span class="reward-cost">' + esc(String(r.cost)) + ' pts</span>' +
+          '<button class="btn-sm btn-accent" aria-label="Approve ' + esc(r.rewardName) + ' for ' + esc(r.member) + '" onclick="window.approveRedemption(\'' + jsq(r.id) + '\')">Approve</button>' +
+          '<button class="btn-sm" aria-label="Deny ' + esc(r.rewardName) + ' for ' + esc(r.member) + '" onclick="window.denyRedemption(\'' + jsq(r.id) + '\')">Deny</button></div>').join('') : '');
   }
   document.getElementById('rewards-admin')?.classList.toggle('hidden', !canEdit);
+  updateRewardsBadge();
+}
+
+// Pending-request count on the 🎁 button (admin only).
+export function updateRewardsBadge() {
+  const b = document.getElementById('rewards-badge');
+  if (!b) return;
+  const n = !READONLY && adminFn() ? pendingFor('').length : 0;
+  b.textContent = String(n);
+  b.classList.toggle('hidden', !n);
 }
 
 // Re-render live when a snapshot arrives while the modal is open.
-export function refreshRewards() {
+export function refreshRewards(isAdminFn) {
+  if (isAdminFn) adminFn = isAdminFn;
+  updateRewardsBadge();
   const m = document.getElementById('rewards-modal');
   if (m && !m.classList.contains('hidden')) renderRewards();
 }
