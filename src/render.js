@@ -223,6 +223,8 @@ function _renderFilters() {
 
 // ── Tasks list ────────────────────────────────────────────────────────────────
 
+export function renderTasks() { _renderTasks(); }
+
 function _renderTasks() {
   let tasks = _visibleTasks();
   if (filter === 'mine') tasks = tasks.filter(t => isMine(t, _currentMember()));
