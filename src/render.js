@@ -1,6 +1,7 @@
 import { state, getMembers } from './state.js';
 import { PCOLS, BADGES, READONLY } from './config.js';
 import { renderTvStrip } from './tv.js';
+import { renderGoal } from './goal.js';
 import { esc, jsq, avatarPrefix, validTime, dueStatus, freqLabel, isMine, isSkipped, localDateStr } from './utils.js';
 import { pColor } from './ui.js';
 
@@ -127,6 +128,7 @@ export function render() {
   _renderFilters();
   _renderTasks();
   renderTvStrip();
+  renderGoal(Object.values(state.tasks || {}));
   if (!READONLY) {
     document.body.setAttribute('data-role', _isAdmin() ? 'admin' : 'member');
   }

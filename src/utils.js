@@ -147,6 +147,23 @@ function baseStatus(t) {
   return 'ok';
 }
 
+// Family daily goal: chores done today vs. those due today (overdue + due today + done today).
+export function todayProgress(tasks, now = Date.now()) {
+  const today = localDateStr(new Date(now));
+  let done = 0, total = 0;
+  for (const t of tasks || []) {
+    if (t.done) {
+      if (t.lastDone && localDateStr(new Date(t.lastDone)) === today) { done++; total++; }
+      continue;
+    }
+    if (isSkipped(t)) continue;
+    const s = dueStatus(t, now);
+    const dueToday = t.freq === 'once' ? t.dueDate === today : t.freq === 'weekdays' && s === 'soon';
+    if (s === 'overdue' || dueToday) total++;
+  }
+  return { done, total };
+}
+
 // "Mine" = assigned to me, or unclaimed; future (on-track) chores are left out.
 export function isMine(t, me) {
   if (!me) return false;
