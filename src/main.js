@@ -122,7 +122,7 @@ document.getElementById('new-freq').addEventListener('change', e => document.get
 document.getElementById('new-task').addEventListener('keydown', e => { if (e.key === 'Enter') addTask(_isAdmin); });
 document.getElementById('new-member').addEventListener('keydown', e => { if (e.key === 'Enter') addMember(_isAdmin); });
 
-initMemberChipClicks(name => removeMember(name, _isAdmin));
+initMemberChipClicks(name => removeMember(name, _isAdmin, _currentMember, () => window.switchUser()));
 
 // Filter events from summary "Let's go" button
 // Keyboard entry for the PIN pads (digits + Backspace)
@@ -195,7 +195,7 @@ window.bulkDelete       = ()      => bulkDelete();
 
 // Members
 window.addMember     = ()         => addMember(_isAdmin);
-window.removeMember  = name       => removeMember(name, _isAdmin);
+window.removeMember  = name       => removeMember(name, _isAdmin, _currentMember, () => window.switchUser());
 window.toggleRole    = name       => toggleRole(name, _isAdmin);
 window.setAvatar     = (name, a)  => setAvatar(name, a, _isAdmin);
 
