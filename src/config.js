@@ -23,3 +23,11 @@ export const BADGES = [
 ];
 
 export const READONLY = new URLSearchParams(location.search).get('readonly') === '1';
+
+// Web app config for Firebase Auth (#97). Not secrets: Firebase web API keys are
+// public identifiers; access is controlled by the database rules. Copy apiKey from
+// Firebase Console → Project settings → General → Your apps. Without it, sign-in
+// (anonymous and parent email) is unavailable and the app runs without auth.
+export const FB_API_KEY     = '';
+export const FB_AUTH_DOMAIN = 'home-chores-glades.firebaseapp.com';
+export const FB_PROJECT_ID  = 'home-chores-glades';

@@ -32,12 +32,15 @@ Replace `1234` with the PIN you want and copy the printed hex string.
 
 ## Starting over (wipe everything)
 
-This deletes all members, tasks and history. There is no in-app reset button.
+This deletes all members, tasks, history, templates, rewards and redemptions. There is no in-app reset button.
 
-1. Firebase Console → **Realtime Database** → select the `/state` node → three-dot menu → **Delete**.
-2. Reload the site. With zero members the app is in setup mode: anyone can add the first member, who becomes the **admin**. Add yourself, then set a PIN from **Admin Panel → Set PIN**.
+1. **Back up first.** Firebase Console → **Realtime Database → Data** → three-dot menu (top right) → **Export JSON**. Keep the file; to restore, use **Import JSON** on the same menu.
+2. Hover the `state` node → three-dot menu → **Delete**. Leave `admins` alone if it exists (it holds the parent UIDs, not family data).
+3. Reload the site on every device (on phones with the app installed, close and reopen it).
+4. With zero members the app is in setup mode: add the first member, who becomes **admin**. Once `/admins` exists, only a signed-in parent is admin, so sign in with **Parent sign in** first.
+5. Add the rest of the family, then set PINs from **Admin Panel → Set PIN**.
 
-Note: Realtime Database rules must still allow `/state` writes and require `nextId` (see `CLAUDE.md`), so re-add a member/task after the wipe to recreate it.
+Note: the rules require `nextId` under `/state` (see `CLAUDE.md`). The first write after the wipe (adding a member) recreates it.
 
 ---
 

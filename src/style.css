@@ -36,6 +36,13 @@ button:focus-visible, a:focus-visible, select:focus-visible { outline: 2px solid
 /* PIN / MEMBER SCREEN */
 #pin-screen { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; z-index: 999; }
 #pin-screen.hidden { display: none; }
+#parent-signin { display: flex; flex-direction: column; gap: 8px; }
+#pin-member-pin.hidden, #parent-signin.hidden, #parent-signin-open.hidden, #pin-member-chips.hidden { display: none !important; }
+#parent-signin input { height: 40px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg); color: var(--text); font-size: var(--font-md); padding: 0 12px; font-family: inherit; }
+#parent-signin input:focus { outline: none; border-color: var(--accent); }
+.btn-link { background: none; border: none; color: var(--muted); font-size: 0.8rem; text-decoration: underline; cursor: pointer; font-family: inherit; margin-top: 0.5rem; }
+.parent-status { font-size: 0.8rem; color: var(--muted); margin: 0.5rem 0; text-align: center; }
+.parent-uid code { font-size: 0.75rem; word-break: break-all; user-select: all; }
 .pin-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 2.5rem 2rem; width: 100%; max-width: 360px; text-align: center; }
 .pin-title { font-family: 'DM Serif Display', serif; font-size: 1.6rem; margin-bottom: 0.4rem; }
 .pin-sub { font-size: 0.85rem; color: var(--muted); margin-bottom: 1.75rem; }

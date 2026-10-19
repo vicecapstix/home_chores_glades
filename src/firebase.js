@@ -1,14 +1,16 @@
 import { initializeApp } from 'firebase/app';
 import { getDatabase, ref, set, remove, update, onValue, runTransaction } from 'firebase/database';
-import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
-import { FB_URL, READONLY } from './config.js';
+import { getAuth, signInAnonymously, onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'firebase/auth';
+import { FB_URL, FB_API_KEY, FB_AUTH_DOMAIN, FB_PROJECT_ID, READONLY } from './config.js';
 import { state } from './state.js';
 
 let _db = null;
 let _app = null;
 
 export function initFirebase() {
-  _app = initializeApp({ databaseURL: FB_URL }, 'homechores');
+  const opts = { databaseURL: FB_URL };
+  if (FB_API_KEY) Object.assign(opts, { apiKey: FB_API_KEY, authDomain: FB_AUTH_DOMAIN, projectId: FB_PROJECT_ID });
+  _app = initializeApp(opts, 'homechores');
   _db  = getDatabase(_app);
   return { app: _app, db: _db };
 }
@@ -23,6 +25,7 @@ export async function initAuth() {
     const auth = getAuth(_app);
     return await new Promise((resolve) => {
       onAuthStateChanged(auth, user => {
+        setAuthUser(user);
         if (user) { resolve({ ok: true }); }
         else {
           signInAnonymously(auth).then(() => resolve({ ok: true }))
@@ -34,6 +37,64 @@ export async function initAuth() {
     console.warn('Firebase Anonymous Auth not available:', e.message);
     return { ok: false, code: e?.code || '', message: e?.message || '' };
   }
+}
+
+// ── Parent email sign-in (#97) ───────────────────────────────────────────────
+// Kids and the TV stay on anonymous sign-in. When a parent signs out, the
+// onAuthStateChanged handler above signs the device back in anonymously.
+
+const _authListeners = [];
+export function onAuthChange(fn) { _authListeners.push(fn); }
+
+function setAuthUser(user) {
+  state.auth = user
+    ? { uid: user.uid, isParent: !user.isAnonymous, email: user.email || '' }
+    : { uid: '', isParent: false, email: '' };
+  _authListeners.forEach(fn => fn(state.auth));
+}
+
+// Resolves (never rejects) with { ok, uid } or { ok: false, code }. No password is stored.
+export async function parentSignIn(email, password) {
+  if (READONLY) return { ok: false, code: 'readonly' };
+  try {
+    const cred = await signInWithEmailAndPassword(getAuth(_app), String(email || '').trim(), password || '');
+    return { ok: true, uid: cred.user.uid };
+  } catch (e) {
+    return { ok: false, code: e?.code || '' };
+  }
+}
+
+export async function parentSignOut() {
+  try { await signOut(getAuth(_app)); return { ok: true }; }
+  catch (e) { return { ok: false, code: e?.code || '' }; }
+}
+
+export function describeParentSignInError(code) {
+  switch (code) {
+    case 'auth/invalid-credential': case 'auth/wrong-password': case 'auth/user-not-found':
+    case 'auth/invalid-email': case 'auth/missing-password':
+      return 'Wrong email or password';
+    case 'auth/too-many-requests':        return 'Too many attempts. Try again later.';
+    case 'auth/network-request-failed':   return 'No connection. Check your internet and try again.';
+    case 'auth/operation-not-allowed':
+      return 'Email sign-in is off. Enable it in Firebase Console → Authentication → Sign-in method → Email/Password.';
+    case 'auth/invalid-api-key':
+      return 'Firebase API key missing. Set FB_API_KEY in src/config.js.';
+    default: return 'Sign-in failed (' + (code || 'unknown') + ')';
+  }
+}
+
+// /admins/<uid>: "<member name>" — root level, read-only for clients (JT edits it in
+// the Console). If it can't be read (rules not applied yet) it counts as empty.
+export function watchAdmins(onChange) {
+  if (!_db) return;
+  onValue(ref(_db, 'admins'), snap => {
+    state.admins = snap.val() || {};
+    onChange();
+  }, () => {
+    state.admins = {};
+    onChange();
+  });
 }
 
 export function describeAuthFailure(res) {

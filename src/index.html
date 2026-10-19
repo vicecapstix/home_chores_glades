@@ -53,6 +53,15 @@
       <div class="pin-error" id="pin-member-error"></div>
       <button class="btn-sm" style="margin-top:1rem;width:100%" onclick="window.memberPinBack()">← Back</button>
     </div>
+    <!-- Parent email sign-in (#97) -->
+    <button class="btn-link" id="parent-signin-open" onclick="window.showParentSignIn()">Parent sign in</button>
+    <form id="parent-signin" class="hidden" onsubmit="event.preventDefault();window.submitParentSignIn()">
+      <input id="parent-email" type="email" autocomplete="username" placeholder="Email" aria-label="Parent email">
+      <input id="parent-password" type="password" autocomplete="current-password" placeholder="Password" aria-label="Parent password">
+      <div class="pin-error" id="parent-signin-error" role="alert"></div>
+      <button class="btn-lg" id="parent-signin-submit" type="submit" style="width:100%">Sign in</button>
+      <button class="btn-sm" type="button" style="margin-top:0.5rem;width:100%" onclick="window.hideParentSignIn()">← Back</button>
+    </form>
   </div>
 </div>
 
@@ -295,6 +304,7 @@
       <div style="margin-top:0.25rem;color:var(--accent);font-size:0.8rem;font-weight:600;letter-spacing:0.05em;">ADMIN</div>
     </div>
     <div id="admin-member-list" style="margin:0.5rem 0;"></div>
+    <div id="admin-parent-status"></div>
     <button class="btn-lg" style="width:100%;margin-top:0.5rem;" onclick="window.adminPanelSwitchUser()">Switch User</button>
   </div>
 </div>

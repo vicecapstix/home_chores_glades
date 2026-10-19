@@ -60,6 +60,20 @@ A real-time chore tracker for families — assign tasks, track progress, earn po
 
 Limit: anyone who opens the site gets an anonymous token, so PIN hashes stay readable from inside the app. These rules block raw REST/bot access without a token and malformed writes. After 5 wrong PINs a member's PIN pad locks for 5 minutes on that device (client-side only).
 
+#### Parent sign-in (email + password)
+
+Parents sign in with email and password; kids keep tapping their name. Until `/admins` exists in the database, admin still comes from each member's role, so nothing changes until you do these steps (only after the parent sign-in code is merged):
+
+1. `src/config.js`: set `FB_API_KEY` to the `apiKey` from Firebase Console → **Project settings → General → Your apps** (add a Web app with **</>** if there is none), then `npm run build:pages` and merge. The key is a public identifier, not a secret. Sign-in of any kind, including anonymous, needs it.
+2. **Authentication → Sign-in method**: enable **Email/Password** (keep **Anonymous** on for kids and the TV).
+3. **Authentication → Settings → Authorized domains**: make sure `<username>.github.io` is listed.
+4. **Authentication → Users → Add user**: one account per parent. Copy each **User UID**. (Signing in on the app also shows the UID in **Admin Panel** if it isn't in `/admins` yet.)
+5. **Realtime Database → Rules**: paste `firebase-rules.json` (it lets signed-in users read `/admins` and nobody write it) and **Publish**.
+6. **Realtime Database → Data**: at the root, next to `state`, add `admins` with one child per parent: key = UID, value = that parent's member name exactly as in the app, e.g. `admins/AbC123…: "JT"`.
+7. Reload. Parents: **Parent sign in** on the login screen. From now on only those accounts are admin; **Switch User** signs the parent out.
+
+Rollback: delete `/admins` in the Console. Admin goes back to member roles immediately.
+
 #### Testing the rules locally
 
 `npm run test:rules` runs `tests/rules/` against the local Realtime Database emulator using a `demo-familyflow` project, so it never touches the live database. It needs Java 11+ (21 recommended). `npm test` doesn't run these and doesn't need Java. CI runs both.

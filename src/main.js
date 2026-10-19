@@ -6,7 +6,8 @@ import { watchConnection, markSynced } from './connection.js';
 import { FB_URL, READONLY } from './config.js';
 import { state, getMembers, applySnapshot, migrateLegacyMembers } from './state.js';
 import { esc, jsq, avatarPrefix, AVATARS } from './utils.js';
-import { initFirebase, initAuth, describeAuthFailure } from './firebase.js';
+import { initFirebase, initAuth, describeAuthFailure, watchAdmins, onAuthChange } from './firebase.js';
+import { showParentSignIn, hideParentSignIn, submitParentSignIn, signOutParent, syncParentSession, parentStatusHTML } from './parent.js';
 import { initModalBackButton, closeModal } from './modals.js';
 import { popUndo } from './undo.js';
 
@@ -20,7 +21,7 @@ import {
 } from './ui.js';
 
 import {
-  currentMember, isAdmin, handleFirstLoad,
+  currentMember, isAdmin, handleFirstLoad, parentMemberName,
   memberSelect, memberPinKey, memberPinDel, memberPinBack,
   switchUser,
 } from './auth.js';
@@ -80,6 +81,9 @@ initModalBackButton();
   const authRes = await initAuth(); // wait for the token before listening
   if (!authRes.ok) showToast(describeAuthFailure(authRes));
   let firstLoad = true;
+  const onAdminsOrAuth = () => { if (!firstLoad) { syncParentSession(); render(); refreshRewards(_isAdmin); } };
+  onAuthChange(onAdminsOrAuth);
+  watchAdmins(onAdminsOrAuth);
   watchConnection(db, { onValue, ref });
 
   onValue(ref(db, 'state'), snap => {
@@ -102,6 +106,7 @@ initModalBackButton();
     if (firstLoad) {
       firstLoad = false;
       if (!READONLY) {
+        syncParentSession();
         handleFirstLoad(() => {
           initNotifications(_currentMember);
           maybeShowDailySummary();
@@ -146,7 +151,18 @@ window.memberSelect  = name  => memberSelect(name);
 window.memberPinKey  = digit => memberPinKey(digit);
 window.memberPinDel  = ()    => memberPinDel();
 window.memberPinBack = ()    => memberPinBack();
-window.switchUser    = ()    => switchUser(window._fcLoginCallback);
+window.switchUser    = ()    => { signOutParent(); switchUser(window._fcLoginCallback); };
+
+// Parent email sign-in (#97)
+window.showParentSignIn   = () => showParentSignIn();
+window.hideParentSignIn   = () => hideParentSignIn();
+window.submitParentSignIn = () => submitParentSignIn();
+window.signOutParent      = () => { window.closeAdminPanel(); window.switchUser(); }; // switchUser signs the parent out
+window.adminPanelParentSignIn = function() {
+  window.closeAdminPanel();
+  window.switchUser();
+  showParentSignIn();
+};
 
 // Theme & misc
 window.toggleTheme   = ()    => toggleTheme();
@@ -202,7 +218,8 @@ window.setAvatar     = (name, a)  => setAvatar(name, a, _isAdmin);
 // Admin panel
 window.openAdminPanel = function() {
   if (READONLY || !_isAdmin()) return;
-  document.getElementById('admin-panel-name').textContent = _currentMember() || 'Admin';
+  document.getElementById('admin-panel-name').textContent = parentMemberName() || _currentMember() || 'Admin';
+  document.getElementById('admin-parent-status').innerHTML = parentStatusHTML();
   const members = getMembers();
   document.getElementById('admin-member-list').innerHTML = members.map(m => {
     const role = state.members[m]?.role || 'member';

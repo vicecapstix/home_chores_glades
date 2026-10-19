@@ -43,8 +43,20 @@ export function currentMember() {
   try { return sessionStorage.getItem('fc_member') || ''; } catch(e) { return ''; }
 }
 
+// Parents (#97): once /admins exists, only a signed-in UID listed there is admin.
+// Until then, fall back to member roles so nothing breaks before rollout.
+export function adminsActive() {
+  return Object.keys(state.admins || {}).length > 0;
+}
+
+export function parentMemberName() {
+  const uid = state.auth?.uid;
+  return (uid && state.admins?.[uid]) || '';
+}
+
 export function isAdmin() {
   if (READONLY) return false;
+  if (adminsActive()) return !!parentMemberName();
   if (Object.keys(state.members).length === 0) return true; // setup mode
   const m = currentMember();
   return m ? (state.members[m]?.role === 'admin') : false;
@@ -74,6 +86,11 @@ export function handleFirstLoad(onLoginComplete) {
   } else {
     showMemberSelector(onLoginComplete);
   }
+}
+
+// Log straight in as a member (used after a parent signs in).
+export function loginAs(name) {
+  completeLogin(name, window._fcLoginCallback);
 }
 
 function completeLogin(name, onLoginComplete) {

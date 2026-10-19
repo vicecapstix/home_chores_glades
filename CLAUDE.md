@@ -19,7 +19,8 @@ src/
   config.js        — constants: FB_URL, PCOLS, CATEGORIES, BADGES, READONLY
   state.js         — central mutable state object; applySnapshot, migrateLegacyMembers
   firebase.js      — Firebase init + all write helpers (writeState, patchTask, …)
-  auth.js          — login/session flow, member PIN, isAdmin, currentMember
+  auth.js          — login/session flow, member PIN, isAdmin (/admins-aware), currentMember
+  parent.js        — parent email sign-in UI (login form, Admin Panel status)
   utils.js         — pure helpers: esc, sha256, dueStatus, taskPoints, freqDays, …
   ui.js            — showToast, toggleTheme, leaderboard, stats, templates, modals
   tasks.js         — task CRUD, toggle (check/uncheck), subtasks, claim, drag-drop
@@ -108,6 +109,7 @@ main.js
  ├── tasks.js          → state, config, firebase, ui, undo, utils
  ├── members.js        → state, config, firebase, ui
  ├── render.js         → state, config, utils, ui
+ ├── parent.js         → state, config, utils, firebase, ui, auth
  └── notifications.js  → state, utils
 ```
 
@@ -152,7 +154,7 @@ window.closeFoo = function() { closeModal('foo-modal'); };
 ### JS guards — always check READONLY and isAdmin()
 - Any function that writes data must start with `if (READONLY) return;`
 - Any function that is admin-only must start with `if (READONLY || !isAdminFn()) return;`
-- `isAdmin()` (in `src/auth.js`) returns `true` when there are zero members (setup mode) — do not break this
+- `isAdmin()` (in `src/auth.js`) returns `true` when there are zero members (setup mode) — do not break this. Once `/admins/<uid>` has entries (#97), only a signed-in listed parent UID is admin
 - Task and member write functions receive `isAdminFn` as a parameter (bound in `main.js`) rather than importing `isAdmin` directly — this avoids circular imports
 
 ### XSS — always use esc()

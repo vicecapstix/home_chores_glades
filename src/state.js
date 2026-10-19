@@ -8,6 +8,8 @@ export const state = {
   templates: {},
   rewards:   {},
   redemptions: {},
+  admins:    {},  // /admins/<uid>: member name (#97), outside /state
+  auth:      { uid: '', isParent: false, email: '' },
 };
 
 // Derived convenience accessor — always computed fresh from state.members
