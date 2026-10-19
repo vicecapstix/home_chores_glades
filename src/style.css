@@ -428,4 +428,20 @@ body[data-role="admin"] #btn-admin { display: flex; }
   body[data-readonly] .section[data-k="available"] { grid-column: 1 / -1; grid-row: 2; }
   body[data-readonly] .section[data-k="ok"] { grid-column: 1 / -1; grid-row: 3; }
 }
+/* FAMILY DAILY GOAL */
+.goal { position: relative; flex: 1 1 100%; order: 9; }
+.goal.hidden { display: none; }
+.goal-text { font-size: 0.85rem; font-weight: 600; margin-bottom: 4px; }
+.goal-track { height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; }
+.goal-fill { height: 100%; width: 0; background: var(--accent); transition: width 0.4s ease; }
+.goal.complete .goal-text::after { content: ' 🎉'; }
+.goal-confetti { display: none; position: absolute; right: 0; top: -6px; font-size: 1.4rem; pointer-events: none; }
+.goal.celebrate .goal-confetti { display: block; animation: goal-pop 2.2s ease-out forwards; }
+@keyframes goal-pop { 0% { transform: translateY(8px) scale(0.6); opacity: 0; } 20% { opacity: 1; } 100% { transform: translateY(-18px) scale(1.2); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .goal.celebrate .goal-confetti { animation: none; display: none; } .goal-fill { transition: none; } }
+@media (min-width: 1200px) {
+  body[data-readonly] .goal-text { font-size: 1.8rem; font-family: 'DM Serif Display', serif; }
+  body[data-readonly] .goal-track { height: 22px; border-radius: 11px; }
+  body[data-readonly] .goal-confetti { font-size: 3rem; top: -20px; }
+}
 .edit-duetime { padding: 6px 8px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); font-size: 0.85rem; font-family: inherit; background: var(--bg); color: var(--text); }
