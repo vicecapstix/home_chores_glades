@@ -6,7 +6,7 @@ import { watchConnection, markSynced } from './connection.js';
 import { FB_URL, READONLY } from './config.js';
 import { state, getMembers, applySnapshot, migrateLegacyMembers } from './state.js';
 import { esc, jsq, avatarPrefix, AVATARS } from './utils.js';
-import { initFirebase, initAuth } from './firebase.js';
+import { initFirebase, initAuth, describeAuthFailure } from './firebase.js';
 import { initModalBackButton, closeModal } from './modals.js';
 import { popUndo } from './undo.js';
 
@@ -77,7 +77,8 @@ initModalBackButton();
 // ── Bootstrap: auth → Firebase listener ──────────────────────────────────────
 (async () => {
   const { app, db } = initFirebase();
-  await initAuth(); // anonymous auth (gracefully degrades if not enabled)
+  const authRes = await initAuth(); // wait for the token before listening
+  if (!authRes.ok) showToast(describeAuthFailure(authRes));
   let firstLoad = true;
   watchConnection(db, { onValue, ref });
 
@@ -109,7 +110,9 @@ initModalBackButton();
       }
     }
   }, err => {
-    showToast('DB error: ' + (err.code || err.message));
+    showToast(/permission/i.test(err.code || err.message || '') && !authRes.ok
+      ? describeAuthFailure(authRes)
+      : 'DB error: ' + (err.code || err.message));
     console.error('Firebase read error:', err);
   });
 })();

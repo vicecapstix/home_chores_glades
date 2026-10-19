@@ -1,0 +1,50 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "state": {
+      ".read": "auth != null",
+      ".write": "auth != null",
+      ".validate": "newData.hasChild('nextId')",
+      "nextId": { ".validate": "newData.isNumber()" },
+      "members": {
+        "$name": {
+          ".validate": "newData.isString() || newData.hasChildren(['name', 'role'])",
+          "name": { ".validate": "newData.isString() && newData.val().length <= 40" },
+          "role": { ".validate": "newData.val() === 'admin' || newData.val() === 'member'" },
+          "pinHash": { ".validate": "newData.isString() && (newData.val() === '' || newData.val().length === 64)" },
+          "points": { ".validate": "newData.isNumber()" },
+          "weekPoints": { ".validate": "newData.isNumber()" },
+          "streak": { ".validate": "newData.isNumber()" },
+          "completedCount": { ".validate": "newData.isNumber()" }
+        }
+      },
+      "tasks": {
+        "$id": {
+          ".validate": "newData.hasChildren(['id', 'name', 'freq'])",
+          "name": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 100" },
+          "freq": { ".validate": "newData.val() === 'daily' || newData.val() === 'weekly' || newData.val() === 'weekdays' || newData.val() === 'fortnightly' || newData.val() === 'monthly' || newData.val() === 'once'" },
+          "done": { ".validate": "newData.isBoolean()" },
+          "notes": { ".validate": "newData.isString() && newData.val().length <= 300" }
+        }
+      },
+      "history": {
+        "$i": {
+          ".validate": "$i.matches(/^([0-9]|[1-9][0-9]|[1-4][0-9]{2})$/) && newData.hasChildren(['taskName', 'person'])"
+        }
+      },
+      "rewards": {
+        "$id": {
+          ".validate": "newData.hasChildren(['name', 'cost'])",
+          "cost": { ".validate": "newData.isNumber() && newData.val() >= 0" }
+        }
+      },
+      "redemptions": {
+        "$id": {
+          ".validate": "newData.hasChildren(['member', 'status'])",
+          "status": { ".validate": "newData.val() === 'pending' || newData.val() === 'approved' || newData.val() === 'denied'" }
+        }
+      }
+    }
+  }
+}

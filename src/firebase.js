@@ -15,21 +15,31 @@ export function initFirebase() {
 
 export function getDb() { return _db; }
 
-// Anonymous auth — optional security layer.
-// Gracefully degrades if Anonymous Auth is not enabled in Firebase Console.
+// Anonymous auth. Resolves (never rejects) with { ok, code, message } so the
+// caller can warn when Anonymous sign-in is not enabled. The app keeps loading
+// either way, so it works both before and after the rules require auth.
 export async function initAuth() {
   try {
     const auth = getAuth(_app);
-    await new Promise((resolve) => {
+    return await new Promise((resolve) => {
       onAuthStateChanged(auth, user => {
-        if (user) { resolve(user); }
-        else { signInAnonymously(auth).then(resolve).catch(resolve); }
+        if (user) { resolve({ ok: true }); }
+        else {
+          signInAnonymously(auth).then(() => resolve({ ok: true }))
+            .catch(e => resolve({ ok: false, code: e?.code || '', message: e?.message || '' }));
+        }
       });
     });
   } catch (e) {
-    // Anonymous auth not enabled — continue with open rules
     console.warn('Firebase Anonymous Auth not available:', e.message);
+    return { ok: false, code: e?.code || '', message: e?.message || '' };
   }
+}
+
+export function describeAuthFailure(res) {
+  if (!res || res.ok) return '';
+  return 'Anonymous sign-in is off (' + (res.code || 'unknown') + '). Enable it in Firebase Console → ' +
+    'Authentication → Sign-in method → Anonymous.';
 }
 
 // ── Write helpers ─────────────────────────────────────────────────────────────

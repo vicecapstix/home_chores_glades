@@ -36,7 +36,7 @@ A real-time chore tracker for families — assign tasks, track progress, earn po
    ```js
    const FB_URL = 'https://your-project-default-rtdb.region.firebasedatabase.app';
    ```
-4. Set the database rules (**Realtime Database → Rules**):
+4. Set the database rules (**Realtime Database → Rules**). Start with the open rules below so the app works immediately:
    ```json
    {
      "rules": {
@@ -48,6 +48,17 @@ A real-time chore tracker for families — assign tasks, track progress, earn po
      }
    }
    ```
+
+#### Optional: require sign-in (tighter rules)
+
+`firebase-rules.json` in this repo is a **draft** that only lets signed-in clients read or write `/state` and checks the shape of members, tasks, history, rewards and redemptions. Nothing applies it automatically; you paste it yourself:
+
+1. Firebase Console → **Authentication → Sign-in method** → enable **Anonymous**. (Free on the Spark plan. Until it is on, the app shows a toast saying so.)
+2. Reload the app once so every device gets a token.
+3. **Realtime Database → Rules**: paste the contents of `firebase-rules.json`, test a read and a write in the **Rules Playground** (authenticated), then **Publish**.
+4. To roll back, paste the open rules from step 4 above and publish again.
+
+Limit: anyone who opens the site gets an anonymous token, so PIN hashes stay readable from inside the app. These rules block raw REST/bot access without a token and malformed writes. After 5 wrong PINs a member's PIN pad locks for 5 minutes on that device (client-side only).
 
 ### 2. GitHub Pages
 
