@@ -10,6 +10,7 @@ vi.mock('../src/firebase.js', () => ({
   removeTask:    vi.fn().mockResolvedValue(undefined),
   restoreTask:   vi.fn().mockResolvedValue(undefined),
   patchSubtask:  vi.fn().mockResolvedValue(undefined),
+  adjustMemberPoints: vi.fn().mockResolvedValue({ ok: true }),
 }));
 
 vi.mock('../src/ui.js', () => ({
@@ -20,7 +21,7 @@ vi.mock('../src/undo.js', () => ({
   pushUndo: vi.fn(),
 }));
 
-import { writeState, patchTask, patchMember, patchRoot, removeTask } from '../src/firebase.js';
+import { adjustMemberPoints, writeState, patchTask, patchMember, patchRoot, removeTask } from '../src/firebase.js';
 import { showToast } from '../src/ui.js';
 import { pushUndo } from '../src/undo.js';
 
@@ -126,13 +127,13 @@ describe('toggleTask', () => {
     state.tasks.t1 = makeTask({ done: false, difficulty: 'medium', freq: 'weekly' }); // 3×2=6pts
     state.members.Alice = makeMember({ points: 10 });
     await toggleTask('t1', asAlice, isAdmin);
-    expect(patchMember).toHaveBeenCalledWith('Alice', expect.objectContaining({ points: 16 }));
+    expect(adjustMemberPoints).toHaveBeenCalledWith('Alice', expect.objectContaining({ pts: 6, count: 1 }));
   });
   it('increments completedCount on check', async () => {
     state.tasks.t1 = makeTask({ done: false });
     state.members.Alice = makeMember({ completedCount: 4 });
     await toggleTask('t1', asAlice, isAdmin);
-    expect(patchMember).toHaveBeenCalledWith('Alice', expect.objectContaining({ completedCount: 5 }));
+    expect(adjustMemberPoints).toHaveBeenCalledWith('Alice', expect.objectContaining({ count: 1 }));
   });
   it('extends streak by 1 when last done yesterday', async () => {
     state.tasks.t1 = makeTask({ done: false });
@@ -150,13 +151,17 @@ describe('toggleTask', () => {
     state.tasks.t1 = makeTask({ done: true, lastDoneBy: 'Alice', lastDonePoints: 6 });
     state.members.Alice = makeMember({ points: 20, completedCount: 5, weekPoints: 6, weekStart: '2026-05-11' });
     await toggleTask('t1', asAlice, isAdmin);
-    expect(patchMember).toHaveBeenCalledWith('Alice', expect.objectContaining({ points: 14 }));
+    expect(adjustMemberPoints).toHaveBeenCalledWith('Alice', expect.objectContaining({ pts: -6, count: -1 }));
   });
-  it('does not allow points to go below 0 on reversal', async () => {
+  it('admin reversal may take the balance below 0 (no clamp); member reversal may not', async () => {
     state.tasks.t1 = makeTask({ done: true, lastDoneBy: 'Alice', lastDonePoints: 100 });
     state.members.Alice = makeMember({ points: 3, completedCount: 1 });
     await toggleTask('t1', asAlice, isAdmin);
-    expect(patchMember).toHaveBeenCalledWith('Alice', expect.objectContaining({ points: 0 }));
+    expect(adjustMemberPoints).toHaveBeenCalledWith('Alice', expect.objectContaining({ pts: -100, allowNegative: true }));
+    adjustMemberPoints.mockClear();
+    state.tasks.t1.done = true;
+    await toggleTask('t1', asAlice, notAdmin);
+    expect(adjustMemberPoints).toHaveBeenCalledWith('Alice', expect.objectContaining({ pts: -100, allowNegative: false }));
   });
   it('earns the "first" badge on first ever completion', async () => {
     state.tasks.t1 = makeTask({ done: false });
