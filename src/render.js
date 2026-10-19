@@ -1,7 +1,7 @@
 import { state, getMembers } from './state.js';
 import { PCOLS, BADGES, READONLY } from './config.js';
 import { renderTvStrip } from './tv.js';
-import { esc, jsq, avatarPrefix, validTime, dueStatus, freqLabel, isMine } from './utils.js';
+import { esc, jsq, avatarPrefix, validTime, dueStatus, freqLabel, isMine, isSkipped, localDateStr } from './utils.js';
 import { pColor } from './ui.js';
 
 // ── Session function references (set once via initRender) ─────────────────────
@@ -307,7 +307,9 @@ export function cardHTML(t) {
   const personTag = t.person
     ? (pc ? '<span class="tag" style="background:' + pc.bg + ';color:' + pc.text + ';">' + esc(t.person) + '</span>' : '')
     : '<button class="btn-claim" onclick="window.claimTask(\'' + jsq(t.id) + '\')">Claim</button>';
-  const dueTag = s === 'overdue' ? '<span class="tag tag-overdue">Overdue</span>'
+  const skipped = isSkipped(t);
+  const dueTag = skipped ? '<span class="tag tag-ok">' + (localDateStr(new Date(t.skippedAt)) === localDateStr(new Date()) ? 'Skipped today' : 'Skipped') + '</span>'
+               : s === 'overdue' ? '<span class="tag tag-overdue">Overdue</span>'
                : s === 'soon'    ? '<span class="tag tag-soon">Due soon</span>'
                : s === 'ok'      ? '<span class="tag tag-ok">On track</span>' : '';
   const diff = t.difficulty || 'easy';
@@ -369,6 +371,9 @@ export function cardHTML(t) {
         '<button class="move-btn" aria-label="Move ' + esc(t.name) + ' up" onclick="event.stopPropagation();window.moveTask(\'' + jsq(t.id) + '\',-1)">▲</button>' +
         '<button class="move-btn" aria-label="Move ' + esc(t.name) + ' down" onclick="event.stopPropagation();window.moveTask(\'' + jsq(t.id) + '\',1)">▼</button>' +
       '</span>' +
+      (t.freq !== 'once' && !t.done
+        ? '<button class="edit-btn skip-btn" aria-label="Skip ' + esc(t.name) + ' this time" title="Skip this time" onclick="event.stopPropagation();window.skipTask(\'' + jsq(t.id) + '\')">⏭</button>'
+        : '') +
       '<button class="edit-btn" onclick="window.editTask(\'' + jsq(t.id) + '\')" title="Edit">✎</button>' +
       '<button class="del" onclick="window.deleteTask(\'' + jsq(t.id) + '\')" title="Remove">×</button>' +
     '</div>' +

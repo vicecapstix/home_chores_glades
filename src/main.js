@@ -30,7 +30,7 @@ import {
   addTask, editTask, saveTask,
   toggleTask, deleteTask,
   toggleSubtasks, toggleSubtask, addSubtask, removeSubtask,
-  claimTask, moveTask,
+  claimTask, moveTask, skipTask,
 } from './tasks.js';
 
 import { addMember, removeMember, toggleRole, setAvatar } from './members.js';
@@ -169,6 +169,7 @@ window.cancelEdit    = function(id) {
 window.toggleTask    = id         => toggleTask(id, _currentMember, _isAdmin);
 window.deleteTask    = id         => deleteTask(id, _isAdmin);
 window.moveTask      = (id, dir)  => moveTask(id, dir, _isAdmin);
+window.skipTask      = id         => skipTask(id, _isAdmin);
 window.toggleReorder = ()         => {
   const on = document.body.toggleAttribute('data-reorder');
   document.getElementById('btn-reorder')?.setAttribute('aria-pressed', String(on));
