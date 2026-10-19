@@ -17,6 +17,19 @@ beforeEach(async () => {
   Object.assign(state, { members: {}, tasks: {}, history: [], nextId: 3, templates: {}, rewards: {}, redemptions: {} });
 });
 
+describe('writeState carries pause (#70)', () => {
+  it('keeps pause so a full write cannot wipe it', async () => {
+    state.pause = { until: '2026-10-20', by: 'Al', since: 1 };
+    await fb.writeState();
+    expect(set.mock.calls[0][1].pause).toEqual(state.pause);
+  });
+  it('writes null when not paused', async () => {
+    state.pause = null;
+    await fb.writeState();
+    expect(set.mock.calls[0][1].pause).toBeNull();
+  });
+});
+
 describe('writeState carries the rewards node (a full write must not wipe the catalog)', () => {
   it('includes rewards when present', async () => {
     state.rewards = { r1: { id: 'r1', name: 'Pizza', cost: 10, icon: '🍕' } };
