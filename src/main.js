@@ -63,6 +63,7 @@ if (READONLY) {
 import { initTvMode } from './tv.js';
 import { startRollover } from './rollover.js';
 import { registerServiceWorker } from './pwa.js';
+import { downloadBackup } from './backup.js';
 import { openHistory, setHistoryFilter } from './history.js';
 import { requestReward, decideRequest } from './redemptions.js';
 import { openRewards, saveReward, editReward, deleteReward, cancelRewardEdit, refreshRewards } from './rewards.js';
@@ -225,6 +226,7 @@ window.openAdminPanel = function() {
 window.closeAdminPanel = function() {
   document.getElementById('admin-panel-modal').classList.add('hidden');
 };
+window.downloadBackup = function() { downloadBackup(_isAdmin); };
 window.adminPanelSwitchUser = function() {
   window.closeAdminPanel();
   window.switchUser();
