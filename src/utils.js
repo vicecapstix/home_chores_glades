@@ -41,7 +41,10 @@ export function prevScheduledStart(days, now = Date.now()) {
 
 // lastDone value for a brand-new task so it is not instantly overdue.
 export function initialLastDone(freq, now = Date.now()) {
-  return freq === 'weekdays' ? now : now - freqDays(freq) * 86400000;
+  if (freq === 'weekdays') return now;
+  const d = new Date(now);
+  d.setDate(d.getDate() - freqDays(freq));
+  return d.getTime();
 }
 
 export function freqLabel(t) {
@@ -54,8 +57,10 @@ export function freqDays(f) {
   return { daily: 1, weekly: 7, fortnightly: 14, monthly: 30 }[f] || 7;
 }
 
-export function daysSince(ts) {
-  return Math.floor((Date.now() - ts) / 86400000);
+// Whole local calendar days from `ts` to `now` (time of day ignored; DST-safe).
+export function daysSince(ts, now = Date.now()) {
+  const a = new Date(ts), b = new Date(now);
+  return Math.round((Date.UTC(b.getFullYear(), b.getMonth(), b.getDate()) - Date.UTC(a.getFullYear(), a.getMonth(), a.getDate())) / 86400000);
 }
 
 // YYYY-MM-DD in the device's local time zone (toISOString would be UTC).
@@ -104,7 +109,7 @@ export function isSkipped(t) {
 }
 
 function rawDueStatus(t, now) {
-  const s = baseStatus(t);
+  const s = baseStatus(t, now);
   if (t.done || !validTime(t.dueTime) || s === 'done') return s;
   if (t.freq === 'weekdays') {
     // base 'soon' means a scheduled day that is today
@@ -123,7 +128,7 @@ function rawDueStatus(t, now) {
   return now >= due ? 'overdue' : now >= due - 86400000 ? 'soon' : 'ok';
 }
 
-function baseStatus(t) {
+function baseStatus(t, now = Date.now()) {
   if (t.done) return 'done';
   if (t.freq === 'once') {
     if (!t.dueDate) return 'ok';
@@ -141,7 +146,7 @@ function baseStatus(t) {
     const today = new Date(); today.setHours(0, 0, 0, 0);
     return p === today.getTime() ? 'soon' : 'overdue';
   }
-  const d = freqDays(t.freq), s = daysSince(t.lastDone || 0);
+  const d = freqDays(t.freq), s = daysSince(t.lastDone || 0, now);
   if (s >= d) return 'overdue';
   if (s >= d - 1) return 'soon';
   return 'ok';

@@ -140,6 +140,21 @@ describe('UI', () => {
   });
 });
 
+describe('removed member (#89)', () => {
+  it('undo of a request does not refund a member who no longer exists', async () => {
+    await D.requestReward('r1', asAlice);
+    const { undo } = pushUndo.mock.calls[0][0];
+    delete state.members.Alice;
+    await undo();
+    expect(refundPoints).not.toHaveBeenCalled();
+  });
+  it('failed request write does not refund a member who no longer exists', async () => {
+    patchRoot.mockImplementationOnce(async () => { delete state.members.Alice; throw new Error('x'); });
+    await D.requestReward('r1', asAlice);
+    expect(refundPoints).not.toHaveBeenCalled();
+  });
+});
+
 describe('state wiring', () => {
   it('applySnapshot keeps redemptions and defaults to {}', () => {
     applySnapshot({ redemptions: { a: { id: 'a' } } });
