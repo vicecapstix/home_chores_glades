@@ -1,6 +1,6 @@
 import { state, getMembers } from './state.js';
 import { READONLY } from './config.js';
-import { writeState, patchMember } from './firebase.js';
+import { writeState, patchMember, patchPaths } from './firebase.js';
 import { showToast } from './ui.js';
 import { getWeekStart, AVATARS } from './utils.js';
 
@@ -73,4 +73,41 @@ export async function toggleRole(name, isAdminFn) {
   } catch (err) {
     showToast('Update failed: ' + (err.code || err.message));
   }
+}
+
+// Build the single multi-path update that moves a member to a new name.
+// The member record (incl. pinHash, points, avatar) is copied unchanged.
+export function renamePaths(oldName, newName) {
+  const paths = {};
+  paths['members/' + oldName] = null;
+  paths['members/' + newName] = { ...state.members[oldName], name: newName };
+  Object.values(state.tasks).forEach(t => {
+    if (t.person === oldName) paths['tasks/' + t.id + '/person'] = newName;
+    if (t.lastDoneBy === oldName) paths['tasks/' + t.id + '/lastDoneBy'] = newName;
+  });
+  state.history.forEach((e, i) => {
+    if (e && e.person === oldName) paths['history/' + i + '/person'] = newName;
+  });
+  Object.entries(state.redemptions || {}).forEach(([id, r]) => {
+    if (r && r.member === oldName) paths['redemptions/' + id + '/member'] = newName;
+    if (r && r.decidedBy === oldName) paths['redemptions/' + id + '/decidedBy'] = newName;
+  });
+  return paths;
+}
+
+export async function renameMember(oldName, newName, isAdminFn) {
+  if (READONLY || !isAdminFn()) return false;
+  newName = (newName || '').trim();
+  if (!state.members[oldName] || !newName || newName === oldName) return false;
+  if (state.members[newName]) { showToast('That name is already taken'); return false; }
+  const nameError = validateMemberName(newName);
+  if (nameError) { showToast(nameError); return false; }
+  try {
+    await patchPaths(renamePaths(oldName, newName));
+  } catch (err) {
+    showToast('Rename failed: ' + (err.code || err.message));
+    return false;
+  }
+  try { if (sessionStorage.getItem('fc_member') === oldName) sessionStorage.setItem('fc_member', newName); } catch (e) {}
+  return true;
 }

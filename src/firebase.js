@@ -71,6 +71,12 @@ export async function patchMember(name, fields) {
   await update(ref(_db, 'state/members/' + name), fields);
 }
 
+// Multi-path update rooted at /state: keys are relative paths, null deletes.
+export async function patchPaths(paths) {
+  if (READONLY || !_db) return;
+  await update(ref(_db, 'state'), paths);
+}
+
 export async function patchRoot(fields) {
   if (READONLY || !_db) return;
   await update(ref(_db, 'state'), fields);

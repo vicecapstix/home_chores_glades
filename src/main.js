@@ -33,7 +33,7 @@ import {
   claimTask, moveTask, skipTask,
 } from './tasks.js';
 
-import { addMember, removeMember, toggleRole, setAvatar } from './members.js';
+import { addMember, removeMember, toggleRole, setAvatar, renameMember } from './members.js';
 
 import {
   initRender, render, cardHTML,
@@ -198,6 +198,11 @@ window.addMember     = ()         => addMember(_isAdmin);
 window.removeMember  = name       => removeMember(name, _isAdmin);
 window.toggleRole    = name       => toggleRole(name, _isAdmin);
 window.setAvatar     = (name, a)  => setAvatar(name, a, _isAdmin);
+window.renameMember  = async name => {
+  if (READONLY || !_isAdmin()) return;
+  const n = prompt('Rename ' + name + ' to (points, PIN and history are kept):', name);
+  if (n !== null && await renameMember(name, n, _isAdmin)) window.openAdminPanel();
+};
 
 // Admin panel
 window.openAdminPanel = function() {
@@ -215,6 +220,7 @@ window.openAdminPanel = function() {
       '</select>' +
       '<span class="admin-member-role' + (isAdm ? ' is-admin' : '') + '">' + (isAdm ? '👑 Admin' : 'Member') + '</span>' +
       '<button class="btn-sm" onclick="window.toggleRole(\'' + jsq(m) + '\');window.openAdminPanel()">Toggle</button>' +
+      '<button class="btn-sm" aria-label="Rename ' + esc(m) + '" onclick="window.renameMember(\'' + jsq(m) + '\')">Rename</button>' +
       '<button class="btn-sm" onclick="window.closeAdminPanel();window.openSetPin(\'' + jsq(m) + '\')">Set PIN</button>' +
       '</div>';
   }).join('');
