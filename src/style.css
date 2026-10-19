@@ -64,9 +64,11 @@ body[data-role="member"] .add-bar,
 body[data-role="member"] .member-add,
 body[data-role="member"] .chip-del,
 body[data-role="member"] .edit-btn,
+body[data-role="member"] .skip-btn,
 body[data-role="member"] .move-btns,
 body[data-role="member"] #btn-reorder,
 body[data-readonly] .move-btns,
+body[data-readonly] .skip-btn,
 body[data-readonly] #btn-reorder,
 body[data-role="member"] .del { display: none !important; }
 

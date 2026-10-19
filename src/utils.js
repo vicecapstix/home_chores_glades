@@ -93,6 +93,17 @@ function atTime(dateStr, hhmm) {
 
 // With a dueTime the deadline is a moment: overdue from then on, due soon in the 24h before.
 export function dueStatus(t, now = Date.now()) {
+  const s = rawDueStatus(t, now);
+  // A skipped occurrence counts as on track until it would be overdue again.
+  return isSkipped(t) && s !== 'overdue' ? 'ok' : s;
+}
+
+// Skipped = admin skipped this occurrence (lastDone was set to skippedAt) and it is not done since.
+export function isSkipped(t) {
+  return !t.done && !!t.skippedAt && t.skippedAt === t.lastDone && t.freq !== 'once';
+}
+
+function rawDueStatus(t, now) {
   const s = baseStatus(t);
   if (t.done || !validTime(t.dueTime) || s === 'done') return s;
   if (t.freq === 'weekdays') {

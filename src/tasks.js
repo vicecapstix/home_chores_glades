@@ -299,6 +299,31 @@ export async function claimTask(id, currentMemberFn) {
   try { await patchTask(id, { person: member }); } catch (err) { showToast('Save failed: ' + (err.code || err.message)); }
 }
 
+// ── Skip this occurrence (admin) ──────────────────────────────────────────────
+
+// No points, no history, no streak: only lastDone/skippedAt move.
+export async function skipTask(id, isAdminFn) {
+  if (READONLY || !isAdminFn()) return;
+  const t = state.tasks[id];
+  if (!t || t.freq === 'once' || t.done) return;
+  const prev = { lastDone: t.lastDone ?? 0, skippedAt: t.skippedAt ?? null };
+  const now = Date.now();
+  try {
+    await patchTask(id, { lastDone: now, skippedAt: now });
+  } catch (err) {
+    showToast('Skip failed: ' + (err.code || err.message)); return;
+  }
+  t.lastDone = now; t.skippedAt = now;
+  pushUndo({
+    label: 'Skipped "' + t.name + '"',
+    undo: async () => {
+      await patchTask(id, prev);
+      if (state.tasks[id]) { state.tasks[id].lastDone = prev.lastDone; state.tasks[id].skippedAt = prev.skippedAt; }
+    },
+  });
+  showToast('Skipped "' + t.name + '"');
+}
+
 // ── Reorder (move up/down) ────────────────────────────────────────────────────
 
 // Pure: given the ids of a section in display order, move `id` by `dir` (-1/+1)
