@@ -68,8 +68,8 @@ export function localDateStr(d = new Date()) {
   return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 }
 
-export function getWeekStart() {
-  const d = new Date();
+export function getWeekStart(from) {
+  const d = from ? new Date(from) : new Date();
   const day = d.getDay();
   d.setDate(d.getDate() - (day === 0 ? 6 : day - 1));
   return localDateStr(d);
