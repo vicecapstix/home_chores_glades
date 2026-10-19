@@ -5,6 +5,38 @@ import { esc, jsq, sha256 } from './utils.js';
 let _pendingMemberName = '';
 let _memberPinBuffer   = '';
 
+// ── PIN attempt lockout (client-side only; see .sdlc/41 spec) ───────────────────
+export const PIN_MAX_ATTEMPTS = 5;
+export const PIN_LOCK_MS = 5 * 60 * 1000;
+const FAIL_KEY = 'fc_pin_fail';
+
+function readFails() {
+  try { return JSON.parse(localStorage.getItem(FAIL_KEY) || '{}') || {}; } catch (e) { return {}; }
+}
+function writeFails(o) {
+  try { localStorage.setItem(FAIL_KEY, JSON.stringify(o)); } catch (e) {}
+}
+// Milliseconds left on this member's lock, or 0.
+export function pinLockedFor(name) {
+  const e = readFails()[name];
+  return e && e.until > Date.now() ? e.until - Date.now() : 0;
+}
+function recordPinFailure(name) {
+  const all = readFails();
+  const e = all[name] && all[name].until <= Date.now() && all[name].until ? { n: 0 } : (all[name] || { n: 0 });
+  e.n = (e.n || 0) + 1;
+  if (e.n >= PIN_MAX_ATTEMPTS) { e.n = 0; e.until = Date.now() + PIN_LOCK_MS; }
+  all[name] = e;
+  writeFails(all);
+}
+function clearPinFailures(name) {
+  const all = readFails();
+  if (all[name]) { delete all[name]; writeFails(all); }
+}
+function lockMessage(ms) {
+  return 'Too many attempts. Try again in ' + Math.max(1, Math.ceil(ms / 60000)) + ' min.';
+}
+
 // ── Session helpers ────────────────────────────────────────────────────────────
 
 export function currentMember() {
@@ -68,7 +100,8 @@ function showMemberPinPad(name) {
   document.getElementById('pin-member-chips').innerHTML = '';
   document.getElementById('pin-member-name').textContent = name;
   document.getElementById('pin-member-sub').textContent = 'Enter your 4-digit PIN';
-  document.getElementById('pin-member-error').textContent = '';
+  const locked = pinLockedFor(name);
+  document.getElementById('pin-member-error').textContent = locked ? lockMessage(locked) : '';
   document.getElementById('pin-member-pin').classList.remove('hidden');
   _memberPinBuffer = '';
   _updateMemberDots();
@@ -108,6 +141,8 @@ export function memberSelect(name) {
 
 export async function memberPinKey(digit) {
   if (_memberPinBuffer.length >= 4) return;
+  const locked = pinLockedFor(_pendingMemberName);
+  if (locked) { document.getElementById('pin-member-error').textContent = lockMessage(locked); return; }
   _memberPinBuffer += digit;
   _updateMemberDots();
   if (_memberPinBuffer.length === 4) {
@@ -115,9 +150,12 @@ export async function memberPinKey(digit) {
     const expected = (state.members[_pendingMemberName] || {}).pinHash || '';
     _memberPinBuffer = '';
     if (hash === expected) {
+      clearPinFailures(_pendingMemberName);
       completeLogin(_pendingMemberName, window._fcLoginCallback);
     } else {
-      _flashMemberError('Incorrect PIN');
+      recordPinFailure(_pendingMemberName);
+      const left = pinLockedFor(_pendingMemberName);
+      _flashMemberError(left ? lockMessage(left) : 'Incorrect PIN');
     }
   }
 }
