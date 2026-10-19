@@ -33,6 +33,17 @@ describe('CI and deploy tooling', () => {
       expect(post).toContain(f);
     }
   });
+  it('rules job runs the emulator tests on a demo project, never deploys (#96)', () => {
+    const y = readFileSync(root('.github/workflows/ci.yml'), 'utf8');
+    const pkg = JSON.parse(readFileSync(root('package.json'), 'utf8'));
+    expect(y).toMatch(/setup-java/);
+    expect(y).toMatch(/npm run test:rules/);
+    expect(pkg.scripts['test:rules']).toMatch(/emulators:exec --only database --project demo-familyflow/);
+    expect(JSON.stringify(pkg.scripts)).not.toMatch(/deploy|firebase login/);
+    expect(existsSync(root('.firebaserc'))).toBe(false);
+    const fb = JSON.parse(readFileSync(root('firebase.json'), 'utf8'));
+    expect(fb.database.rules).toBe('firebase-rules.json');
+  });
   it('CLAUDE.md documents the root index.html deploy', () => {
     const c = readFileSync(root('CLAUDE.md'), 'utf8');
     expect(c).toMatch(/build:pages/);

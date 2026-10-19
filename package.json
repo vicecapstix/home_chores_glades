@@ -8,15 +8,18 @@
     "postbuild:pages": "cp dist/manifest.webmanifest dist/sw.js dist/icon.svg dist/icon-192.png dist/icon-512.png .",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:rules": "firebase emulators:exec --only database --project demo-familyflow \"vitest run --config vitest.rules.config.js\""
   },
   "dependencies": {
     "firebase": "^10.12.2"
   },
   "devDependencies": {
+    "@firebase/rules-unit-testing": "^3.0.4",
+    "firebase-tools": "^13.35.1",
+    "jsdom": "^25.0.0",
     "vite": "^5.0.0",
     "vite-plugin-singlefile": "^2.0.0",
-    "vitest": "^2.0.0",
-    "jsdom": "^25.0.0"
+    "vitest": "^2.0.0"
   }
 }

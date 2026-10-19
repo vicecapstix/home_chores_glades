@@ -60,6 +60,10 @@ A real-time chore tracker for families — assign tasks, track progress, earn po
 
 Limit: anyone who opens the site gets an anonymous token, so PIN hashes stay readable from inside the app. These rules block raw REST/bot access without a token and malformed writes. After 5 wrong PINs a member's PIN pad locks for 5 minutes on that device (client-side only).
 
+#### Testing the rules locally
+
+`npm run test:rules` runs `tests/rules/` against the local Realtime Database emulator using a `demo-familyflow` project, so it never touches the live database. It needs Java 11+ (21 recommended). `npm test` doesn't run these and doesn't need Java. CI runs both.
+
 ### 2. GitHub Pages
 
 1. Push `index.html` (and these docs) to your repository's `main` branch

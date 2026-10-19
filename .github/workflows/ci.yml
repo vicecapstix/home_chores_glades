@@ -29,3 +29,23 @@ jobs:
           cmp dist/icon-192.png icon-192.png || stale=1
           cmp dist/icon-512.png icon-512.png || stale=1
           if [ "$stale" = 1 ]; then echo "::error::Root deployed files are stale - run npm run build:pages and commit"; exit 1; fi
+  # Security-rules tests (#96): local RTDB emulator with a demo- project only.
+  # Never deploys or logs in; uses no repo credentials.
+  rules:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/firebase/emulators
+          key: firebase-emulators-${{ hashFiles('package-lock.json') }}
+      - run: npm ci
+      - run: npm run test:rules
