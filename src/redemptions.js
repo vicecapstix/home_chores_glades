@@ -56,7 +56,7 @@ export async function requestReward(rewardId, currentMemberFn) {
     drops.forEach(d => { fields['redemptions/' + d] = null; });
     try { await patchRoot(fields); }
     catch (err) {
-      await refundPoints(me, reward.cost).catch(() => {});
+      if (state.members[me]) await refundPoints(me, reward.cost).catch(() => {});
       showToast('Request failed: ' + (err.code || err.message));
       return;
     }
@@ -69,7 +69,7 @@ export async function requestReward(rewardId, currentMemberFn) {
       undo: async () => {
         if (state.redemptions?.[id]?.status !== 'pending') throw new Error('Already processed');
         await patchRoot({ ['redemptions/' + id]: null });
-        await refundPoints(me, reward.cost);
+        if (state.members[me]) await refundPoints(me, reward.cost);
         delete state.redemptions[id];
       },
     });
