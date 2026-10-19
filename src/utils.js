@@ -41,7 +41,10 @@ export function prevScheduledStart(days, now = Date.now()) {
 
 // lastDone value for a brand-new task so it is not instantly overdue.
 export function initialLastDone(freq, now = Date.now()) {
-  return freq === 'weekdays' ? now : now - freqDays(freq) * 86400000;
+  if (freq === 'weekdays') return now;
+  const d = new Date(now);
+  d.setDate(d.getDate() - freqDays(freq));
+  return d.getTime();
 }
 
 export function freqLabel(t) {
@@ -54,8 +57,10 @@ export function freqDays(f) {
   return { daily: 1, weekly: 7, fortnightly: 14, monthly: 30 }[f] || 7;
 }
 
-export function daysSince(ts) {
-  return Math.floor((Date.now() - ts) / 86400000);
+// Whole local calendar days from `ts` to `now` (time of day ignored; DST-safe).
+export function daysSince(ts, now = Date.now()) {
+  const a = new Date(ts), b = new Date(now);
+  return Math.round((Date.UTC(b.getFullYear(), b.getMonth(), b.getDate()) - Date.UTC(a.getFullYear(), a.getMonth(), a.getDate())) / 86400000);
 }
 
 // YYYY-MM-DD in the device's local time zone (toISOString would be UTC).
@@ -63,8 +68,8 @@ export function localDateStr(d = new Date()) {
   return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 }
 
-export function getWeekStart() {
-  const d = new Date();
+export function getWeekStart(from) {
+  const d = from ? new Date(from) : new Date();
   const day = d.getDay();
   d.setDate(d.getDate() - (day === 0 ? 6 : day - 1));
   return localDateStr(d);
@@ -104,7 +109,7 @@ export function isSkipped(t) {
 }
 
 function rawDueStatus(t, now) {
-  const s = baseStatus(t);
+  const s = baseStatus(t, now);
   if (t.done || !validTime(t.dueTime) || s === 'done') return s;
   if (t.freq === 'weekdays') {
     // base 'soon' means a scheduled day that is today
@@ -123,7 +128,7 @@ function rawDueStatus(t, now) {
   return now >= due ? 'overdue' : now >= due - 86400000 ? 'soon' : 'ok';
 }
 
-function baseStatus(t) {
+function baseStatus(t, now = Date.now()) {
   if (t.done) return 'done';
   if (t.freq === 'once') {
     if (!t.dueDate) return 'ok';
@@ -141,10 +146,27 @@ function baseStatus(t) {
     const today = new Date(); today.setHours(0, 0, 0, 0);
     return p === today.getTime() ? 'soon' : 'overdue';
   }
-  const d = freqDays(t.freq), s = daysSince(t.lastDone || 0);
+  const d = freqDays(t.freq), s = daysSince(t.lastDone || 0, now);
   if (s >= d) return 'overdue';
   if (s >= d - 1) return 'soon';
   return 'ok';
+}
+
+// Family daily goal: chores done today vs. those due today (overdue + due today + done today).
+export function todayProgress(tasks, now = Date.now()) {
+  const today = localDateStr(new Date(now));
+  let done = 0, total = 0;
+  for (const t of tasks || []) {
+    if (t.done) {
+      if (t.lastDone && localDateStr(new Date(t.lastDone)) === today) { done++; total++; }
+      continue;
+    }
+    if (isSkipped(t)) continue;
+    const s = dueStatus(t, now);
+    const dueToday = t.freq === 'once' ? t.dueDate === today : t.freq === 'weekdays' && s === 'soon';
+    if (s === 'overdue' || dueToday) total++;
+  }
+  return { done, total };
 }
 
 // "Mine" = assigned to me, or unclaimed; future (on-track) chores are left out.

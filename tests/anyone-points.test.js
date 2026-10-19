@@ -10,11 +10,12 @@ vi.mock('../src/firebase.js', () => ({
   removeTask:   vi.fn().mockResolvedValue(undefined),
   restoreTask:  vi.fn().mockResolvedValue(undefined),
   patchSubtask: vi.fn().mockResolvedValue(undefined),
+  adjustMemberPoints: vi.fn().mockResolvedValue({ ok: true }),
 }));
 vi.mock('../src/ui.js', () => ({ showToast: vi.fn() }));
 vi.mock('../src/undo.js', () => ({ pushUndo: vi.fn() }));
 
-import { patchTask, patchMember, patchRoot } from '../src/firebase.js';
+import { adjustMemberPoints, patchTask, patchMember, patchRoot } from '../src/firebase.js';
 
 const isAdmin = () => true;
 const notAdmin = () => false;
@@ -44,7 +45,7 @@ describe('Anyone task completion (#43)', () => {
     expect(patchTask).toHaveBeenCalledWith('t1', expect.objectContaining({
       done: true, lastDoneBy: 'Alice', lastDonePoints: 3,
     }));
-    expect(patchMember).toHaveBeenCalledWith('Alice', expect.objectContaining({ points: 13, completedCount: 1 }));
+    expect(adjustMemberPoints).toHaveBeenCalledWith('Alice', expect.objectContaining({ pts: 3, count: 1 }));
     const hist = patchRoot.mock.calls[0][0].history;
     expect(hist).toHaveLength(1);
     expect(hist[0]).toMatchObject({ taskId: 't1', person: 'Alice', points: 3 });
@@ -55,7 +56,7 @@ describe('Anyone task completion (#43)', () => {
     state.members.Alice.points = 13;
     state.members.Alice.completedCount = 1;
     await toggleTask('t1', () => 'Bob', isAdmin);
-    expect(patchMember).toHaveBeenCalledWith('Alice', expect.objectContaining({ points: 10, completedCount: 0 }));
+    expect(adjustMemberPoints).toHaveBeenCalledWith('Alice', expect.objectContaining({ pts: -3, count: -1 }));
   });
 
   it('awards nothing and does not crash with no logged-in member', async () => {
@@ -76,7 +77,7 @@ describe('Anyone task completion (#43)', () => {
   it('assigned tasks still award the assignee, not the ticker', async () => {
     state.tasks.t1 = anyoneTask({ person: 'Bob' });
     await toggleTask('t1', () => 'Alice', isAdmin);
-    expect(patchMember).toHaveBeenCalledWith('Bob', expect.any(Object));
-    expect(patchMember).not.toHaveBeenCalledWith('Alice', expect.any(Object));
+    expect(adjustMemberPoints).toHaveBeenCalledWith('Bob', expect.any(Object));
+    expect(adjustMemberPoints).not.toHaveBeenCalledWith('Alice', expect.any(Object));
   });
 });

@@ -37,13 +37,27 @@ export async function addMember(isAdminFn) {
   }
 }
 
-export async function removeMember(name, isAdminFn) {
+export async function removeMember(name, isAdminFn, currentMemberFn, onSelfRemoved) {
   if (READONLY || !isAdminFn()) return;
+  const m = state.members[name];
+  if (!m) return;
+  const others = Object.keys(state.members).length - 1;
+  if (m.role === 'admin' && others > 0 &&
+      Object.values(state.members).filter(x => x.role === 'admin').length <= 1) {
+    showToast('Cannot remove the last admin');
+    return;
+  }
   if (!confirm('Remove ' + name + '? Their chores become unassigned.')) return;
+  const wasSelf = !!currentMemberFn && currentMemberFn() === name;
   delete state.members[name];
   Object.values(state.tasks).forEach(t => { if (t.person === name) t.person = ''; });
+  // Pending requests held points for a member who is gone: drop them (no refund).
+  Object.entries(state.redemptions || {}).forEach(([id, r]) => {
+    if (r && r.member === name && r.status === 'pending') delete state.redemptions[id];
+  });
   try {
     await writeState();
+    if (wasSelf && onSelfRemoved) onSelfRemoved();
   } catch (err) {
     showToast('Save failed: ' + (err.code || err.message));
   }
