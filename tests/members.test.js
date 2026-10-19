@@ -12,6 +12,7 @@ vi.mock('../src/ui.js', () => ({
 }));
 
 import { writeState, patchMember } from '../src/firebase.js';
+import { showToast } from '../src/ui.js';
 
 const isAdmin  = () => true;
 const notAdmin = () => false;
@@ -122,6 +123,49 @@ describe('removeMember', () => {
     await removeMember('Bob', isAdmin);
     expect(state.tasks.t1.person).toBe('');
     expect(state.tasks.t2.person).toBe('Alice'); // unaffected
+  });
+  it('refuses to remove the last admin while others remain (#89)', async () => {
+    await removeMember('Alice', isAdmin);
+    expect(state.members).toHaveProperty('Alice');
+    expect(writeState).not.toHaveBeenCalled();
+    expect(showToast).toHaveBeenCalledWith('Cannot remove the last admin');
+  });
+  it('allows removing an admin when another admin exists (#89)', async () => {
+    state.members.Bob.role = 'admin';
+    await removeMember('Alice', isAdmin);
+    expect(state.members).not.toHaveProperty('Alice');
+  });
+  it('allows removing the only member (#89)', async () => {
+    delete state.members.Bob;
+    await removeMember('Alice', isAdmin);
+    expect(state.members).toEqual({});
+  });
+  it('drops pending redemptions of the removed member in the same write (#89)', async () => {
+    state.redemptions = {
+      r1: { id: 'r1', member: 'Bob', status: 'pending' },
+      r2: { id: 'r2', member: 'Bob', status: 'approved' },
+      r3: { id: 'r3', member: 'Alice', status: 'pending' },
+    };
+    writeState.mockImplementationOnce(async () => { expect(state.redemptions).not.toHaveProperty('r1'); });
+    await removeMember('Bob', isAdmin);
+    expect(writeState).toHaveBeenCalledOnce();
+    expect(Object.keys(state.redemptions).sort()).toEqual(['r2', 'r3']);
+  });
+  it('calls onSelfRemoved after writing when removing the logged-in member (#89)', async () => {
+    state.members.Bob.role = 'admin';
+    const cb = vi.fn();
+    writeState.mockImplementationOnce(async () => { expect(cb).not.toHaveBeenCalled(); });
+    await removeMember('Alice', isAdmin, () => 'Alice', cb);
+    expect(cb).toHaveBeenCalledOnce();
+  });
+  it('does not call onSelfRemoved for someone else or when the write fails (#89)', async () => {
+    const cb = vi.fn();
+    await removeMember('Bob', isAdmin, () => 'Alice', cb);
+    expect(cb).not.toHaveBeenCalled();
+    state.members.Bob = { name: 'Bob', role: 'admin' };
+    writeState.mockRejectedValueOnce(new Error('x'));
+    await removeMember('Alice', isAdmin, () => 'Alice', cb);
+    expect(cb).not.toHaveBeenCalled();
   });
   it('non-admin cannot remove a member', async () => {
     await removeMember('Bob', notAdmin);
