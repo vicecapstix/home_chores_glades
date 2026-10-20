@@ -97,7 +97,12 @@ function atTime(dateStr, hhmm) {
 }
 
 // With a dueTime the deadline is a moment: overdue from then on, due soon in the 24h before.
+let _pausedUntil = '';
+export function setPauseUntil(d) { _pausedUntil = d || ''; }
+export function isPausedNow(now = Date.now()) { return !!_pausedUntil && localDateStr(new Date(now)) <= _pausedUntil; }
+
 export function dueStatus(t, now = Date.now()) {
+  if (!t.done && isPausedNow(now)) return 'ok'; // holiday pause: nothing is due
   const s = rawDueStatus(t, now);
   // A skipped occurrence counts as on track until it would be overdue again.
   return isSkipped(t) && s !== 'overdue' ? 'ok' : s;

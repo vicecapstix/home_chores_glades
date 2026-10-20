@@ -33,6 +33,7 @@ import {
   claimTask, moveTask, skipTask,
 } from './tasks.js';
 
+import { checkPauseExpiry, renderPauseBanner, setPause, clearPause, pauseAdminHTML } from './pause.js';
 import { addMember, removeMember, toggleRole, setAvatar, renameMember } from './members.js';
 
 import {
@@ -95,10 +96,13 @@ initModalBackButton();
       templates: val.templates || {},
       rewards:   val.rewards   || {},
       redemptions: val.redemptions || {},
+      pause: val.pause || null,
     });
 
+    checkPauseExpiry();
     checkTaskResets();
     render();
+    renderPauseBanner();
     refreshRewards(_isAdmin);
     markSynced();
 
@@ -226,9 +230,11 @@ window.openAdminPanel = function() {
       '<button class="btn-sm" aria-label="Rename ' + esc(m) + '" onclick="window.renameMember(\'' + jsq(m) + '\')">Rename</button>' +
       '<button class="btn-sm" onclick="window.closeAdminPanel();window.openSetPin(\'' + jsq(m) + '\')">Set PIN</button>' +
       '</div>';
-  }).join('');
+  }).join('') + pauseAdminHTML();
   document.getElementById('admin-panel-modal').classList.remove('hidden');
 };
+window.setPause = () => { const el = document.getElementById('pause-until'); return setPause(el && el.value, _isAdmin, _currentMember).then(() => window.openAdminPanel()); };
+window.clearPause = () => clearPause(_isAdmin).then(() => window.openAdminPanel());
 window.closeAdminPanel = function() {
   document.getElementById('admin-panel-modal').classList.add('hidden');
 };
