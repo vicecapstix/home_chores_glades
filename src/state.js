@@ -1,3 +1,5 @@
+import { setPauseUntil } from './utils.js';
+
 // Central mutable state — all modules import this object directly.
 // Mutations are visible to all importers since objects are passed by reference.
 export const state = {
@@ -8,6 +10,7 @@ export const state = {
   templates: {},
   rewards:   {},
   redemptions: {},
+  pause:     null,
 };
 
 // Derived convenience accessor — always computed fresh from state.members
@@ -24,6 +27,8 @@ export function applySnapshot(val) {
   state.templates = val.templates || {};
   state.rewards   = val.rewards   || {};
   state.redemptions = val.redemptions || {};
+  state.pause = val.pause && val.pause.until ? val.pause : null;
+  setPauseUntil(state.pause ? state.pause.until : '');
 }
 
 // Migrate legacy members array ["Alice","Bob"] → object format
