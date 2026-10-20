@@ -75,6 +75,46 @@ export function getWeekStart(from) {
   return localDateStr(d);
 }
 
+// Local-time Monday (YYYY-MM-DD) of the week before the current one.
+export function prevWeekStart(from) {
+  const [y, m, d] = getWeekStart(from).split('-').map(Number);
+  return localDateStr(new Date(y, m - 1, d - 7));
+}
+
+// Per-member points and completions for the local week starting on `weekStart`
+// (Mon 00:00 to next Mon 00:00), computed from history. Members with nothing
+// are omitted. Sorted by points desc, then name.
+export function weekRecap(history, weekStart) {
+  const [y, m, d] = String(weekStart).split('-').map(Number);
+  const start = new Date(y, m - 1, d).getTime();
+  const end = new Date(y, m - 1, d + 7).getTime();
+  const by = {};
+  (history || []).forEach(e => {
+    if (!e || !e.person || !(e.completedAt >= start && e.completedAt < end)) return;
+    const r = by[e.person] || (by[e.person] = { name: e.person, points: 0, count: 0 });
+    r.points += e.points || 0;
+    r.count++;
+  });
+  return Object.values(by).filter(r => r.points > 0 || r.count > 0)
+    .sort((a, b) => b.points - a.points || a.name.localeCompare(b.name));
+}
+
+// Last week's winner(s); ties are shared. truncated = the capped history may
+// not reach back to the start of that week, so totals can be incomplete.
+export function lastWeekChampion(history, from, cap = 500) {
+  const ws = prevWeekStart(from);
+  const rows = weekRecap(history, ws);
+  const top = rows.length ? rows[0].points : 0;
+  const [y, m, d] = ws.split('-').map(Number);
+  const start = new Date(y, m - 1, d).getTime();
+  const oldest = (history || []).reduce((mn, e) => Math.min(mn, e && e.completedAt ? e.completedAt : Infinity), Infinity);
+  return {
+    weekStart: ws, rows, points: top,
+    names: rows.filter(r => r.points === top && top > 0).map(r => r.name),
+    truncated: (history || []).length >= cap && oldest > start,
+  };
+}
+
 // Points earned this week; stale (previous-week) totals count as 0.
 export function currentWeekPoints(m) {
   return m && m.weekStart === getWeekStart() ? (m.weekPoints || 0) : 0;

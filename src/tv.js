@@ -1,7 +1,7 @@
 // TV dashboard helpers for ?readonly=1 — display only, no Firebase access.
 import { state, getMembers } from './state.js';
 import { PCOLS, READONLY } from './config.js';
-import { esc, avatarPrefix, currentWeekPoints } from './utils.js';
+import { esc, avatarPrefix, currentWeekPoints, lastWeekChampion } from './utils.js';
 
 export function applyTvMode(readonly, body = document.body) {
   body.classList.toggle('tv', !!readonly);
@@ -22,7 +22,13 @@ export function updateClock(d = new Date()) {
   el.innerHTML = '<span class="tv-time">' + esc(time) + '</span><span class="tv-date">' + esc(date) + '</span>';
 }
 
-export function tvStripHTML(members = state.members) {
+export function tvChampionHTML(history = state.history) {
+  const c = lastWeekChampion(history);
+  if (!c.names.length) return '';
+  return '<span class="tv-champ">🏆 Last week: ' + c.names.map(esc).join(' & ') + ' — ' + c.points + ' pts</span>';
+}
+
+export function tvStripHTML(members = state.members, history = state.history) {
   const names = getMembers();
   const sorted = Object.values(members).slice().sort((a, b) => currentWeekPoints(b) - currentWeekPoints(a));
   return sorted.map(m => {
@@ -31,7 +37,7 @@ export function tvStripHTML(members = state.members) {
     return '<span class="tv-chip" style="background:' + c.bg + ';color:' + c.text + ';">' +
       esc(avatarPrefix(m)) + esc(m.name) + ' <b>' + currentWeekPoints(m) + '</b> pts' +
       ((m.streak || 0) > 0 ? ' 🔥' + m.streak : '') + '</span>';
-  }).join('');
+  }).join('') + tvChampionHTML(history);
 }
 
 export function renderTvStrip() {
