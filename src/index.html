@@ -212,6 +212,11 @@
     <div class="hstat"><div class="hstat-val" id="h-overdue" style="color:var(--warn)">—</div><div class="hstat-label">Overdue</div></div>
     <div class="hstat"><div class="hstat-val" id="h-pct">—</div><div class="hstat-label">Progress</div></div>
   </div>
+  <div id="goal" class="goal hidden" role="progressbar" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0" aria-label="Today's chores">
+    <div id="goal-text" class="goal-text"></div>
+    <div class="goal-track"><div id="goal-fill" class="goal-fill"></div></div>
+    <span class="goal-confetti" aria-hidden="true">🎉 ✨ 🎊 ⭐ 🎉</span>
+  </div>
   <div id="tv-strip" aria-label="Weekly points"></div>
   <div class="progress-bar"><div class="progress-fill" id="prog" style="width:0%"></div></div>
 </header>
@@ -296,6 +301,7 @@
       <div style="margin-top:0.25rem;color:var(--accent);font-size:0.8rem;font-weight:600;letter-spacing:0.05em;">ADMIN</div>
     </div>
     <div id="admin-member-list" style="margin:0.5rem 0;"></div>
+    <button class="btn-lg" style="width:100%;margin-top:0.5rem;" onclick="window.downloadBackup()" title="Saves a JSON copy of chores, points and history. PINs are not included.">Download backup</button>
     <button class="btn-lg" style="width:100%;margin-top:0.5rem;" onclick="window.adminPanelSwitchUser()">Switch User</button>
   </div>
 </div>

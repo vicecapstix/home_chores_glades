@@ -72,6 +72,12 @@ export async function patchMember(name, fields) {
   await update(ref(_db, 'state/members/' + name), fields);
 }
 
+// Multi-path update rooted at /state: keys are relative paths, null deletes.
+export async function patchPaths(paths) {
+  if (READONLY || !_db) return;
+  await update(ref(_db, 'state'), paths);
+}
+
 export async function patchRoot(fields) {
   if (READONLY || !_db) return;
   await update(ref(_db, 'state'), fields);
@@ -107,6 +113,29 @@ export async function decideRedemption(id, status, by) {
   const res = await runTransaction(ref(_db, 'state/redemptions/' + id),
     cur => (cur && cur.status === 'pending' ? { ...cur, status, decidedAt: Date.now(), decidedBy: by } : undefined));
   return !!res.committed;
+}
+
+// Atomic award/reversal of task points on the member's LIVE server value (never
+// an absolute from the local cache). opts: { pts (signed), count (signed),
+// weekStart, countWeek (touch weekPoints?), allowNegative }. Without
+// allowNegative a reversal that the balance cannot cover aborts untouched.
+// Returns { ok, reason: 'insufficient'|'missing'|'readonly', member }.
+export async function adjustMemberPoints(name, opts) {
+  if (READONLY || !_db) return { ok: false, reason: 'readonly' };
+  const { pts = 0, count = 0, weekStart, countWeek = true, allowNegative = false } = opts;
+  let reason = '';
+  const res = await runTransaction(ref(_db, 'state/members/' + name), cur => {
+    if (!cur) { reason = 'missing'; return undefined; }
+    const balance = cur.points || 0;
+    if (pts < 0 && !allowNegative && balance < -pts) { reason = 'insufficient'; return undefined; }
+    const next = { ...cur, points: balance + pts, completedCount: Math.max(0, (cur.completedCount || 0) + count) };
+    if (countWeek) {
+      next.weekPoints = Math.max(0, (cur.weekStart === weekStart ? (cur.weekPoints || 0) : 0) + pts);
+      next.weekStart = weekStart;
+    }
+    return next;
+  });
+  return { ok: !!res.committed, reason: res.committed ? '' : reason, member: res.snapshot?.val?.() ?? null };
 }
 
 export async function refundPoints(name, cost) {

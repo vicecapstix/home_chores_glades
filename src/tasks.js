@@ -1,9 +1,9 @@
 import { state, getMembers } from './state.js';
 import { READONLY, BADGES, CATEGORIES } from './config.js';
-import { writeState, patchTask, patchMember, patchRoot, removeTask, restoreTask, patchSubtask } from './firebase.js';
+import { writeState, adjustMemberPoints, patchTask, patchMember, patchRoot, removeTask, restoreTask, patchSubtask } from './firebase.js';
 import { showToast } from './ui.js';
 import { pushUndo } from './undo.js';
-import { esc, jsq, validTime, freqDays, dueStatus, taskPoints, getWeekStart, localDateStr, prevScheduledStart, initialLastDone, DAY_NAMES } from './utils.js';
+import { esc, jsq, validTime, freqDays, daysSince, dueStatus, taskPoints, getWeekStart, localDateStr, prevScheduledStart, initialLastDone, DAY_NAMES } from './utils.js';
 
 // Re-export for other modules
 export { dueStatus, taskPoints, freqDays };
@@ -18,7 +18,7 @@ export function checkTaskResets() {
     if (t.freq === 'once') return;
     const due = t.freq === 'weekdays'
       ? (prevScheduledStart(t.days, now) !== null && prevScheduledStart(t.days, now) > (t.lastDone || 0))
-      : now - (t.lastDone || 0) >= freqDays(t.freq) * 86400000;
+      : daysSince(t.lastDone || 0, now) >= freqDays(t.freq);
     if (t.done && due) {
       t.done = false;
       t.lastDoneBy = null;
@@ -166,29 +166,32 @@ export async function toggleTask(id, currentMemberFn, isAdminFn) {
   if (done && awardee) {
     taskUpdate.lastDoneBy     = awardee;
     taskUpdate.lastDonePoints = taskPoints(t);
+    taskUpdate.lastDoneWeek   = getWeekStart();
   } else if (!done) {
     taskUpdate.lastDoneBy     = null;
     taskUpdate.lastDonePoints = null;
+    taskUpdate.lastDoneWeek   = null;
+  }
+  const weekStart = getWeekStart();
+  // Uncheck: reverse points FIRST, atomically on the live value. A member may
+  // not claw back points they already spent; an admin can (balance may go < 0).
+  let reversal = null;
+  if (!done && t.lastDoneBy && t.lastDonePoints && state.members[t.lastDoneBy]) {
+    const countedWeek = t.lastDoneWeek || (t.lastDone ? getWeekStart(new Date(t.lastDone)) : '');
+    reversal = { pts: -t.lastDonePoints, count: -1, weekStart, countWeek: countedWeek === weekStart, allowNegative: isAdminFn() };
+    try {
+      const r = await adjustMemberPoints(t.lastDoneBy, reversal);
+      if (!r.ok && r.reason === 'insufficient') { showToast('Points already spent — ask a parent'); return; }
+      if (!r.ok) { showToast('Member update failed'); return; }
+    } catch (err) { showToast('Member update failed: ' + (err.code || err.message)); return; }
   }
   try {
     await patchTask(id, taskUpdate);
   } catch (err) {
-    showToast('Update failed: ' + (err.code || err.message)); return;
-  }
-  // Reverse points when unchecking
-  if (!done && t.lastDoneBy && t.lastDonePoints) {
-    const m = state.members[t.lastDoneBy];
-    if (m) {
-      const weekStart = getWeekStart();
-      try {
-        await patchMember(t.lastDoneBy, {
-          points:       Math.max(0, (m.points || 0) - t.lastDonePoints),
-          completedCount: Math.max(0, (m.completedCount || 0) - 1),
-          weekPoints:   Math.max(0, (m.weekStart === weekStart ? (m.weekPoints || 0) : 0) - t.lastDonePoints),
-          weekStart,
-        });
-      } catch (err) { showToast('Member update failed: ' + (err.code || err.message)); }
-    }
+    showToast('Update failed: ' + (err.code || err.message));
+    // Task still checked: put the reversed points back.
+    if (reversal) adjustMemberPoints(t.lastDoneBy, { ...reversal, pts: -reversal.pts, count: 1, allowNegative: true }).catch(() => {});
+    return;
   }
   // Award points when checking
   if (done && awardee) {
@@ -198,23 +201,21 @@ export async function toggleTask(id, currentMemberFn, isAdminFn) {
     const today     = localDateStr();
     const yd        = new Date(); yd.setDate(yd.getDate() - 1);
     const yesterday = localDateStr(yd);
-    const weekStart = getWeekStart();
     const newPoints = (m.points || 0) + pts;
     const newCount  = (m.completedCount || 0) + 1;
     const newStreak = m.lastStreakDate === today     ? (m.streak || 0) :
                       m.lastStreakDate === yesterday ? (m.streak || 0) + 1 : 1;
-    const newWeekPoints = (m.weekStart === weekStart ? (m.weekPoints || 0) : 0) + pts;
     const currentBadges = m.badges || [];
     const virtualMember = { ...m, points: newPoints, completedCount: newCount, streak: newStreak };
     const newBadgeIds = BADGES
       .filter(b => !currentBadges.includes(b.id) && b.check(virtualMember))
       .map(b => b.id);
-    const memberUpdate = {
-      points: newPoints, completedCount: newCount, streak: newStreak,
-      lastStreakDate: today, weekPoints: newWeekPoints, weekStart,
-    };
+    const memberUpdate = { streak: newStreak, lastStreakDate: today };
     if (newBadgeIds.length) memberUpdate.badges = [...currentBadges, ...newBadgeIds];
     try {
+      // Points/count/week via one atomic transaction; streak/badges stay a patch.
+      const r = await adjustMemberPoints(awardee, { pts, count: 1, weekStart });
+      if (!r.ok) { showToast('Member update failed'); return; }
       await patchMember(awardee, memberUpdate);
       newBadgeIds.forEach(bid => {
         const b = BADGES.find(b => b.id === bid);

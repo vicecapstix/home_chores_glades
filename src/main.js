@@ -34,7 +34,7 @@ import {
 } from './tasks.js';
 
 import { checkPauseExpiry, renderPauseBanner, setPause, clearPause, pauseAdminHTML } from './pause.js';
-import { addMember, removeMember, toggleRole, setAvatar } from './members.js';
+import { addMember, removeMember, toggleRole, setAvatar, renameMember } from './members.js';
 
 import {
   initRender, render, cardHTML,
@@ -62,12 +62,15 @@ if (READONLY) {
 }
 
 import { initTvMode } from './tv.js';
+import { startRollover } from './rollover.js';
 import { registerServiceWorker } from './pwa.js';
+import { downloadBackup } from './backup.js';
 import { openHistory, setHistoryFilter } from './history.js';
 import { requestReward, decideRequest } from './redemptions.js';
 import { openRewards, saveReward, editReward, deleteReward, cancelRewardEdit, refreshRewards } from './rewards.js';
 registerServiceWorker();
 initTvMode();
+startRollover(render);
 
 // ── Theme sync on load ────────────────────────────────────────────────────────
 syncThemeButton();
@@ -126,7 +129,7 @@ document.getElementById('new-freq').addEventListener('change', e => document.get
 document.getElementById('new-task').addEventListener('keydown', e => { if (e.key === 'Enter') addTask(_isAdmin); });
 document.getElementById('new-member').addEventListener('keydown', e => { if (e.key === 'Enter') addMember(_isAdmin); });
 
-initMemberChipClicks(name => removeMember(name, _isAdmin));
+initMemberChipClicks(name => removeMember(name, _isAdmin, _currentMember, () => window.switchUser()));
 
 // Filter events from summary "Let's go" button
 // Keyboard entry for the PIN pads (digits + Backspace)
@@ -199,9 +202,14 @@ window.bulkDelete       = ()      => bulkDelete();
 
 // Members
 window.addMember     = ()         => addMember(_isAdmin);
-window.removeMember  = name       => removeMember(name, _isAdmin);
+window.removeMember  = name       => removeMember(name, _isAdmin, _currentMember, () => window.switchUser());
 window.toggleRole    = name       => toggleRole(name, _isAdmin);
 window.setAvatar     = (name, a)  => setAvatar(name, a, _isAdmin);
+window.renameMember  = async name => {
+  if (READONLY || !_isAdmin()) return;
+  const n = prompt('Rename ' + name + ' to (points, PIN and history are kept):', name);
+  if (n !== null && await renameMember(name, n, _isAdmin)) window.openAdminPanel();
+};
 
 // Admin panel
 window.openAdminPanel = function() {
@@ -219,6 +227,7 @@ window.openAdminPanel = function() {
       '</select>' +
       '<span class="admin-member-role' + (isAdm ? ' is-admin' : '') + '">' + (isAdm ? '👑 Admin' : 'Member') + '</span>' +
       '<button class="btn-sm" onclick="window.toggleRole(\'' + jsq(m) + '\');window.openAdminPanel()">Toggle</button>' +
+      '<button class="btn-sm" aria-label="Rename ' + esc(m) + '" onclick="window.renameMember(\'' + jsq(m) + '\')">Rename</button>' +
       '<button class="btn-sm" onclick="window.closeAdminPanel();window.openSetPin(\'' + jsq(m) + '\')">Set PIN</button>' +
       '</div>';
   }).join('') + pauseAdminHTML();
@@ -229,6 +238,7 @@ window.clearPause = () => clearPause(_isAdmin).then(() => window.openAdminPanel(
 window.closeAdminPanel = function() {
   document.getElementById('admin-panel-modal').classList.add('hidden');
 };
+window.downloadBackup = function() { downloadBackup(_isAdmin); };
 window.adminPanelSwitchUser = function() {
   window.closeAdminPanel();
   window.switchUser();
