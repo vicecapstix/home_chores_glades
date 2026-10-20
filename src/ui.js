@@ -1,7 +1,7 @@
 import { state, getMembers } from './state.js';
 import { PCOLS, BADGES, READONLY } from './config.js';
 import { openModal, closeModal } from './modals.js';
-import { writeState } from './firebase.js';
+import { writeState, patchPaths } from './firebase.js';
 import { esc, jsq, avatarPrefix, sha256, initialLastDone, dueStatus, localDateStr, currentWeekPoints, weekRecap, lastWeekChampion } from './utils.js';
 import { isAdmin } from './auth.js';
 
@@ -195,6 +195,11 @@ export function openTemplates() {
   openModal('templates-modal');
 }
 
+const MAX_TEMPLATES = 20;
+const MAX_TEMPLATE_TASKS = 100;
+// Firebase drops empty arrays, so a stored template may have no `tasks` key.
+const tplTasks = tpl => (tpl && Array.isArray(tpl.tasks) ? tpl.tasks : []);
+
 function renderTemplates() {
   const tmpls = Object.values(state.templates || {});
   document.getElementById('tpl-list').innerHTML = tmpls.length
@@ -202,7 +207,7 @@ function renderTemplates() {
         '<div class="tpl-item">' +
           '<div class="tpl-item-info">' +
             '<div class="tpl-item-name">' + esc(tpl.name) + '</div>' +
-            '<div class="tpl-item-count">' + tpl.tasks.length + ' task' + (tpl.tasks.length !== 1 ? 's' : '') + '</div>' +
+            '<div class="tpl-item-count">' + tplTasks(tpl).length + ' task' + (tplTasks(tpl).length !== 1 ? 's' : '') + '</div>' +
           '</div>' +
           '<button class="btn-sm btn-accent" onclick="window.applyTemplate(\'' + jsq(tpl.id) + '\')">Apply</button>' +
           '<button class="btn-sm" onclick="window.deleteTemplate(\'' + jsq(tpl.id) + '\')">Delete</button>' +
@@ -216,13 +221,19 @@ export function saveTemplate() {
   const input = document.getElementById('tpl-name-input');
   const name = input.value.trim();
   if (!name) { showToast('Enter a template name'); return; }
+  const chores = Object.values(state.tasks || {});
+  if (!chores.length) { showToast('Add some chores before saving a template'); return; }
+  if (chores.length > MAX_TEMPLATE_TASKS) { showToast('Too many chores for one template (max ' + MAX_TEMPLATE_TASKS + ')'); return; }
+  if (!state.templates) state.templates = {};
+  if (Object.keys(state.templates).length >= MAX_TEMPLATES) { showToast('Template limit reached (' + MAX_TEMPLATES + ')'); return; }
   const id = 'tpl' + Date.now();
-  state.templates[id] = {
+  const tpl = {
     id, name,
-    tasks: Object.values(state.tasks).map(t => ({ name: t.name, freq: t.freq, difficulty: t.difficulty || 'easy', ...(t.freq === 'weekdays' ? { days: t.days || [] } : {}) })),
+    tasks: chores.map(t => ({ name: t.name, freq: t.freq, difficulty: t.difficulty || 'easy', ...(t.freq === 'weekdays' ? { days: t.days || [] } : {}) })),
   };
+  state.templates[id] = tpl;
   input.value = '';
-  writeState().catch(err => showToast('Save failed: ' + (err.code || err.message)));
+  patchPaths({ ['templates/' + id]: tpl }).catch(err => showToast('Save failed: ' + (err.code || err.message)));
   showToast('Template saved');
   renderTemplates();
 }
@@ -232,7 +243,7 @@ export function applyTemplate(id) {
   const tpl = (state.templates || {})[id];
   if (!tpl) return;
   let added = 0;
-  tpl.tasks.forEach(t => {
+  tplTasks(tpl).forEach(t => {
     const taskId = 't' + Date.now() + Math.random().toString(36).slice(2);
     state.tasks[taskId] = {
       id: taskId, name: t.name, freq: t.freq, difficulty: t.difficulty || 'easy',
@@ -252,7 +263,7 @@ export function deleteTemplate(id) {
   if (READONLY || !isAdmin()) return;
   if (!confirm('Delete this template?')) return;
   delete state.templates[id];
-  writeState().catch(err => showToast('Save failed: ' + (err.code || err.message)));
+  patchPaths({ ['templates/' + id]: null }).catch(err => showToast('Save failed: ' + (err.code || err.message)));
   renderTemplates();
 }
 

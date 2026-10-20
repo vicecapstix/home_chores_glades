@@ -11,6 +11,7 @@ export { dueStatus, taskPoints, freqDays };
 // ── Task resets ───────────────────────────────────────────────────────────────
 
 export function checkTaskResets() {
+  if (state.pause) return; // paused (or expiry resume pending): freeze resets
   const patch = {};
   const now = Date.now();
   Object.values(state.tasks).forEach(t => {
