@@ -339,6 +339,8 @@ body[data-role="admin"] #btn-admin { display: flex; }
 .lb-name { flex: 1; font-size: 0.85rem; font-weight: 500; padding: 3px 10px; border-radius: 20px; }
 .lb-pts { font-weight: 500; color: var(--accent); white-space: nowrap; font-size: 0.85rem; }
 .lb-streak { white-space: nowrap; font-size: 0.85rem; color: var(--muted); }
+.lb-note { font-size: 0.8rem; color: var(--muted); padding: 4px 0; }
+.tv-champ { font-weight: 600; padding: 4px 10px; }
 .lb-badges { font-size: 0.9rem; }
 
 /* SUMMARY MODAL */

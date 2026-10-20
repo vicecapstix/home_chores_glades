@@ -2,7 +2,7 @@ import { state, getMembers } from './state.js';
 import { PCOLS, BADGES, READONLY } from './config.js';
 import { openModal, closeModal } from './modals.js';
 import { writeState } from './firebase.js';
-import { esc, jsq, avatarPrefix, sha256, initialLastDone, dueStatus, localDateStr, currentWeekPoints } from './utils.js';
+import { esc, jsq, avatarPrefix, sha256, initialLastDone, dueStatus, localDateStr, currentWeekPoints, weekRecap, lastWeekChampion } from './utils.js';
 import { isAdmin } from './auth.js';
 
 // ── pColor helper ─────────────────────────────────────────────────────────────
@@ -63,7 +63,27 @@ export function setLbTab(tab, btn) {
   renderLeaderboard();
 }
 
+// "Last week" tab: rows come from history (no new stored data). Ties share a rank.
+export function lastWeekHTML() {
+  const { weekStart, rows, truncated } = lastWeekChampion(state.history);
+  if (!rows.length) return '<div class="empty">No chores were completed last week.</div>';
+  let rank = 0, prev = null;
+  const html = rows.map((r, i) => {
+    if (r.points !== prev) rank = i + 1;
+    prev = r.points;
+    const m = state.members[r.name] || { name: r.name };
+    const c = pColor(r.name) || { bg: '#EEE', text: '#333' };
+    return '<div class="lb-row"><span class="lb-rank">' + rank + '</span>' +
+      '<span class="lb-name" style="background:' + c.bg + ';color:' + c.text + ';">' + esc(avatarPrefix(m)) + esc(r.name) + '</span>' +
+      '<span class="lb-pts">' + r.points + ' pts</span>' +
+      '<span class="lb-streak">' + r.count + ' done</span></div>';
+  }).join('');
+  return '<div class="lb-note">Week of ' + esc(weekStart) + '</div>' + html +
+    (truncated ? '<div class="lb-note" role="note">Activity history is capped, so this week may be incomplete.</div>' : '');
+}
+
 function renderLeaderboard() {
+  if (lbTab === 'lastweek') { document.getElementById('lb-list').innerHTML = lastWeekHTML(); return; }
   const sorted = Object.values(state.members).slice().sort((a, b) => {
     const va = lbTab === 'week' ? currentWeekPoints(a) : (a.points || 0);
     const vb = lbTab === 'week' ? currentWeekPoints(b) : (b.points || 0);
