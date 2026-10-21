@@ -50,7 +50,13 @@ export async function removeMember(name, isAdminFn, currentMemberFn, onSelfRemov
   if (!confirm('Remove ' + name + '? Their chores become unassigned.')) return;
   const wasSelf = !!currentMemberFn && currentMemberFn() === name;
   delete state.members[name];
-  Object.values(state.tasks).forEach(t => { if (t.person === name) t.person = ''; });
+  Object.values(state.tasks).forEach(t => {
+    if (t.person === name) t.person = '';
+    if (t.rotation) {
+      const left = Object.values(t.rotation).filter(n => n !== name);
+      if (left.length >= 2) t.rotation = left; else delete t.rotation;
+    }
+  });
   // Pending requests held points for a member who is gone: drop them (no refund).
   Object.entries(state.redemptions || {}).forEach(([id, r]) => {
     if (r && r.member === name && r.status === 'pending') delete state.redemptions[id];
@@ -98,6 +104,9 @@ export function renamePaths(oldName, newName) {
   Object.values(state.tasks).forEach(t => {
     if (t.person === oldName) paths['tasks/' + t.id + '/person'] = newName;
     if (t.lastDoneBy === oldName) paths['tasks/' + t.id + '/lastDoneBy'] = newName;
+    if (t.rotation && Object.values(t.rotation).includes(oldName)) {
+      paths['tasks/' + t.id + '/rotation'] = Object.values(t.rotation).map(n => n === oldName ? newName : n);
+    }
   });
   state.history.forEach((e, i) => {
     if (e && e.person === oldName) paths['history/' + i + '/person'] = newName;

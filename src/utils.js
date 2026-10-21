@@ -47,6 +47,19 @@ export function initialLastDone(freq, now = Date.now()) {
   return d.getTime();
 }
 
+// Rotation (#54): the chore's assignee advances through `rotation` on each reset.
+// Names of members that no longer exist are skipped; fewer than 2 valid names = no rotation.
+export function rotationList(rotation, memberNames) {
+  const names = Array.isArray(rotation) ? rotation : Object.values(rotation || {});
+  return names.filter((n, i) => typeof n === 'string' && memberNames.includes(n) && names.indexOf(n) === i);
+}
+export function nextRotationPerson(rotation, current, memberNames) {
+  const list = rotationList(rotation, memberNames);
+  if (list.length < 2) return null;
+  const i = list.indexOf(current);
+  return list[(i + 1) % list.length]; // not in the list (or unassigned): start at the first
+}
+
 export function freqLabel(t) {
   return t.freq === 'weekdays'
     ? (t.days || []).map(Number).sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7)).map(d => DAY_NAMES[d]).join(', ') || 'No days'
