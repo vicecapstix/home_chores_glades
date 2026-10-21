@@ -27,6 +27,11 @@ export function checkTaskResets() {
       patch['tasks/' + t.id + '/lastDoneBy'] = null;
       patch['tasks/' + t.id + '/lastDonePoints'] = null;
       const next = t.rotation ? nextRotationPerson(t.rotation, t.person, getMembers()) : null;
+      Object.entries(t.subtasks || {}).forEach(([sid, st]) => {
+        if (!st.done) return;
+        st.done = false;
+        patch['tasks/' + t.id + '/subtasks/' + sid + '/done'] = false;
+      });
       if (next) { t.person = next; patch['tasks/' + t.id + '/person'] = next; }
     }
   });

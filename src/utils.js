@@ -83,6 +83,12 @@ export function daysSince(ts, now = Date.now()) {
   return Math.round((Date.UTC(b.getFullYear(), b.getMonth(), b.getDate()) - Date.UTC(a.getFullYear(), a.getMonth(), a.getDate())) / 86400000);
 }
 
+// Relative completion day for a done card: 'today' / 'yesterday' / 'N days ago'.
+export function doneAgoLabel(ts, now = Date.now()) {
+  const n = Math.max(0, daysSince(ts, now));
+  return n === 0 ? 'today' : n === 1 ? 'yesterday' : n + ' days ago';
+}
+
 // YYYY-MM-DD in the device's local time zone (toISOString would be UTC).
 export function localDateStr(d = new Date()) {
   return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');

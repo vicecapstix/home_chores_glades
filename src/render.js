@@ -2,7 +2,7 @@ import { state, getMembers } from './state.js';
 import { PCOLS, BADGES, READONLY } from './config.js';
 import { renderTvStrip } from './tv.js';
 import { renderGoal } from './goal.js';
-import { esc, jsq, avatarPrefix, validTime, dueStatus, freqLabel, rotationTag, isMine, isSkipped, localDateStr } from './utils.js';
+import { esc, jsq, avatarPrefix, validTime, dueStatus, freqLabel, rotationTag, isMine, isSkipped, localDateStr, doneAgoLabel } from './utils.js';
 import { pColor } from './ui.js';
 
 // ── Session function references (set once via initRender) ─────────────────────
@@ -207,7 +207,7 @@ function _renderFilters() {
     { k: 'all',     label: 'All' },
     { k: 'pending', label: 'Pending' },
     { k: 'overdue', label: 'Overdue' },
-    { k: 'done',    label: 'Done today' },
+    { k: 'done',    label: 'Done' },
   ];
   let html = defs.map(d =>
     '<button class="filter-pill' + (filter === d.k ? ' active' : '') + '" onclick="window.setFilter(\'' + d.k + '\')">' +
@@ -251,7 +251,7 @@ function _renderTasks() {
     { k: 'overdue',   label: 'Overdue',    dot: 'dot-overdue' },
     { k: 'soon',      label: 'Due soon',   dot: 'dot-soon' },
     { k: 'ok',        label: 'Upcoming',   dot: 'dot-ok' },
-    { k: 'done',      label: 'Done today', dot: 'dot-done' },
+    { k: 'done',      label: 'Done', dot: 'dot-done' },
   ];
 
   let html = '';
@@ -313,7 +313,8 @@ export function cardHTML(t) {
   const dueTag = skipped ? '<span class="tag tag-ok">' + (localDateStr(new Date(t.skippedAt)) === localDateStr(new Date()) ? 'Skipped today' : 'Skipped') + '</span>'
                : s === 'overdue' ? '<span class="tag tag-overdue">Overdue</span>'
                : s === 'soon'    ? '<span class="tag tag-soon">Due soon</span>'
-               : s === 'ok'      ? '<span class="tag tag-ok">On track</span>' : '';
+               : s === 'ok'      ? '<span class="tag tag-ok">On track</span>'
+               : s === 'done' && t.lastDone ? '<span class="tag tag-ok">Done ' + doneAgoLabel(t.lastDone) + '</span>' : '';
   const diff = t.difficulty || 'easy';
   const diffTag = '<span class="tag tag-' + esc(diff) + '">' + esc(diff) + '</span>';
   const freqTag = t.freq === 'once'
