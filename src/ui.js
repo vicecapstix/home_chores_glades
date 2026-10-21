@@ -2,7 +2,7 @@ import { state, getMembers } from './state.js';
 import { PCOLS, BADGES, READONLY } from './config.js';
 import { openModal, closeModal } from './modals.js';
 import { writeState, patchPaths } from './firebase.js';
-import { esc, jsq, avatarPrefix, sha256, initialLastDone, dueStatus, localDateStr, currentWeekPoints, weekRecap, lastWeekChampion } from './utils.js';
+import { esc, jsq, avatarPrefix, sha256, initialLastDone, dueStatus, localDateStr, currentStreak, currentWeekPoints, weekRecap, lastWeekChampion } from './utils.js';
 import { isAdmin } from './auth.js';
 
 // ── pColor helper ─────────────────────────────────────────────────────────────
@@ -91,7 +91,7 @@ function renderLeaderboard() {
   });
   document.getElementById('lb-list').innerHTML = sorted.map((m, i) => {
     const c = pColor(m.name) || { bg: '#EEE', text: '#333' };
-    const streak = m.streak || 0;
+    const streak = currentStreak(m);
     const pts = lbTab === 'week' ? currentWeekPoints(m) : (m.points || 0);
     const badgeIcons = (m.badges || []).map(id => {
       const b = BADGES.find(b => b.id === id); return b ? b.icon : '';
