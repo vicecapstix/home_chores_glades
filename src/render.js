@@ -65,6 +65,8 @@ export function toggleSelect(id) {
   const card = document.getElementById('tc-' + id);
   if (card) {
     card.classList.toggle('selected', selectedIds.has(id));
+    const cb = card.querySelector('.sel-box');
+    if (cb) cb.setAttribute('aria-checked', String(selectedIds.has(id)));
     const box = card.querySelector('.sel-box svg');
     if (box) box.style.display = selectedIds.has(id) ? 'block' : 'none';
   }
@@ -335,9 +337,9 @@ export function cardHTML(t) {
   subs.forEach(st => {
     subRows +=
       '<div class="subtask-row">' +
-        '<div class="subtask-check' + (st.done ? ' checked' : '') + '" onclick="window.toggleSubtask(\'' + jsq(t.id) + '\',\'' + jsq(st.id) + '\')">' +
-          '<svg width="10" height="10" viewBox="0 0 12 12" fill="none"><polyline points="2,6 5,9 10,3" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
-        '</div>' +
+        '<button type="button" role="checkbox" aria-checked="' + !!st.done + '" aria-label="' + esc(st.name) + '" class="subtask-check' + (st.done ? ' checked' : '') + '" onclick="window.toggleSubtask(\'' + jsq(t.id) + '\',\'' + jsq(st.id) + '\')">' +
+          '<svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><polyline points="2,6 5,9 10,3" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
+        '</button>' +
         '<span class="subtask-name' + (st.done ? ' done' : '') + '">' + esc(st.name) + '</span>' +
         '<button class="subtask-del" onclick="window.removeSubtask(\'' + jsq(t.id) + '\',\'' + jsq(st.id) + '\')" title="Remove">×</button>' +
       '</div>';
@@ -355,10 +357,10 @@ export function cardHTML(t) {
   const cardClass  = 'task-card ' + s + (isSelected ? ' selected' : '');
   const cardClick  = selectMode ? ' onclick="window.toggleSelect(\'' + jsq(t.id) + '\')"' : '';
   const checkEl    = selectMode
-    ? '<div class="sel-box" onclick="event.stopPropagation();window.toggleSelect(\'' + jsq(t.id) + '\')"><svg width="10" height="10" viewBox="0 0 12 12" fill="none" style="display:' + (isSelected ? 'block' : 'none') + '"><polyline points="2,6 5,9 10,3" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>'
-    : '<div class="check' + (t.done ? ' checked' : '') + '" onclick="window.toggleTask(\'' + jsq(t.id) + '\')">' +
-        '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><polyline points="2,6 5,9 10,3" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
-      '</div>';
+    ? '<button type="button" role="checkbox" aria-checked="' + isSelected + '" aria-label="Select ' + esc(t.name) + '" class="sel-box" onclick="event.stopPropagation();window.toggleSelect(\'' + jsq(t.id) + '\')"><svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true" style="display:' + (isSelected ? 'block' : 'none') + '"><polyline points="2,6 5,9 10,3" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>'
+    : '<button type="button" role="checkbox" aria-checked="' + !!t.done + '" aria-label="' + esc(t.name) + '" class="check' + (t.done ? ' checked' : '') + '" onclick="window.toggleTask(\'' + jsq(t.id) + '\')">' +
+        '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><polyline points="2,6 5,9 10,3" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
+      '</button>';
 
   return '<div class="' + cardClass + '" id="tc-' + esc(t.id) + '" data-id="' + esc(t.id) + '"' + cardClick + '>' +
     '<div class="card-main">' +
