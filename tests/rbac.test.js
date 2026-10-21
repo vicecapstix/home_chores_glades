@@ -48,7 +48,7 @@ describe('subtasks', () => {
     expect(state.tasks.t1.subtasks.s1).toBeUndefined();
   });
   it('toggleSubtask stays allowed for members', async () => {
-    await toggleSubtask('t1', 's1');
+    await toggleSubtask('t1', 's1', () => 'Bob', notAdmin);
     expect(patchSubtask).toHaveBeenCalledWith('t1', 's1', { done: true });
   });
 });

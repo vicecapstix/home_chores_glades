@@ -35,24 +35,23 @@ describe("unchecking an 'Anyone' chore (#104)", () => {
   it("blocks a member unchecking another member's completion (no points moved)", async () => {
     await toggleTask('any', as('Cy'), notAdmin);
     expect(showToast).toHaveBeenCalled();
-    expect(state.tasks.any.done).toBe(true);
     expect(adjustMemberPoints).not.toHaveBeenCalled();
     expect(patchTask).not.toHaveBeenCalled();
   });
   it('lets the member who completed it uncheck it', async () => {
     await toggleTask('any', as('Bob'), notAdmin);
-    expect(state.tasks.any.done).toBe(false);
+    expect(patchTask).toHaveBeenCalledWith('any', expect.objectContaining({ done: false }));
   });
   it('lets an admin uncheck it, and any member tick an unchecked Anyone chore', async () => {
     await toggleTask('any', as('Alice'), admin);
-    expect(state.tasks.any.done).toBe(false);
+    expect(patchTask).toHaveBeenCalledWith('any', expect.objectContaining({ done: false }));
     await toggleTask('open', as('Cy'), notAdmin);
-    expect(state.tasks.open.done).toBe(true);
+    expect(patchTask).toHaveBeenCalledWith('open', expect.objectContaining({ done: true, lastDoneBy: 'Cy' }));
   });
   it('lets a member uncheck a done Anyone chore that has no recorded completer', async () => {
     state.tasks.any.lastDoneBy = null;
     await toggleTask('any', as('Cy'), notAdmin);
-    expect(state.tasks.any.done).toBe(false);
+    expect(patchTask).toHaveBeenCalledWith('any', expect.objectContaining({ done: false }));
   });
 });
 
