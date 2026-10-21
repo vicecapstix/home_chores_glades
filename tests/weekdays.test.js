@@ -134,13 +134,13 @@ describe('add / edit UI', () => {
   it('edit form pre-checks days and saveTask persists changes / clears days on switch', async () => {
     state.tasks = { t1: { id: 't1', name: 'Bins', freq: 'weekdays', days: [2], person: '', done: false, lastDone: 0 } };
     document.body.innerHTML = '<div id="tc-t1" class="task-card"></div>';
-    editTask('t1');
+    editTask('t1', () => true);
     const card = document.getElementById('tc-t1');
     expect(readDays(card.querySelector('.edit-days'))).toEqual([2]);
     card.querySelector('.edit-days input[value="5"]').checked = true;
     await saveTask('t1', admin);
     expect(state.tasks.t1.days).toEqual([2, 5]);
-    editTask('t1');
+    editTask('t1', () => true);
     card.querySelector('.edit-freq').value = 'weekly';
     await saveTask('t1', admin);
     expect(state.tasks.t1.freq).toBe('weekly');
