@@ -65,7 +65,7 @@ import { initTvMode } from './tv.js';
 import { startRollover } from './rollover.js';
 import { registerServiceWorker } from './pwa.js';
 import { downloadBackup } from './backup.js';
-import { openHistory, setHistoryFilter } from './history.js';
+import { openHistory, setHistoryFilter, historyFilterClick } from './history.js';
 import { requestReward, decideRequest } from './redemptions.js';
 import { openRewards, saveReward, editReward, deleteReward, cancelRewardEdit, refreshRewards } from './rewards.js';
 registerServiceWorker();
@@ -265,6 +265,7 @@ window.exportCSV     = (f,t)      => exportCSV(f, t);
 // Activity history (read-only)
 window.openHistory      = ()      => openHistory();
 window.setHistoryFilter = m       => setHistoryFilter(m);
+window.historyFilterClick = e    => historyFilterClick(e);
 
 // Rewards catalog (everyone can browse; admin-only edits are guarded in rewards.js)
 window.openRewards       = ()     => openRewards(_isAdmin, _currentMember);

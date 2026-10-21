@@ -52,6 +52,13 @@ export function setHistoryFilter(member) {
   renderHistory();
 }
 
+// Click handler for the pill container: ignore clicks that miss a pill (gaps).
+export function historyFilterClick(e) {
+  const pill = e && e.target && e.target.closest ? e.target.closest('[data-member]') : null;
+  if (!pill) return;
+  setHistoryFilter(pill.dataset.member);
+}
+
 export function openHistory() {
   if (filter && !getMembers().includes(filter)) filter = '';
   renderHistory();

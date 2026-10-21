@@ -11,7 +11,7 @@ beforeEach(async () => {
   document.body.innerHTML =
     '<div id="leaderboard-modal" class="hidden"><div id="lb-list"></div>' +
     '<button class="lb-tab active" id="l1"></button><button class="lb-tab" id="l2"></button></div>' +
-    '<div id="stats-modal" class="hidden"><div id="stats-list"></div>' +
+    '<div id="stats-modal" class="hidden"><div id="stats-chart"></div>' +
     '<button class="lb-tab active" id="s1"></button><button class="lb-tab" id="s2"></button></div>' +
     '<div id="history-modal" class="hidden"><div id="history-filters"></div><div id="history-list"></div></div>';
 });
