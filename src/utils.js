@@ -60,6 +60,13 @@ export function nextRotationPerson(rotation, current, memberNames) {
   return list[(i + 1) % list.length]; // not in the list (or unassigned): start at the first
 }
 
+// Small "🔁 next: Bo" tag for a rotating chore (display only; same logic as the reset).
+export function rotationTag(t, memberNames) {
+  if (!t.rotation || t.freq === 'once') return '';
+  const next = nextRotationPerson(t.rotation, t.person, memberNames);
+  return next ? '<span class="tag tag-freq" title="Rotates on reset">🔁 next: ' + esc(next) + '</span>' : '';
+}
+
 export function freqLabel(t) {
   return t.freq === 'weekdays'
     ? (t.days || []).map(Number).sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7)).map(d => DAY_NAMES[d]).join(', ') || 'No days'
