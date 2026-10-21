@@ -175,6 +175,25 @@ function ownershipBlock(t, me, isAdminFn) {
   return '';
 }
 
+// Uncheck (#32): drop this completion's history entry and give back the streak it added.
+async function undoCompletionRecords(id, t, c) {
+  const hist = state.history || [];
+  let idx = -1;
+  for (let i = hist.length - 1; i >= 0; i--) {
+    if (hist[i].taskId === id && hist[i].completedAt === c.at && (!c.by || hist[i].person === c.by)) { idx = i; break; }
+  }
+  if (idx < 0) return;
+  const rest = hist.filter((_, i) => i !== idx);
+  try { await patchRoot({ history: rest }); } catch (err) { showToast('History update failed: ' + (err.code || err.message)); return; }
+  const m = c.by && state.members[c.by];
+  if (!m || c.prevStreakDate === undefined || c.prevStreakDate === null) return;
+  const day = localDateStr(new Date(c.at));
+  const otherSameDay = rest.some(h => h.person === c.by && localDateStr(new Date(h.completedAt)) === day);
+  if (m.lastStreakDate !== day || otherSameDay || c.prevStreakDate === day) return;
+  try { await patchMember(c.by, { streak: c.prevStreak || 0, lastStreakDate: c.prevStreakDate || null }); }
+  catch (err) { showToast('Member update failed: ' + (err.code || err.message)); }
+}
+
 export async function toggleTask(id, currentMemberFn, isAdminFn) {
   if (READONLY) return;
   const t = state.tasks[id];
@@ -185,8 +204,14 @@ export async function toggleTask(id, currentMemberFn, isAdminFn) {
   const done = !t.done;
   // 'Anyone' tasks credit the logged-in member who ticks them (if they exist).
   const awardee = t.person || (me && state.members[me] ? me : '');
-  const taskUpdate = { done, lastDone: done ? Date.now() : t.lastDone };
+  const nowTs = Date.now(); // shared by lastDone and the history entry so uncheck can match them
+  // Check remembers the previous lastDone (and streak) so uncheck can restore them (#32).
+  const taskUpdate = { done, lastDone: done ? nowTs : (typeof t.prevLastDone === 'number' ? t.prevLastDone : t.lastDone) };
+  if (done) taskUpdate.prevLastDone = t.lastDone || 0;
+  else taskUpdate.prevLastDone = null;
   if (done && awardee) {
+    const am = state.members[awardee];
+    if (am) { taskUpdate.prevStreak = am.streak || 0; taskUpdate.prevStreakDate = am.lastStreakDate || ''; }
     taskUpdate.lastDoneBy     = awardee;
     taskUpdate.lastDonePoints = taskPoints(t);
     taskUpdate.lastDoneWeek   = getWeekStart();
@@ -194,8 +219,11 @@ export async function toggleTask(id, currentMemberFn, isAdminFn) {
     taskUpdate.lastDoneBy     = null;
     taskUpdate.lastDonePoints = null;
     taskUpdate.lastDoneWeek   = null;
+    taskUpdate.prevStreak     = null;
+    taskUpdate.prevStreakDate = null;
   }
   const weekStart = getWeekStart();
+  const completion = { by: t.lastDoneBy, at: t.lastDone, prevStreak: t.prevStreak, prevStreakDate: t.prevStreakDate };
   // Uncheck: reverse points FIRST, atomically on the live value. A member may
   // not claw back points they already spent; an admin can (balance may go < 0).
   let reversal = null;
@@ -216,6 +244,7 @@ export async function toggleTask(id, currentMemberFn, isAdminFn) {
     if (reversal) adjustMemberPoints(t.lastDoneBy, { ...reversal, pts: -reversal.pts, count: 1, allowNegative: true }).catch(() => {});
     return;
   }
+  if (!done) await undoCompletionRecords(id, t, completion);
   // Award points when checking
   if (done && awardee) {
     const m = state.members[awardee];
@@ -246,7 +275,7 @@ export async function toggleTask(id, currentMemberFn, isAdminFn) {
       });
     } catch (err) { showToast('Member update failed: ' + (err.code || err.message)); }
     // History
-    const histEntry  = { taskId: id, taskName: t.name, person: awardee, completedAt: Date.now(), points: taskPoints(t) };
+    const histEntry  = { taskId: id, taskName: t.name, person: awardee, completedAt: nowTs, points: taskPoints(t) };
     const newHistory = (state.history || []).concat([histEntry]).slice(-500);
     try {
       await patchRoot({ history: newHistory });
