@@ -7,7 +7,7 @@ import { FB_URL, READONLY } from './config.js';
 import { state, getMembers, applySnapshot, migrateLegacyMembers } from './state.js';
 import { esc, jsq, avatarPrefix, AVATARS } from './utils.js';
 import { initFirebase, initAuth, describeAuthFailure } from './firebase.js';
-import { initModalBackButton, closeModal } from './modals.js';
+import { initModalBackButton, openModal, closeModal } from './modals.js';
 import { popUndo } from './undo.js';
 
 import {
@@ -231,12 +231,12 @@ window.openAdminPanel = function() {
       '<button class="btn-sm" onclick="window.closeAdminPanel();window.openSetPin(\'' + jsq(m) + '\')">Set PIN</button>' +
       '</div>';
   }).join('') + pauseAdminHTML();
-  document.getElementById('admin-panel-modal').classList.remove('hidden');
+  openModal('admin-panel-modal');
 };
 window.setPause = () => { const el = document.getElementById('pause-until'); return setPause(el && el.value, _isAdmin, _currentMember).then(() => window.openAdminPanel()); };
 window.clearPause = () => clearPause(_isAdmin).then(() => window.openAdminPanel());
 window.closeAdminPanel = function() {
-  document.getElementById('admin-panel-modal').classList.add('hidden');
+  closeModal('admin-panel-modal');
 };
 window.downloadBackup = function() { downloadBackup(_isAdmin); };
 window.adminPanelSwitchUser = function() {
