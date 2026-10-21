@@ -153,6 +153,7 @@ export async function saveTask(id, isAdminFn) {
   const rot = [...card.querySelectorAll('.edit-rotation input:checked')].map(i => i.value);
   if (rot.length >= 2) state.tasks[id].rotation = rot; else delete state.tasks[id].rotation;
   state.tasks[id].name       = name;
+  if (newFreq === 'weekdays' && state.tasks[id].freq !== 'weekdays' && !state.tasks[id].done) state.tasks[id].lastDone = initialLastDone('weekdays');
   state.tasks[id].freq       = newFreq;
   if (newFreq === 'weekdays') state.tasks[id].days = days; else delete state.tasks[id].days;
   state.tasks[id].dueDate    = card.querySelector('.edit-freq').value === 'once' ? (card.querySelector('.edit-duedate').value || '') : '';
