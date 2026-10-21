@@ -100,7 +100,8 @@ export async function addTask(isAdminFn) {
 
 // ── Edit / Save ───────────────────────────────────────────────────────────────
 
-export function editTask(id) {
+export function editTask(id, isAdminFn) {
+  if (READONLY || !isAdminFn || !isAdminFn()) return;
   const t = state.tasks[id];
   if (!t) return;
   const card = document.getElementById('tc-' + id);
@@ -166,15 +167,21 @@ export async function saveTask(id, isAdminFn) {
 
 // ── Toggle (check/uncheck) ────────────────────────────────────────────────────
 
+// Non-admins act only on their own chores; a done 'Anyone' chore belongs to whoever completed it.
+function ownershipBlock(t, me, isAdminFn) {
+  if (isAdminFn()) return '';
+  if (t.person && t.person !== me) return 'Only your own tasks can be checked';
+  if (!t.person && t.done && t.lastDoneBy && t.lastDoneBy !== me) return 'Only ' + t.lastDoneBy + ' or a parent can undo this';
+  return '';
+}
+
 export async function toggleTask(id, currentMemberFn, isAdminFn) {
   if (READONLY) return;
   const t = state.tasks[id];
   if (!t) return;
   const me = currentMemberFn();
-  if (!isAdminFn() && t.person && t.person !== me) {
-    showToast('Only your own tasks can be checked');
-    return;
-  }
+  const blocked = ownershipBlock(t, me, isAdminFn);
+  if (blocked) { showToast(blocked); return; }
   const done = !t.done;
   // 'Anyone' tasks credit the logged-in member who ticks them (if they exist).
   const awardee = t.person || (me && state.members[me] ? me : '');
@@ -271,10 +278,12 @@ export function toggleSubtasks(taskId) {
   card.querySelector('.subtask-list')?.classList.toggle('open');
 }
 
-export async function toggleSubtask(taskId, subId) {
-  if (READONLY) return;
+export async function toggleSubtask(taskId, subId, currentMemberFn, isAdminFn) {
+  if (READONLY || !currentMemberFn || !isAdminFn) return;
   const t = state.tasks[taskId];
   if (!t?.subtasks?.[subId]) return;
+  const blocked = ownershipBlock(t, currentMemberFn(), isAdminFn);
+  if (blocked) { showToast(blocked); return; }
   try {
     await patchSubtask(taskId, subId, { done: !t.subtasks[subId].done });
   } catch (err) { showToast('Update failed: ' + (err.code || err.message)); }

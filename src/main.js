@@ -166,7 +166,7 @@ window.toggleNewNote = function() {
 // Tasks
 window.enableNotifications = () => enableNotifications();
 window.addTask       = ()         => addTask(_isAdmin);
-window.editTask      = id         => editTask(id);
+window.editTask      = id         => editTask(id, _isAdmin);
 window.saveTask      = id         => saveTask(id, _isAdmin);
 window.cancelEdit    = function(id) {
   const t    = state.tasks[id];
@@ -182,7 +182,7 @@ window.toggleReorder = ()         => {
   document.getElementById('btn-reorder')?.setAttribute('aria-pressed', String(on));
 };
 window.toggleSubtasks = id        => toggleSubtasks(id);
-window.toggleSubtask  = (tid,sid) => toggleSubtask(tid, sid);
+window.toggleSubtask  = (tid,sid) => toggleSubtask(tid, sid, _currentMember, _isAdmin);
 window.addSubtask     = id        => addSubtask(id, _isAdmin);
 window.removeSubtask  = (tid,sid) => removeSubtask(tid, sid, _isAdmin);
 window.claimTask      = id        => claimTask(id, _currentMember);

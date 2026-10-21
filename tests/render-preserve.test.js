@@ -21,7 +21,7 @@ beforeEach(() => {
 
 describe('re-render while editing (#34)', () => {
   it('keeps the inline edit form and typed text across a snapshot render', () => {
-    editTask('t1');
+    editTask('t1', () => true);
     const input = document.querySelector('#tc-t1 .edit-name');
     input.value = 'Dishes and pans';
     state.tasks.t2.name = 'Bins (changed remotely)';
@@ -41,7 +41,7 @@ describe('re-render while editing (#34)', () => {
     expect(document.querySelector('#tc-t1 .subtask-add input').value).toBe('wipe counter');
   });
   it('drops an edited card that was deleted remotely and renders normally otherwise', () => {
-    editTask('t1');
+    editTask('t1', () => true);
     delete state.tasks.t1;
     renderTasks();
     expect(document.getElementById('tc-t1')).toBeNull();
