@@ -2,6 +2,7 @@ import { state } from './state.js';
 import { dueStatus, localDateStr } from './utils.js';
 
 let _notifiedIds = new Set();
+const _pending = new Map();
 let _started = false;
 let _currentMember = () => '';
 
@@ -45,6 +46,21 @@ function scheduleOverdueCheck() {
   setInterval(runOverdueCheck, 30 * 60 * 1000);
 }
 
+// Android Chrome/PWAs throw on `new Notification()`; use the service worker there.
+// Resolves true only when a notification was actually shown.
+async function showOverdue(body) {
+  const opts = { body, icon: './icon-192.png', tag: 'ff-overdue-' + body };
+  try {
+    const sw = typeof navigator !== 'undefined' && navigator.serviceWorker;
+    if (sw && sw.getRegistration && await sw.getRegistration()) {
+      const reg = await sw.ready;
+      await reg.showNotification('FamilyFlow', opts);
+      return true;
+    }
+  } catch(e) { /* fall through to constructor */ }
+  try { new Notification('FamilyFlow', opts); return true; } catch(e) { return false; }
+}
+
 export function runOverdueCheck() {
   const today = localDateStr();
   try {
@@ -53,12 +69,18 @@ export function runOverdueCheck() {
       localStorage.setItem('fc_last_notify_date', today);
     }
   } catch(e) {}
-  if (!notificationsSupported() || Notification.permission !== 'granted') return;
-  selectNotifyTasks(state.tasks, _currentMember()).forEach(t => {
-    if (_notifiedIds.has(t.id)) return;
-    _notifiedIds.add(t.id);
-    new Notification('FamilyFlow', { body: t.name + ' is overdue', icon: '' });
+  if (!notificationsSupported() || Notification.permission !== 'granted') return Promise.resolve();
+  const jobs = selectNotifyTasks(state.tasks, _currentMember()).map(t => {
+    if (_notifiedIds.has(t.id)) return null;
+    if (_pending.has(t.id)) return _pending.get(t.id);
+    const p = showOverdue(t.name + ' is overdue').then(ok => {
+      _pending.delete(t.id);
+      if (ok) _notifiedIds.add(t.id); // only mark once actually shown
+    });
+    _pending.set(t.id, p);
+    return p;
   });
+  return Promise.all(jobs);
 }
 
-export function _resetForTests() { _notifiedIds = new Set(); _started = false; _currentMember = () => ''; }
+export function _resetForTests() { _notifiedIds = new Set(); _pending.clear(); _started = false; _currentMember = () => ''; }
