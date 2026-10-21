@@ -95,3 +95,7 @@ Each member can have an optional 4-digit PIN. An admin sets or changes it in the
 - Vanilla HTML/CSS/JS — no framework, no build step
 - [Firebase Realtime Database](https://firebase.google.com/docs/database) for live sync
 - Hosted on GitHub Pages
+
+## Testing the security rules (emulator)
+
+`npm run test:rules` runs `rules-tests/` against `firebase-rules.json` on the local Firebase Realtime Database emulator (project `demo-familyflow`, no real project or network to production). It needs Java 11+ for the emulator; the normal `npm test` does not. CI runs it as the `rules-tests` job.

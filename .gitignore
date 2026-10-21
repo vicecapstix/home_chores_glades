@@ -1,3 +1,6 @@
 node_modules/
 dist/
 index.html.bak
+database-debug.log
+firebase-debug.log
+ui-debug.log
