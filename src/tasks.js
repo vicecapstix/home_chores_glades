@@ -3,7 +3,7 @@ import { READONLY, BADGES, CATEGORIES } from './config.js';
 import { writeState, adjustMemberPoints, patchTask, patchMember, patchRoot, removeTask, restoreTask, patchSubtask } from './firebase.js';
 import { showToast } from './ui.js';
 import { pushUndo } from './undo.js';
-import { esc, jsq, validTime, freqDays, daysSince, dueStatus, taskPoints, getWeekStart, localDateStr, prevScheduledStart, initialLastDone, DAY_NAMES } from './utils.js';
+import { esc, jsq, validTime, freqDays, daysSince, dueStatus, taskPoints, getWeekStart, localDateStr, prevScheduledStart, initialLastDone, nextRotationPerson, DAY_NAMES } from './utils.js';
 
 // Re-export for other modules
 export { dueStatus, taskPoints, freqDays };
@@ -26,6 +26,8 @@ export function checkTaskResets() {
       patch['tasks/' + t.id + '/done'] = false;
       patch['tasks/' + t.id + '/lastDoneBy'] = null;
       patch['tasks/' + t.id + '/lastDonePoints'] = null;
+      const next = t.rotation ? nextRotationPerson(t.rotation, t.person, getMembers()) : null;
+      if (next) { t.person = next; patch['tasks/' + t.id + '/person'] = next; }
     }
   });
   // One multi-path update touching only the reset leaves (never a full-state set).
@@ -46,6 +48,17 @@ export function dayChipsHTML(selected = [], cls = 'day-chips') {
 
 export function readDays(container) {
   return [...container.querySelectorAll('input:checked')].map(i => Number(i.value)).sort((a, b) => a - b);
+}
+
+// ── Rotation chips (#54) ──────────────────────────────────────────────────────
+
+export function rotationChipsHTML(t, members) {
+  if (members.length < 2) return '';
+  const sel = Array.isArray(t.rotation) ? t.rotation : Object.values(t.rotation || {});
+  return '<div class="day-chips edit-rotation" role="group" aria-label="Rotate assignee between (pick 2 or more)">' +
+    '<span class="rot-label">Rotate on reset:</span>' +
+    members.map(m => '<label class="day-chip"><input type="checkbox" value="' + esc(m) + '"' + (sel.includes(m) ? ' checked' : '') + ' /><span>' + esc(m) + '</span></label>').join('') +
+    '</div>';
 }
 
 // ── Add task ──────────────────────────────────────────────────────────────────
@@ -116,6 +129,7 @@ export function editTask(id) {
       '<select class="edit-person">' + personOpts + '</select>' +
     '</div>' +
     dayChipsHTML(t.days, 'day-chips edit-days' + (t.freq === 'weekdays' ? '' : ' hidden')) +
+    rotationChipsHTML(t, members) +
     '<textarea class="edit-notes" placeholder="Notes..." maxlength="300">' + esc(t.notes || '') + '</textarea>' +
     '<div class="edit-actions">' +
       '<button class="btn-sm btn-accent" onclick="window.saveTask(\'' + jsq(id) + '\')">Save</button>' +
@@ -135,6 +149,8 @@ export async function saveTask(id, isAdminFn) {
   if (newFreq === 'weekdays' && !days.length) { showToast('Pick at least one day'); return; }
   card.classList.remove('editing');
   document.activeElement?.blur?.();
+  const rot = [...card.querySelectorAll('.edit-rotation input:checked')].map(i => i.value);
+  if (rot.length >= 2) state.tasks[id].rotation = rot; else delete state.tasks[id].rotation;
   state.tasks[id].name       = name;
   state.tasks[id].freq       = newFreq;
   if (newFreq === 'weekdays') state.tasks[id].days = days; else delete state.tasks[id].days;
