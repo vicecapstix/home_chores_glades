@@ -295,3 +295,24 @@ export function isMine(t, me) {
   if (t.done) return t.person === me;
   return (!t.person || t.person === me) && dueStatus(t) !== 'ok';
 }
+
+// Saving goal (#141): derived live from the member's points and the current reward,
+// so a deleted reward or changed cost never leaves stale data. Returns null when unset/gone.
+export function goalProgress(member, rewards) {
+  const r = member && member.goalRewardId && rewards && rewards[member.goalRewardId];
+  if (!r || !r.name || !(Number(r.cost) > 0)) return null;
+  const points = Math.max(0, Number(member.points) || 0);
+  const cost = Number(r.cost);
+  return { reward: r, points, cost, pct: Math.min(100, Math.floor(points / cost * 100)), ready: points >= cost };
+}
+
+export function goalHTML(member, rewards) {
+  const g = goalProgress(member, rewards);
+  if (!g) return '';
+  const shown = Math.min(g.points, g.cost);
+  return '<span class="goal-wrap">' +
+    '<span class="goal-text">🎯 ' + esc(g.reward.name) + ' ' + shown + '/' + g.cost +
+    (g.ready ? ' <b>Ready to request!</b>' : '') + '</span>' +
+    '<span class="goal-bar" role="progressbar" aria-label="' + esc('Goal: ' + g.reward.name) + '" aria-valuemin="0" aria-valuemax="' + g.cost +
+    '" aria-valuenow="' + shown + '"><span class="goal-fill" style="width:' + g.pct + '%"></span></span></span>';
+}

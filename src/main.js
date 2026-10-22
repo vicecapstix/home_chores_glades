@@ -69,7 +69,7 @@ import { downloadBackup } from './backup.js';
 import { saveSnapshot, loadSnapshot, clearSnapshot, setCacheBanner } from './cache.js';
 import { openHistory, setHistoryFilter, historyFilterClick } from './history.js';
 import { requestReward, decideRequest } from './redemptions.js';
-import { openRewards, saveReward, editReward, deleteReward, cancelRewardEdit, refreshRewards } from './rewards.js';
+import { openRewards, saveReward, editReward, deleteReward, cancelRewardEdit, refreshRewards, setGoalFor, pickGoalTarget } from './rewards.js';
 registerServiceWorker();
 initTvMode();
 startRollover(render);
@@ -296,6 +296,8 @@ window.saveReward        = ()     => saveReward(_isAdmin);
 window.editReward        = id     => editReward(id, _isAdmin);
 window.deleteReward      = id     => deleteReward(id, _isAdmin);
 window.cancelRewardEdit  = ()     => cancelRewardEdit();
+window.setGoal           = id     => setGoalFor(id, _isAdmin, _currentMember);
+window.pickGoalTarget    = name   => pickGoalTarget(name);
 
 // Templates
 window.openTemplates  = ()        => openTemplates();

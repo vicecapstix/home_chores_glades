@@ -114,6 +114,8 @@
       <span class="lb-title" id="rewards-title">🎁 Rewards</span>
       <button class="lb-close" aria-label="Close" onclick="window.closeModal('rewards-modal')">×</button>
     </div>
+    <label for="goal-target" class="sr-only">Set goal for member</label>
+    <select id="goal-target" class="hidden" onchange="window.pickGoalTarget(this.value)"></select>
     <div id="rewards-list"></div>
     <div id="rewards-pending" aria-live="polite"></div>
     <form id="rewards-admin" class="rewards-admin hidden" onsubmit="event.preventDefault();window.saveReward()">
