@@ -41,7 +41,10 @@ export function prevScheduledStart(days, now = Date.now()) {
 
 // lastDone value for a brand-new task so it is not instantly overdue.
 export function initialLastDone(freq, now = Date.now()) {
-  if (freq === 'weekdays') return now;
+  if (freq === 'weekdays') { // start of today minus 1 ms: due today if today is a scheduled day, never overdue for earlier days
+    const s = new Date(now); s.setHours(0, 0, 0, 0);
+    return s.getTime() - 1;
+  }
   const d = new Date(now);
   d.setDate(d.getDate() - freqDays(freq));
   return d.getTime();
@@ -86,6 +89,15 @@ export function daysSince(ts, now = Date.now()) {
 // YYYY-MM-DD in the device's local time zone (toISOString would be UTC).
 export function localDateStr(d = new Date()) {
   return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+
+// Streak to display: stored streak only if the last completion was today or
+// yesterday (local), otherwise 0. Display-only; never written back.
+export function currentStreak(m, now = Date.now()) {
+  if (!m || !m.streak || !m.lastStreakDate) return 0;
+  const y = new Date(now); y.setDate(y.getDate() - 1);
+  const last = m.lastStreakDate;
+  return (last === localDateStr(new Date(now)) || last === localDateStr(y)) ? m.streak : 0;
 }
 
 export function getWeekStart(from) {

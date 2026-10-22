@@ -2,7 +2,7 @@ import { state, getMembers } from './state.js';
 import { PCOLS, BADGES, READONLY } from './config.js';
 import { renderTvStrip } from './tv.js';
 import { renderGoal } from './goal.js';
-import { esc, jsq, avatarPrefix, validTime, dueStatus, freqLabel, rotationTag, isMine, isSkipped, localDateStr } from './utils.js';
+import { esc, jsq, avatarPrefix, validTime, dueStatus, freqLabel, rotationTag, isMine, isSkipped, localDateStr, currentStreak } from './utils.js';
 import { pColor } from './ui.js';
 
 // ── Session function references (set once via initRender) ─────────────────────
@@ -159,7 +159,7 @@ function _renderMembers() {
   document.getElementById('member-chips').innerHTML = members.map((m, i) => {
     const c = PCOLS[i % PCOLS.length];
     const mem = state.members[m] || {};
-    const streak = mem.streak || 0;
+    const streak = currentStreak(mem);
     const badgeIcons = (mem.badges || []).map(id => {
       const b = BADGES.find(b => b.id === id); return b ? b.icon : '';
     }).join('');
