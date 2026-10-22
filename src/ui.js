@@ -160,19 +160,24 @@ function renderStats() {
   }).join('');
 }
 
+// Neutralise spreadsheet formulas (CSV injection) and quote fields that need it.
+export function csvField(v) {
+  let s = String(v);
+  if (typeof v !== 'number' && /^[=+\-@\t\r]/.test(s)) s = "'" + s;
+  return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
+
 export function exportCSV(from, to) {
   const fromTs = from ? new Date(from + 'T00:00:00').getTime() : 0;
   const toTs   = to   ? new Date(to + 'T00:00:00').getTime() + 86399999 : Date.now();
   const rows = (state.history || []).filter(e => e.completedAt >= fromTs && e.completedAt <= toTs);
-  function csvField(s) {
-    s = String(s);
-    return s.includes(',') || s.includes('"') ? '"' + s.replace(/"/g, '""') + '"' : s;
-  }
-  let csv = 'date,person,task,frequency,difficulty,points\n';
+  let csv = 'date,time,person,task,frequency,difficulty,points\n';
   rows.forEach(e => {
     const task = state.tasks[e.taskId];
+    const d = new Date(e.completedAt);
     csv += [
-      csvField(new Date(e.completedAt).toLocaleDateString()),
+      csvField(localDateStr(d)),
+      csvField(String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0')),
       csvField(e.person || ''),
       csvField(e.taskName || ''),
       csvField(task ? (task.freq || '') : ''),
