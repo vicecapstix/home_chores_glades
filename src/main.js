@@ -7,7 +7,7 @@ import { watchConnection, markSynced } from './connection.js';
 import { FB_URL, READONLY } from './config.js';
 import { state, getMembers, applySnapshot, migrateLegacyMembers } from './state.js';
 import { esc, jsq, avatarPrefix, AVATARS } from './utils.js';
-import { initFirebase, initAuth, describeAuthFailure, setWritesEnabled } from './firebase.js';
+import { initFirebase, initAuth, describeAuthFailure, setWritesEnabled, setAuthChangeHandler, parentSignIn, parentSignOut } from './firebase.js';
 import { initModalBackButton, openModal, closeModal } from './modals.js';
 import { initDialogA11y } from './a11y.js';
 import { popUndo } from './undo.js';
@@ -22,7 +22,7 @@ import {
 } from './ui.js';
 
 import {
-  currentMember, isAdmin, handleFirstLoad,
+  currentMember, isAdmin, handleFirstLoad, completeParentLogin,
   memberSelect, memberPinKey, memberPinDel, memberPinBack,
   switchUser,
 } from './auth.js';
@@ -98,6 +98,10 @@ initDialogA11y();
   if (!authRes.ok) showToast(describeAuthFailure(authRes));
   let firstLoad = true;
   watchConnection(db, { onValue, ref });
+  // /admins {uid: name}: readable when signed in, never client-writable (#97)
+  onValue(ref(db, 'admins'), snap => { state.admins = snap.val() || null; render(); },
+    () => { state.admins = null; });
+  setAuthChangeHandler(() => render());
 
   onValue(ref(db, 'state'), snap => {
     const val = snap.val() || {};
@@ -249,10 +253,43 @@ window.openAdminPanel = function() {
       '<button class="btn-sm" aria-label="Adjust points for ' + esc(m) + '" onclick="window.adjustBonus(\'' + jsq(m) + '\')">± Points</button>' +
       '</div>';
   }).join('') + pauseAdminHTML();
+  document.getElementById('admin-parent-in').classList.toggle('hidden', !!state.parentEmail);
+  document.getElementById('admin-parent-out').classList.toggle('hidden', !state.parentEmail);
   openModal('admin-panel-modal');
 };
 window.setPause = () => { const el = document.getElementById('pause-until'); return setPause(el && el.value, _isAdmin, _currentMember).then(() => window.openAdminPanel()); };
 window.clearPause = () => clearPause(_isAdmin).then(() => window.openAdminPanel());
+// Parent sign in (#97)
+window.openParentSignIn = function() {
+  if (READONLY) return;
+  document.getElementById('parent-error').textContent = '';
+  openModal('parent-modal');
+  const em = document.getElementById('parent-email'); if (em) em.focus();
+};
+window.closeParentSignIn = function() {
+  document.getElementById('parent-password').value = '';
+  closeModal('parent-modal');
+};
+window.submitParentSignIn = async function() {
+  if (READONLY) return;
+  const res = await parentSignIn(document.getElementById('parent-email').value, document.getElementById('parent-password').value);
+  if (!res.ok) { document.getElementById('parent-error').textContent = res.message; showToast(res.message); return; }
+  document.getElementById('parent-email').value = '';
+  window.closeParentSignIn();
+  const wasLogin = !document.getElementById('pin-screen').classList.contains('hidden');
+  window.closeAdminPanel();
+  showToast('Signed in as parent');
+  if (wasLogin) {
+    // uid arrives via onAuthStateChanged; wait a tick so state.uid is set
+    setTimeout(() => completeParentLogin(), 0);
+  }
+};
+window.parentSignOut = async function() {
+  if (READONLY) return;
+  const res = await parentSignOut();
+  showToast(res.ok ? 'Signed out' : (res.message || 'Could not sign out'));
+  window.closeAdminPanel();
+};
 window.closeAdminPanel = function() {
   closeModal('admin-panel-modal');
 };

@@ -2,6 +2,10 @@
   "rules": {
     ".read": false,
     ".write": false,
+    "admins": {
+      ".read": "auth != null",
+      ".write": false
+    },
     "state": {
       ".read": "auth != null",
       ".write": "auth != null",

@@ -10,6 +10,10 @@ describe('firebase-rules.json draft (#41, not deployed by agents)', () => {
     expect(rules.state['.read']).toBe('auth != null');
     expect(rules.state['.write']).toBe('auth != null');
   });
+  it('/admins is readable when signed in and never client-writable (#97)', () => {
+    expect(rules.admins['.read']).toBe('auth != null');
+    expect(rules.admins['.write']).toBe(false);
+  });
   it('keeps the nextId validate (empty lists are null in RTDB)', () => {
     expect(rules.state['.validate']).toBe("newData.hasChild('nextId')");
   });

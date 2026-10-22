@@ -46,6 +46,10 @@ export function currentMember() {
 export function isAdmin() {
   if (READONLY) return false;
   if (Object.keys(state.members).length === 0) return true; // setup mode
+  // Once /admins exists (#97) only listed UIDs are admins; until then fall back to role.
+  if (state.admins && Object.keys(state.admins).length > 0) {
+    return !!(state.uid && state.admins[state.uid]);
+  }
   const m = currentMember();
   return m ? (state.members[m]?.role === 'admin') : false;
 }
@@ -80,6 +84,12 @@ function completeLogin(name, onLoginComplete) {
   try { if (name) sessionStorage.setItem('fc_member', name); } catch(e) {}
   document.getElementById('pin-screen').classList.add('hidden');
   if (onLoginComplete) onLoginComplete();
+}
+
+// After a parent signs in: take their member identity if /admins maps one, then close login.
+export function completeParentLogin() {
+  const mapped = state.uid && state.admins ? state.admins[state.uid] : '';
+  completeLogin(typeof mapped === 'string' && state.members[mapped] ? mapped : null, window._fcLoginCallback);
 }
 
 export function showMemberSelector(onLoginComplete) {

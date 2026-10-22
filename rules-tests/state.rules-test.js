@@ -22,6 +22,22 @@ beforeEach(async () => {
 const anon = () => env.unauthenticatedContext().database();
 const authed = () => env.authenticatedContext('uid1').database();
 
+describe('/admins (#97)', () => {
+  beforeEach(async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => { await ctx.database().ref('admins').set({ parentUid: 'Alice' }); });
+  });
+  it('is readable by signed-in users but not by anonymous-less clients', async () => {
+    await assertSucceeds(authed().ref('admins').get());
+    await assertFails(anon().ref('admins').get());
+  });
+  it('is not writable by any client, including a listed admin', async () => {
+    await assertFails(authed().ref('admins/uid1').set('Bob'));
+    await assertFails(authed().ref('admins').set({ uid1: 'Bob' }));
+    await assertFails(env.authenticatedContext('parentUid').database().ref('admins/parentUid').remove());
+    await assertFails(anon().ref('admins/x').set('Bob'));
+  });
+});
+
 describe('firebase-rules.json on the emulator', () => {
   it('denies unauthenticated read and write of /state', async () => {
     await assertFails(anon().ref('state').get());
