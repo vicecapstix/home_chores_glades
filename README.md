@@ -63,6 +63,15 @@ Proposed tighter rules are tracked in issue #41. `firebase-rules.json` in this r
 3. **Realtime Database → Rules**: paste the contents of `firebase-rules.json`, test a read and a write in the **Rules Playground** (authenticated), then **Publish**.
 4. To roll back, paste the open rules from step 4 above and publish again.
 
+#### Parent sign in (#97)
+
+The login screen and Admin Panel have a **Parent sign in** (email + password; the app never stores the password). Until `/admins` exists in the database the app keeps using each member's `role`, so this is safe to deploy first. To switch to real parent accounts, do these in the Firebase Console (free on Spark):
+
+1. **Authentication → Sign-in method**: enable **Email/Password**.
+2. **Authentication → Users**: add one account per parent and copy each UID.
+3. **Realtime Database → Data**: add `admins/<uid>` = the parent's member name (e.g. `Alice`). The rules above make `/admins` readable by signed-in users and not writable by any client, so only you can edit it in the Console.
+4. Re-publish the rules from `firebase-rules.json`. To roll back, delete the `admins` node and the app falls back to roles.
+
 Limit: anyone who opens the site gets an anonymous token, so PIN hashes stay readable from inside the app. These rules block raw REST/bot access without a token and malformed writes. After 5 wrong PINs a member's PIN pad locks for 5 minutes on that device (client-side only).
 
 ### 2. GitHub Pages

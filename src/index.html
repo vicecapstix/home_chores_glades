@@ -30,6 +30,7 @@
     <div class="pin-title">Family<span style="color:var(--accent)">Flow</span></div>
     <div class="pin-sub" id="pin-member-sub">Select your name to continue</div>
     <div id="pin-member-chips" style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:1.25rem;"></div>
+    <button id="pin-parent-btn" class="btn-sm" style="margin-bottom:1rem;" onclick="window.openParentSignIn()">Parent sign in</button>
     <!-- 4-digit PIN pad (shown when member has a PIN) -->
     <div id="pin-member-pin" class="hidden">
       <div id="pin-member-name" style="font-family:'DM Serif Display',serif;font-size:1.2rem;margin-bottom:0.5rem;"></div>
@@ -303,7 +304,27 @@
     </div>
     <div id="admin-member-list" style="margin:0.5rem 0;"></div>
     <button class="btn-lg" style="width:100%;margin-top:0.5rem;" onclick="window.downloadBackup()" title="Saves a JSON copy of chores, points and history. PINs are not included.">Download backup</button>
+    <button id="admin-parent-in" class="btn-lg" style="width:100%;margin-top:0.5rem;" onclick="window.openParentSignIn()">Parent sign in</button>
+    <button id="admin-parent-out" class="btn-lg hidden" style="width:100%;margin-top:0.5rem;" onclick="window.parentSignOut()">Parent sign out</button>
     <button class="btn-lg" style="width:100%;margin-top:0.5rem;" onclick="window.adminPanelSwitchUser()">Switch User</button>
+  </div>
+</div>
+
+<!-- PARENT SIGN IN -->
+<div id="parent-modal" class="hidden" role="dialog" aria-modal="true" aria-labelledby="parent-title" onclick="window.closeParentSignIn()">
+  <div class="lb-card" onclick="event.stopPropagation()" style="max-width:340px;">
+    <div class="lb-header">
+      <span class="lb-title" id="parent-title">Parent sign in</span>
+      <button class="lb-close" aria-label="Close" onclick="window.closeParentSignIn()">×</button>
+    </div>
+    <form onsubmit="event.preventDefault();window.submitParentSignIn()" style="display:flex;flex-direction:column;gap:0.6rem;margin-top:0.5rem;">
+      <label for="parent-email" style="font-size:0.85rem;">Email</label>
+      <input id="parent-email" type="email" autocomplete="username" required>
+      <label for="parent-password" style="font-size:0.85rem;">Password</label>
+      <input id="parent-password" type="password" autocomplete="current-password" required>
+      <div id="parent-error" class="pin-error" role="alert"></div>
+      <button type="submit" class="btn-lg btn-accent">Sign in</button>
+    </form>
   </div>
 </div>
 

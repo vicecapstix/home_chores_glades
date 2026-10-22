@@ -257,6 +257,8 @@ body[data-reorder] .move-btns { display: flex; }
 #templates-modal.hidden,
 #setpin-modal.hidden,
 #admin-panel-modal.hidden { display: none; }
+#parent-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; z-index: 1001; }
+#parent-modal.hidden, #admin-parent-in.hidden, #admin-parent-out.hidden, #pin-parent-btn.hidden { display: none; }
 
 /* ACTIVITY HISTORY */
 .hist-card { width: min(480px, 94vw); max-height: 80vh; overflow-y: auto; }
