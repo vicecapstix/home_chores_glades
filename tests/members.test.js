@@ -3,7 +3,7 @@ import { state } from '../src/state.js';
 import { addMember, removeMember, toggleRole } from '../src/members.js';
 
 vi.mock('../src/firebase.js', () => ({
-  writeState:  vi.fn().mockResolvedValue(undefined),
+  patchPaths:  vi.fn().mockResolvedValue(undefined),
   patchMember: vi.fn().mockResolvedValue(undefined),
 }));
 
@@ -11,7 +11,7 @@ vi.mock('../src/ui.js', () => ({
   showToast: vi.fn(),
 }));
 
-import { writeState, patchMember } from '../src/firebase.js';
+import { patchPaths, patchMember } from '../src/firebase.js';
 import { showToast } from '../src/ui.js';
 
 const isAdmin  = () => true;
@@ -58,10 +58,10 @@ describe('addMember', () => {
     await addMember(isAdmin);
     expect(state.members.Bob.role).toBe('member');
   });
-  it('calls writeState after adding', async () => {
+  it('calls patchPaths after adding', async () => {
     document.getElementById('new-member').value = 'Alice';
     await addMember(isAdmin);
-    expect(writeState).toHaveBeenCalledOnce();
+    expect(patchPaths).toHaveBeenCalledOnce();
   });
   it('clears the input field after adding', async () => {
     const inp = document.getElementById('new-member');
@@ -73,26 +73,26 @@ describe('addMember', () => {
     document.getElementById('new-member').value = '';
     await addMember(isAdmin);
     expect(state.members).toEqual({});
-    expect(writeState).not.toHaveBeenCalled();
+    expect(patchPaths).not.toHaveBeenCalled();
   });
   it('does nothing when name is whitespace only', async () => {
     document.getElementById('new-member').value = '   ';
     await addMember(isAdmin);
     expect(state.members).toEqual({});
-    expect(writeState).not.toHaveBeenCalled();
+    expect(patchPaths).not.toHaveBeenCalled();
   });
   it('ignores duplicate names (member already exists)', async () => {
     state.members.Alice = { name: 'Alice', role: 'admin' };
     document.getElementById('new-member').value = 'Alice';
     await addMember(isAdmin);
-    expect(writeState).not.toHaveBeenCalled();
+    expect(patchPaths).not.toHaveBeenCalled();
     expect(Object.keys(state.members)).toHaveLength(1);
   });
   it('non-admin cannot add a member', async () => {
     document.getElementById('new-member').value = 'Alice';
     await addMember(notAdmin);
     expect(state.members).toEqual({});
-    expect(writeState).not.toHaveBeenCalled();
+    expect(patchPaths).not.toHaveBeenCalled();
   });
 });
 
@@ -111,9 +111,9 @@ describe('removeMember', () => {
     expect(state.members).not.toHaveProperty('Bob');
     expect(state.members).toHaveProperty('Alice');
   });
-  it('calls writeState after removing', async () => {
+  it('calls patchPaths after removing', async () => {
     await removeMember('Bob', isAdmin);
-    expect(writeState).toHaveBeenCalledOnce();
+    expect(patchPaths).toHaveBeenCalledOnce();
   });
   it('clears the person field from tasks assigned to that member', async () => {
     state.tasks = {
@@ -127,7 +127,7 @@ describe('removeMember', () => {
   it('refuses to remove the last admin while others remain (#89)', async () => {
     await removeMember('Alice', isAdmin);
     expect(state.members).toHaveProperty('Alice');
-    expect(writeState).not.toHaveBeenCalled();
+    expect(patchPaths).not.toHaveBeenCalled();
     expect(showToast).toHaveBeenCalledWith('Cannot remove the last admin');
   });
   it('allows removing an admin when another admin exists (#89)', async () => {
@@ -146,15 +146,15 @@ describe('removeMember', () => {
       r2: { id: 'r2', member: 'Bob', status: 'approved' },
       r3: { id: 'r3', member: 'Alice', status: 'pending' },
     };
-    writeState.mockImplementationOnce(async () => { expect(state.redemptions).not.toHaveProperty('r1'); });
+    patchPaths.mockImplementationOnce(async () => { expect(state.redemptions).not.toHaveProperty('r1'); });
     await removeMember('Bob', isAdmin);
-    expect(writeState).toHaveBeenCalledOnce();
+    expect(patchPaths).toHaveBeenCalledOnce();
     expect(Object.keys(state.redemptions).sort()).toEqual(['r2', 'r3']);
   });
   it('calls onSelfRemoved after writing when removing the logged-in member (#89)', async () => {
     state.members.Bob.role = 'admin';
     const cb = vi.fn();
-    writeState.mockImplementationOnce(async () => { expect(cb).not.toHaveBeenCalled(); });
+    patchPaths.mockImplementationOnce(async () => { expect(cb).not.toHaveBeenCalled(); });
     await removeMember('Alice', isAdmin, () => 'Alice', cb);
     expect(cb).toHaveBeenCalledOnce();
   });
@@ -163,14 +163,14 @@ describe('removeMember', () => {
     await removeMember('Bob', isAdmin, () => 'Alice', cb);
     expect(cb).not.toHaveBeenCalled();
     state.members.Bob = { name: 'Bob', role: 'admin' };
-    writeState.mockRejectedValueOnce(new Error('x'));
+    patchPaths.mockRejectedValueOnce(new Error('x'));
     await removeMember('Alice', isAdmin, () => 'Alice', cb);
     expect(cb).not.toHaveBeenCalled();
   });
   it('non-admin cannot remove a member', async () => {
     await removeMember('Bob', notAdmin);
     expect(state.members).toHaveProperty('Bob');
-    expect(writeState).not.toHaveBeenCalled();
+    expect(patchPaths).not.toHaveBeenCalled();
   });
 });
 
