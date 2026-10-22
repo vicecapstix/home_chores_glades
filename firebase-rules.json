@@ -27,7 +27,8 @@
         "$id": {
           ".validate": "newData.hasChildren(['id', 'name', 'freq'])",
           "name": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 100" },
-          "freq": { ".validate": "newData.val() === 'daily' || newData.val() === 'weekly' || newData.val() === 'weekdays' || newData.val() === 'fortnightly' || newData.val() === 'monthly' || newData.val() === 'once'" },
+          "freq": { ".validate": "newData.val() === 'daily' || newData.val() === 'weekly' || newData.val() === 'weekdays' || newData.val() === 'interval' || newData.val() === 'fortnightly' || newData.val() === 'monthly' || newData.val() === 'once'" },
+          "intervalDays": { ".validate": "newData.isNumber() && newData.val() >= 2 && newData.val() <= 60 && newData.val() % 1 === 0" },
           "done": { ".validate": "newData.isBoolean()" },
           "notes": { ".validate": "newData.isString() && newData.val().length <= 300" }
         }

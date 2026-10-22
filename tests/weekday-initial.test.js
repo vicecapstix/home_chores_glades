@@ -3,7 +3,7 @@ import { state } from '../src/state.js';
 import { dueStatus, initialLastDone } from '../src/utils.js';
 
 vi.mock('../src/firebase.js', () => ({
-  writeState: vi.fn().mockResolvedValue(undefined), patchTask: vi.fn(), patchMember: vi.fn(), patchRoot: vi.fn().mockResolvedValue(undefined),
+  writeState: vi.fn().mockResolvedValue(undefined), patchTask: vi.fn(), patchMember: vi.fn(), patchRoot: vi.fn().mockResolvedValue(undefined), patchPaths: vi.fn().mockResolvedValue(undefined),
   removeTask: vi.fn(), restoreTask: vi.fn(), patchSubtask: vi.fn(),
 }));
 vi.mock('../src/ui.js', () => ({ showToast: vi.fn() }));

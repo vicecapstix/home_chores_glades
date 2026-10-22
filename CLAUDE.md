@@ -29,7 +29,10 @@ src/
   notifications.js — overdue browser notifications (30-min interval check)
   undo.js          — command-pattern undo stack (max 20, 5s toast window)
   a11y.js          — dialog accessibility: Esc to close, focus restore, Tab trap
+  savings.js       — member saving goal: pin a reward, progress bar on chip and TV
   backup.js        — admin JSON backup download
+  bonus.js         — admin ± Points: bonus/deduction with history entry + undo
+  cache.js         — device-local snapshot cache (localStorage) for offline start
   connection.js    — online/offline indicator (Firebase .info/connected)
   goal.js          — family daily goal bar + celebration (display only)
   history.js       — activity history modal
