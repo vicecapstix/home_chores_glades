@@ -161,7 +161,7 @@ export function weekRecap(history, weekStart) {
     if (!e || !e.person || !(e.completedAt >= start && e.completedAt < end)) return;
     const r = by[e.person] || (by[e.person] = { name: e.person, points: 0, count: 0 });
     r.points += e.points || 0;
-    r.count++;
+    if (e.type !== 'bonus') r.count++;
   });
   return Object.values(by).filter(r => r.points > 0 || r.count > 0)
     .sort((a, b) => b.points - a.points || a.name.localeCompare(b.name));

@@ -142,7 +142,7 @@ function renderStats() {
   const from = getStatsFromTs();
   const history = (state.history || []).filter(e => e.completedAt >= from);
   const counts = {};
-  history.forEach(e => { if (e.person) counts[e.person] = (counts[e.person] || 0) + 1; });
+  history.forEach(e => { if (e.person && e.type !== 'bonus') counts[e.person] = (counts[e.person] || 0) + 1; });
   const max = Math.max(1, ...Object.values(counts).concat([0]));
   const el = document.getElementById('stats-chart');
   const members = getMembers();
@@ -179,7 +179,7 @@ export function exportCSV(from, to) {
       csvField(localDateStr(d)),
       csvField(String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0')),
       csvField(e.person || ''),
-      csvField(e.taskName || ''),
+      csvField(e.type === 'bonus' ? 'Bonus: ' + (e.reason || '') : (e.taskName || '')),
       csvField(task ? (task.freq || '') : ''),
       csvField(task ? (task.difficulty || 'easy') : ''),
       csvField(e.points || 0),

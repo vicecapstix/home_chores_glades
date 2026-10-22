@@ -1,0 +1,54 @@
+import { state } from './state.js';
+import { READONLY } from './config.js';
+import { adjustMemberPoints, patchRoot } from './firebase.js';
+import { showToast } from './ui.js';
+import { pushUndo } from './undo.js';
+import { getWeekStart } from './utils.js';
+
+export const BONUS_MAX = 50;
+export const BONUS_REASON_MAX = 60;
+
+// '' when valid, otherwise a message for the admin.
+export function validateBonus(amount, reason) {
+  if (!Number.isInteger(amount) || amount === 0 || Math.abs(amount) > BONUS_MAX) {
+    return 'Amount must be a whole number from -' + BONUS_MAX + ' to +' + BONUS_MAX + ' (not 0)';
+  }
+  const r = String(reason || '').trim();
+  if (!r) return 'Please give a reason';
+  if (r.length > BONUS_REASON_MAX) return 'Reason must be ' + BONUS_REASON_MAX + ' characters or fewer';
+  return '';
+}
+
+// Admin gives (+) or takes (-) points outside chores. Atomic on the live
+// server value; a positive award also counts toward this week.
+export async function adjustBonus(name, amount, reason, isAdminFn, currentMemberFn, confirmFn = confirm) {
+  if (READONLY || !isAdminFn()) return false;
+  if (!state.members[name]) return false;
+  amount = Number(amount);
+  reason = String(reason || '').trim();
+  const bad = validateBonus(amount, reason);
+  if (bad) { showToast(bad); return false; }
+  const opts = { pts: amount, count: 0, weekStart: getWeekStart(), countWeek: amount > 0 };
+  try {
+    let r = await adjustMemberPoints(name, opts);
+    if (!r.ok && r.reason === 'insufficient') {
+      if (!confirmFn(name + ' has fewer than ' + (-amount) + ' points. Take them below 0?')) return false;
+      r = await adjustMemberPoints(name, { ...opts, allowNegative: true });
+    }
+    if (!r.ok) { showToast('Points update failed'); return false; }
+    const entry = { type: 'bonus', person: name, points: amount, reason, by: currentMemberFn() || '', completedAt: Date.now() };
+    await patchRoot({ history: (state.history || []).concat([entry]).slice(-500) });
+    pushUndo({
+      label: (amount > 0 ? '+' : '') + amount + ' ' + name,
+      verb: amount > 0 ? 'Awarded' : 'Deducted',
+      undo: async () => {
+        await adjustMemberPoints(name, { ...opts, pts: -amount, allowNegative: true });
+        await patchRoot({ history: (state.history || []).filter(e => !(e && e.type === 'bonus' && e.person === name && e.completedAt === entry.completedAt)) });
+      },
+    });
+    return true;
+  } catch (err) {
+    showToast('Points update failed: ' + (err.code || err.message));
+    return false;
+  }
+}

@@ -1,3 +1,4 @@
+import { adjustBonus, BONUS_MAX, BONUS_REASON_MAX } from './bonus.js';
 import './style.css';
 
 import { onValue, ref } from 'firebase/database';
@@ -245,6 +246,7 @@ window.openAdminPanel = function() {
       '<button class="btn-sm" onclick="window.toggleRole(\'' + jsq(m) + '\');window.openAdminPanel()">Toggle</button>' +
       '<button class="btn-sm" aria-label="Rename ' + esc(m) + '" onclick="window.renameMember(\'' + jsq(m) + '\')">Rename</button>' +
       '<button class="btn-sm" onclick="window.closeAdminPanel();window.openSetPin(\'' + jsq(m) + '\')">Set PIN</button>' +
+      '<button class="btn-sm" aria-label="Adjust points for ' + esc(m) + '" onclick="window.adjustBonus(\'' + jsq(m) + '\')">± Points</button>' +
       '</div>';
   }).join('') + pauseAdminHTML();
   openModal('admin-panel-modal');
@@ -266,6 +268,16 @@ window.adminPanelSwitchUser = function() {
 
 // Modals
 window.closeModal    = id         => closeModal(id);
+
+// Bonus / deduction points
+window.adjustBonus = async function(name) {
+  if (READONLY || !_isAdmin()) return;
+  const a = (prompt('Points for ' + name + ' (-' + BONUS_MAX + ' to +' + BONUS_MAX + '):') || '').trim();
+  if (!a) return;
+  const reason = prompt('Reason (max ' + BONUS_REASON_MAX + ' characters):');
+  if (reason === null) return;
+  await adjustBonus(name, Number(a), reason, _isAdmin, _currentMember);
+};
 
 // Set PIN
 window.openSetPin    = function(name) { if (READONLY || !_isAdmin()) return; openSetPin(name); };
