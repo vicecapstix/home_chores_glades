@@ -7,12 +7,12 @@ vi.mock('../src/firebase.js', () => ({
   writeState: vi.fn().mockResolvedValue(undefined), patchTask: vi.fn().mockResolvedValue(undefined),
   patchMember: vi.fn().mockResolvedValue(undefined), patchRoot: vi.fn().mockResolvedValue(undefined),
   removeTask: vi.fn().mockResolvedValue(undefined), restoreTask: vi.fn().mockResolvedValue(undefined),
-  patchSubtask: vi.fn().mockResolvedValue(undefined),
+  patchSubtask: vi.fn().mockResolvedValue(undefined), patchPaths: vi.fn().mockResolvedValue(undefined),
 }));
 vi.mock('../src/ui.js', () => ({ showToast: vi.fn(), pColor: vi.fn() }));
 vi.mock('../src/undo.js', () => ({ pushUndo: vi.fn() }));
 
-import { writeState, patchSubtask, patchRoot, patchMember, removeTask } from '../src/firebase.js';
+import { writeState, patchPaths, patchSubtask, patchRoot, patchMember, removeTask } from '../src/firebase.js';
 import { showToast } from '../src/ui.js';
 import { addSubtask, removeSubtask, toggleSubtask, claimTask, moveTask } from '../src/tasks.js';
 import { removeMember, toggleRole } from '../src/members.js';
@@ -80,6 +80,7 @@ describe('bulk actions', () => {
     toggleSelectMode(); toggleSelect('t1');
     await bulkAssign();
     expect(state.tasks.t1.person).toBe('Bob');
+    expect(patchPaths).toHaveBeenCalledWith({ 'tasks/t1/person': 'Bob' });
   });
 });
 
