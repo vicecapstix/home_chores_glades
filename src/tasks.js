@@ -1,6 +1,6 @@
 import { state, getMembers } from './state.js';
 import { READONLY, BADGES, CATEGORIES } from './config.js';
-import { writeState, adjustMemberPoints, patchTask, patchMember, patchRoot, removeTask, restoreTask, patchSubtask } from './firebase.js';
+import { writeState, adjustMemberPoints, appendHistory, patchTask, patchMember, patchRoot, removeTask, restoreTask, patchSubtask } from './firebase.js';
 import { showToast } from './ui.js';
 import { pushUndo } from './undo.js';
 import { esc, jsq, validTime, freqDays, daysSince, dueStatus, taskPoints, getWeekStart, localDateStr, prevScheduledStart, initialLastDone, nextRotationPerson, DAY_NAMES } from './utils.js';
@@ -282,9 +282,8 @@ export async function toggleTask(id, currentMemberFn, isAdminFn) {
     } catch (err) { showToast('Member update failed: ' + (err.code || err.message)); }
     // History
     const histEntry  = { taskId: id, taskName: t.name, person: awardee, completedAt: nowTs, points: taskPoints(t) };
-    const newHistory = (state.history || []).concat([histEntry]).slice(-500);
     try {
-      await patchRoot({ history: newHistory });
+      await appendHistory(histEntry);
     } catch (err) { showToast('History update failed: ' + (err.code || err.message)); }
   }
 }

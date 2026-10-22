@@ -11,11 +11,12 @@ vi.mock('../src/firebase.js', () => ({
   restoreTask:  vi.fn().mockResolvedValue(undefined),
   patchSubtask: vi.fn().mockResolvedValue(undefined),
   adjustMemberPoints: vi.fn().mockResolvedValue({ ok: true }),
+  appendHistory: vi.fn().mockResolvedValue({ ok: true }),
 }));
 vi.mock('../src/ui.js', () => ({ showToast: vi.fn() }));
 vi.mock('../src/undo.js', () => ({ pushUndo: vi.fn() }));
 
-import { adjustMemberPoints, patchTask, patchMember, patchRoot } from '../src/firebase.js';
+import { adjustMemberPoints, appendHistory, patchTask, patchMember, patchRoot } from '../src/firebase.js';
 
 const isAdmin = () => true;
 const notAdmin = () => false;
@@ -46,9 +47,8 @@ describe('Anyone task completion (#43)', () => {
       done: true, lastDoneBy: 'Alice', lastDonePoints: 3,
     }));
     expect(adjustMemberPoints).toHaveBeenCalledWith('Alice', expect.objectContaining({ pts: 3, count: 1 }));
-    const hist = patchRoot.mock.calls[0][0].history;
-    expect(hist).toHaveLength(1);
-    expect(hist[0]).toMatchObject({ taskId: 't1', person: 'Alice', points: 3 });
+    expect(appendHistory).toHaveBeenCalledTimes(1);
+    expect(appendHistory.mock.calls[0][0]).toMatchObject({ taskId: 't1', person: 'Alice', points: 3 });
   });
 
   it('unchecking reverses the points from whoever earned them', async () => {
