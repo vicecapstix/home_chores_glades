@@ -11,6 +11,7 @@ vi.mock('../src/firebase.js', () => ({
   restoreTask:   vi.fn().mockResolvedValue(undefined),
   patchSubtask:  vi.fn().mockResolvedValue(undefined),
   adjustMemberPoints: vi.fn().mockResolvedValue({ ok: true }),
+  appendHistory: vi.fn().mockResolvedValue({ ok: true }),
 }));
 
 vi.mock('../src/ui.js', () => ({
@@ -21,7 +22,7 @@ vi.mock('../src/undo.js', () => ({
   pushUndo: vi.fn(),
 }));
 
-import { adjustMemberPoints, writeState, patchTask, patchMember, patchRoot, removeTask } from '../src/firebase.js';
+import { adjustMemberPoints, appendHistory, writeState, patchTask, patchMember, patchRoot, removeTask } from '../src/firebase.js';
 import { showToast } from '../src/ui.js';
 import { pushUndo } from '../src/undo.js';
 
@@ -184,10 +185,8 @@ describe('toggleTask', () => {
     state.tasks.t1 = makeTask({ done: false });
     state.members.Alice = makeMember();
     await toggleTask('t1', asAlice, isAdmin);
-    expect(patchRoot).toHaveBeenCalledWith(
-      expect.objectContaining({ history: expect.arrayContaining([
-        expect.objectContaining({ taskId: 't1', person: 'Alice' })
-      ])})
+    expect(appendHistory).toHaveBeenCalledWith(
+      expect.objectContaining({ taskId: 't1', person: 'Alice' })
     );
   });
   it('non-admin cannot toggle another member\'s task', async () => {

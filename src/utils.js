@@ -46,8 +46,26 @@ export function initialLastDone(freq, now = Date.now()) {
     return s.getTime() - 1;
   }
   const d = new Date(now);
+  if (freq === 'monthly') return addMonthClamped(d, -1).getTime(); // due today
   d.setDate(d.getDate() - freqDays(freq));
   return d.getTime();
+}
+
+// Same local time, `n` calendar months away; day clamped to that month's last day (31 Jan +1 → 28/29 Feb).
+export function addMonthClamped(date, n) {
+  const d = new Date(date);
+  const day = d.getDate();
+  d.setDate(1);
+  d.setMonth(d.getMonth() + n);
+  d.setDate(Math.min(day, new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate()));
+  return d;
+}
+
+// Whole local days in the chore's cycle that started at `lastDone`. Monthly follows the calendar (#137).
+export function cycleDays(f, lastDone) {
+  const freq = f && typeof f === 'object' ? f.freq : f;
+  if (freq !== 'monthly') return freqDays(f);
+  return daysSince(lastDone || 0, addMonthClamped(new Date(lastDone || 0), 1).getTime());
 }
 
 // Rotation (#54): the chore's assignee advances through `rotation` on each reset.
@@ -218,7 +236,7 @@ function rawDueStatus(t, now) {
     dueDate = t.dueDate;
   } else {
     const d = new Date(t.lastDone || 0);
-    d.setDate(d.getDate() + freqDays(t));
+    d.setDate(d.getDate() + cycleDays(t, t.lastDone));
     dueDate = localDateStr(d);
   }
   const due = atTime(dueDate, t.dueTime);
@@ -243,7 +261,7 @@ function baseStatus(t, now = Date.now()) {
     const today = new Date(); today.setHours(0, 0, 0, 0);
     return p === today.getTime() ? 'soon' : 'overdue';
   }
-  const d = freqDays(t), s = daysSince(t.lastDone || 0, now);
+  const d = cycleDays(t, t.lastDone), s = daysSince(t.lastDone || 0, now);
   if (s >= d) return 'overdue';
   if (s >= d - 1) return 'soon';
   return 'ok';

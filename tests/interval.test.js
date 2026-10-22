@@ -111,7 +111,6 @@ describe('templates round trip', () => {
     expect(t.intervalDays).toBe(45);
     expect(freqDays(t)).toBe(45);
     expect(t.lastDone).toBe(initialLastDone({ freq: 'interval', intervalDays: 45 }, NOW));
-    expect(writeState).toHaveBeenCalled();
     expect(patchPaths).toHaveBeenCalled();
   });
   it('a template with an invalid interval falls back to 7', () => {
@@ -133,14 +132,14 @@ describe('add / edit form validation', () => {
       addDom(n); await addTask(admin);
     }
     expect(Object.keys(state.tasks)).toHaveLength(0);
-    expect(writeState).not.toHaveBeenCalled();
+    expect(patchPaths).not.toHaveBeenCalled();
   });
   it('addTask stores intervalDays for valid N', async () => {
     addDom('45'); await addTask(admin);
     const t = Object.values(state.tasks)[0];
     expect(t).toMatchObject({ freq: 'interval', intervalDays: 45 });
     expect(t.lastDone).toBe(initialLastDone({ freq: 'interval', intervalDays: 45 }, NOW));
-    expect(writeState).toHaveBeenCalledTimes(1);
+    expect(patchPaths).toHaveBeenCalledTimes(1);
   });
   it('saveTask rejects invalid N, stores valid N, and drops it when switching away', async () => {
     state.tasks = { a: mk({ done: false }) };
@@ -150,7 +149,7 @@ describe('add / edit form validation', () => {
         '<select class="edit-cat"><option value=""></option></select><select class="edit-person"><option value="Ann">Ann</option></select><textarea class="edit-notes"></textarea></div><div id="toast"></div>';
     };
     card('interval', '0'); await saveTask('a', admin);
-    expect(writeState).not.toHaveBeenCalled(); expect(state.tasks.a.intervalDays).toBe(3);
+    expect(patchPaths).not.toHaveBeenCalled(); expect(state.tasks.a.intervalDays).toBe(3);
     card('interval', '12'); await saveTask('a', admin);
     expect(state.tasks.a.intervalDays).toBe(12);
     card('weekly', '12'); await saveTask('a', admin);
