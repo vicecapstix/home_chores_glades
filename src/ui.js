@@ -2,7 +2,7 @@ import { state, getMembers } from './state.js';
 import { PCOLS, BADGES, READONLY } from './config.js';
 import { openModal, closeModal } from './modals.js';
 import { writeState, patchPaths } from './firebase.js';
-import { esc, jsq, avatarPrefix, sha256, initialLastDone, dueStatus, localDateStr, currentStreak, currentWeekPoints, weekRecap, lastWeekChampion } from './utils.js';
+import { esc, jsq, avatarPrefix, sha256, initialLastDone, validInterval, dueStatus, localDateStr, currentStreak, currentWeekPoints, weekRecap, lastWeekChampion } from './utils.js';
 import { isAdmin } from './auth.js';
 
 // ── pColor helper ─────────────────────────────────────────────────────────────
@@ -234,7 +234,7 @@ export function saveTemplate() {
   const id = 'tpl' + Date.now();
   const tpl = {
     id, name,
-    tasks: chores.map(t => ({ name: t.name, freq: t.freq, difficulty: t.difficulty || 'easy', ...(t.freq === 'weekdays' ? { days: t.days || [] } : {}) })),
+    tasks: chores.map(t => ({ name: t.name, freq: t.freq, difficulty: t.difficulty || 'easy', ...(t.freq === 'weekdays' ? { days: t.days || [] } : {}), ...(t.freq === 'interval' ? { intervalDays: validInterval(t.intervalDays) || 7 } : {}) })),
   };
   state.templates[id] = tpl;
   input.value = '';
@@ -253,7 +253,8 @@ export function applyTemplate(id) {
     state.tasks[taskId] = {
       id: taskId, name: t.name, freq: t.freq, difficulty: t.difficulty || 'easy',
       ...(t.freq === 'weekdays' ? { days: t.days || [] } : {}),
-      done: false, lastDone: initialLastDone(t.freq),
+      ...(t.freq === 'interval' ? { intervalDays: validInterval(t.intervalDays) || 7 } : {}),
+      done: false, lastDone: initialLastDone(t),
       person: '', order: Date.now() + added,
     };
     state.nextId++;
