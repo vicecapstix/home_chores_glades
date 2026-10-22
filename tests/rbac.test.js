@@ -81,6 +81,51 @@ describe('bulk actions', () => {
     await bulkAssign();
     expect(state.tasks.t1.person).toBe('Bob');
     expect(patchPaths).toHaveBeenCalledWith({ 'tasks/t1/person': 'Bob' });
+    expect(writeState).not.toHaveBeenCalled();
+  });
+});
+
+describe('bulkAssign rotation (#138)', () => {
+  const setup = () => {
+    state.tasks.t1.rotation = ['Alice', 'Carol'];
+    state.tasks.t2.rotation = { 0: 'Bob', 1: 'Alice' };
+    state.tasks.t3 = { id: 't3', name: 'C', person: 'Alice', order: 3, done: false };
+    document.getElementById('task-list').innerHTML += '<div class="task-card" data-id="t3"></div>';
+    initRender(admin, () => 'Alice');
+    toggleSelectMode(); toggleSelect('t1'); toggleSelect('t2'); toggleSelect('t3');
+  };
+  it('removes rotation when the person is not in it, with a toast', async () => {
+    setup();
+    await bulkAssign(); // Bob
+    expect(patchPaths).toHaveBeenCalledTimes(1);
+    expect(state.tasks.t1.rotation).toBeUndefined();
+    expect(state.tasks.t2.rotation).toEqual({ 0: 'Bob', 1: 'Alice' });
+    expect(showToast).toHaveBeenCalledWith('Rotation turned off for 1 chore');
+  });
+  it('removes rotation when assigning to Anyone', async () => {
+    setup();
+    document.getElementById('bulk-person').innerHTML = '<option value="">Anyone</option>';
+    await bulkAssign();
+    expect(patchPaths).toHaveBeenCalledWith({
+      'tasks/t1/person': '', 'tasks/t1/rotation': null,
+      'tasks/t2/person': '', 'tasks/t2/rotation': null,
+      'tasks/t3/person': '',
+    });
+    expect(showToast).toHaveBeenCalledWith('Rotation turned off for 2 chores');
+  });
+  it('keeps rotation when the person is in it and writes only changed leaves', async () => {
+    setup();
+    await bulkAssign(); // Bob: t2 keeps rotation
+    expect(patchPaths).toHaveBeenCalledWith({
+      'tasks/t1/person': 'Bob', 'tasks/t1/rotation': null,
+      'tasks/t2/person': 'Bob', 'tasks/t3/person': 'Bob',
+    });
+    expect(writeState).not.toHaveBeenCalled();
+  });
+  it('non-admin writes nothing', async () => {
+    setup(); initRender(notAdmin, () => 'Bob');
+    await bulkAssign();
+    expect(patchPaths).not.toHaveBeenCalled();
   });
 });
 

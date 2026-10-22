@@ -92,11 +92,30 @@ function _updateBulkBar() {
 export async function bulkAssign() {
   if (READONLY || !_isAdmin() || !selectedIds.size) return;
   const person = document.getElementById('bulk-person').value;
-  const paths = {};
-  selectedIds.forEach(id => { if (state.tasks[id]) { state.tasks[id].person = person; paths['tasks/' + id + '/person'] = person; } });
   const { patchPaths } = await import('./firebase.js');
   const { showToast }  = await import('./ui.js');
-  try { await patchPaths(paths); } catch (err) { showToast('Save failed: ' + err.code); }
+  // Only the changed leaves, in one multi-path update. A rotation that doesn't
+  // include the new assignee (or "Anyone") would override the choice at the next reset, so drop it.
+  const paths = {};
+  let rotationOff = 0;
+  selectedIds.forEach(id => {
+    const t = state.tasks[id];
+    if (!t) return;
+    t.person = person;
+    paths['tasks/' + id + '/person'] = person;
+    if (t.rotation) {
+      const names = Array.isArray(t.rotation) ? t.rotation : Object.values(t.rotation);
+      if (!person || !names.includes(person)) {
+        delete t.rotation;
+        paths['tasks/' + id + '/rotation'] = null;
+        rotationOff++;
+      }
+    }
+  });
+  try {
+    await patchPaths(paths);
+    if (rotationOff) showToast('Rotation turned off for ' + rotationOff + ' chore' + (rotationOff > 1 ? 's' : ''));
+  } catch (err) { showToast('Save failed: ' + (err.code || err.message)); }
   toggleSelectMode();
 }
 
