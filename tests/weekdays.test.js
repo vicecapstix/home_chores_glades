@@ -83,7 +83,7 @@ describe('points, labels, initial state', () => {
     expect(freqLabel({ freq: 'weekly' })).toBe('weekly');
   });
   it('new weekday tasks are not instantly overdue; others unchanged', () => {
-    expect(initialLastDone('weekdays')).toBe(Date.now());
+    expect(initialLastDone('weekdays')).toBe(new Date(2026, 9, WED, 0, 0, 0).getTime() - 1); // #69: start of today - 1ms
     expect(initialLastDone('daily')).toBe(Date.now() - 86400000);
   });
 });
@@ -122,7 +122,7 @@ describe('add / edit UI', () => {
     const t = Object.values(state.tasks)[0];
     expect(t.freq).toBe('weekdays');
     expect(t.days).toEqual([2, 4]);
-    expect(t.lastDone).toBeGreaterThan(Date.now() - 1000);
+    expect(t.lastDone).toBe(initialLastDone('weekdays')); // #69
     expect(writeState).toHaveBeenCalled();
   });
   it('addTask refuses a weekdays chore with no days', async () => {
