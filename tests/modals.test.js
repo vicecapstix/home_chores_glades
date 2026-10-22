@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 // Use dynamic imports so each test gets a fresh module (no shared _stack state)
 let openModal, closeModal, closeTopModal, closeAllModals;
@@ -99,5 +99,62 @@ describe('closeAllModals', () => {
     closeAllModals();
     // Would throw or re-close if stack was not cleared
     expect(() => closeTopModal()).not.toThrow();
+  });
+});
+
+describe('history sync (#37)', () => {
+  beforeEach(async () => {
+    const mod = await import('../src/modals.js');
+    mod.initModalBackButton();
+  });
+
+  it('closing via closeModal pops its own history entry once', () => {
+    const back = vi.spyOn(history, 'back').mockImplementation(() => {});
+    openModal('modal-a');
+    closeModal('modal-a');
+    expect(back).toHaveBeenCalledTimes(1);
+    back.mockRestore();
+  });
+  it('does not call history.back when the modal was not open', () => {
+    const back = vi.spyOn(history, 'back').mockImplementation(() => {});
+    closeModal('modal-a');
+    expect(back).not.toHaveBeenCalled();
+    back.mockRestore();
+  });
+  it('re-opening an open modal does not push another entry', () => {
+    const push = vi.spyOn(history, 'pushState');
+    openModal('modal-a');
+    openModal('modal-a');
+    expect(push).toHaveBeenCalledTimes(1);
+    push.mockRestore();
+  });
+  it('real back button closes the top modal', () => {
+    openModal('modal-a');
+    window.dispatchEvent(new PopStateEvent('popstate', { state: null }));
+    expect(document.getElementById('modal-a').classList.contains('hidden')).toBe(true);
+  });
+  it('popstate echo of our own history.back does not close a second modal', () => {
+    const back = vi.spyOn(history, 'back').mockImplementation(() => {});
+    openModal('modal-a');
+    openModal('modal-b');
+    closeModal('modal-b');
+    window.dispatchEvent(new PopStateEvent('popstate', { state: null }));
+    expect(document.getElementById('modal-a').classList.contains('hidden')).toBe(false);
+    back.mockRestore();
+  });
+  it('closeAllModals unwinds history with a single go(-n)', () => {
+    const go = vi.spyOn(history, 'go').mockImplementation(() => {});
+    openModal('modal-a');
+    openModal('modal-b');
+    closeAllModals();
+    expect(go).toHaveBeenCalledWith(-2);
+    go.mockRestore();
+  });
+  it('admin panel is opened and closed through the modal manager', async () => {
+    const fs = await import('node:fs');
+    const src = fs.readFileSync('src/main.js', 'utf8');
+    expect(src).toMatch(/openModal\('admin-panel-modal'\)/);
+    expect(src).toMatch(/closeModal\('admin-panel-modal'\)/);
+    expect(src).not.toMatch(/getElementById\('admin-panel-modal'\)\.classList/);
   });
 });

@@ -1,6 +1,6 @@
 // FamilyFlow service worker — network-first app shell, same-origin only.
 // Database, auth and font requests are cross-origin and never touched.
-const CACHE = 'familyflow-shell-v1';
+const CACHE = 'familyflow-shell-v2';
 
 self.addEventListener('install', () => self.skipWaiting());
 
@@ -27,5 +27,16 @@ self.addEventListener('fetch', event => {
         return res;
       })
       .catch(() => caches.match(req).then(hit => hit || caches.match('./')))
+  );
+});
+
+// Tapping an overdue reminder focuses an open FamilyFlow tab, or opens the app.
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
+      const open = list.find(c => 'focus' in c);
+      return open ? open.focus() : self.clients.openWindow(self.registration.scope);
+    })
   );
 });
