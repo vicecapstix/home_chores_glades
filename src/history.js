@@ -28,9 +28,9 @@ export function historyHTML(history, members, member) {
     const c = i >= 0 ? PCOLS[i % PCOLS.length] : { bg: 'var(--bg)', text: 'var(--muted)' };
     return '<div class="hist-row">' +
       '<span class="lb-name hist-who" style="background:' + c.bg + ';color:' + c.text + '">' + esc(e.person || 'Anyone') + '</span>' +
-      '<span class="hist-task">' + esc(e.taskName || '') + '</span>' +
+      '<span class="hist-task">' + esc(e.type === 'bonus' ? 'Bonus: ' + (e.reason || '') : (e.taskName || '')) + '</span>' +
       '<span class="hist-when">' + esc(when(e.completedAt)) + '</span>' +
-      '<span class="hist-pts">+' + esc(String(e.points || 0)) + '</span>' +
+      '<span class="hist-pts">' + ((e.points || 0) > 0 ? '+' : '') + esc(String(e.points || 0)) + '</span>' +
       '</div>';
   }).join('');
 }
