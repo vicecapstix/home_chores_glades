@@ -28,6 +28,7 @@ src/
   modals.js        — modal stack manager + browser back-button support
   notifications.js — overdue browser notifications (30-min interval check)
   undo.js          — command-pattern undo stack (max 20, 5s toast window)
+  a11y.js          — dialog accessibility: Esc to close, focus restore, Tab trap
   backup.js        — admin JSON backup download
   connection.js    — online/offline indicator (Firebase .info/connected)
   goal.js          — family daily goal bar + celebration (display only)
