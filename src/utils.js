@@ -186,6 +186,11 @@ export function dueStatus(t, now = Date.now()) {
   return isSkipped(t) && s !== 'overdue' ? 'ok' : s;
 }
 
+// A one-off chore ticked on an earlier local day: shown in the collapsed Done section (#142).
+export function isStaleDoneOnce(t, now = Date.now()) {
+  return t.freq === 'once' && !!t.done && !!t.lastDone && localDateStr(new Date(t.lastDone)) < localDateStr(new Date(now));
+}
+
 // Skipped = admin skipped this occurrence (lastDone was set to skippedAt) and it is not done since.
 export function isSkipped(t) {
   return !t.done && !!t.skippedAt && t.skippedAt === t.lastDone && t.freq !== 'once';
