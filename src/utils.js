@@ -91,6 +91,15 @@ export function localDateStr(d = new Date()) {
   return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 }
 
+// Streak to display: stored streak only if the last completion was today or
+// yesterday (local), otherwise 0. Display-only; never written back.
+export function currentStreak(m, now = Date.now()) {
+  if (!m || !m.streak || !m.lastStreakDate) return 0;
+  const y = new Date(now); y.setDate(y.getDate() - 1);
+  const last = m.lastStreakDate;
+  return (last === localDateStr(new Date(now)) || last === localDateStr(y)) ? m.streak : 0;
+}
+
 export function getWeekStart(from) {
   const d = from ? new Date(from) : new Date();
   const day = d.getDay();
