@@ -41,13 +41,31 @@ export function prevScheduledStart(days, now = Date.now()) {
 
 // lastDone value for a brand-new task so it is not instantly overdue.
 export function initialLastDone(freq, now = Date.now()) {
-  if (freq === 'weekdays') { // start of today minus 1 ms: due today if today is a scheduled day, never overdue for earlier days
+  if ((freq && freq.freq || freq) === 'weekdays') { // start of today minus 1 ms: due today if today is a scheduled day, never overdue for earlier days
     const s = new Date(now); s.setHours(0, 0, 0, 0);
     return s.getTime() - 1;
   }
   const d = new Date(now);
+  if (freq === 'monthly') return addMonthClamped(d, -1).getTime(); // due today
   d.setDate(d.getDate() - freqDays(freq));
   return d.getTime();
+}
+
+// Same local time, `n` calendar months away; day clamped to that month's last day (31 Jan +1 → 28/29 Feb).
+export function addMonthClamped(date, n) {
+  const d = new Date(date);
+  const day = d.getDate();
+  d.setDate(1);
+  d.setMonth(d.getMonth() + n);
+  d.setDate(Math.min(day, new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate()));
+  return d;
+}
+
+// Whole local days in the chore's cycle that started at `lastDone`. Monthly follows the calendar (#137).
+export function cycleDays(f, lastDone) {
+  const freq = f && typeof f === 'object' ? f.freq : f;
+  if (freq !== 'monthly') return freqDays(f);
+  return daysSince(lastDone || 0, addMonthClamped(new Date(lastDone || 0), 1).getTime());
 }
 
 // Rotation (#54): the chore's assignee advances through `rotation` on each reset.
@@ -73,10 +91,22 @@ export function rotationTag(t, memberNames) {
 export function freqLabel(t) {
   return t.freq === 'weekdays'
     ? (t.days || []).map(Number).sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7)).map(d => DAY_NAMES[d]).join(', ') || 'No days'
+    : t.freq === 'interval' ? 'Every ' + (validInterval(t.intervalDays) || 7) + ' days'
     : t.freq;
 }
 
+// "Every N days" recurrence (#145): a whole number from 2 to 60, else 0 (invalid).
+export const INTERVAL_MIN = 2, INTERVAL_MAX = 60;
+export function validInterval(n) {
+  const v = typeof n === 'string' && n.trim() !== '' ? Number(n) : n;
+  return Number.isInteger(v) && v >= INTERVAL_MIN && v <= INTERVAL_MAX ? v : 0;
+}
+
+// Days between occurrences. Takes a freq string, or a task/template entry so 'interval' can read intervalDays.
 export function freqDays(f) {
+  if (f && typeof f === 'object') {
+    return f.freq === 'interval' ? (validInterval(f.intervalDays) || 7) : freqDays(f.freq);
+  }
   return { daily: 1, weekly: 7, fortnightly: 14, monthly: 30 }[f] || 7;
 }
 
@@ -159,7 +189,9 @@ export function currentWeekPoints(m) {
 }
 
 export function taskPoints(t) {
-  const base = { daily: 1, weekly: 3, weekdays: 3, fortnightly: 5, monthly: 8, once: 8 }[t.freq] || 1;
+  const base = t.freq === 'interval'
+    ? (n => n <= 2 ? 1 : n <= 7 ? 3 : n <= 14 ? 5 : 8)(freqDays(t))
+    : { daily: 1, weekly: 3, weekdays: 3, fortnightly: 5, monthly: 8, once: 8 }[t.freq] || 1;
   const mult = { easy: 1, medium: 2, hard: 3 }[t.difficulty || 'easy'];
   return base * mult;
 }
@@ -204,7 +236,7 @@ function rawDueStatus(t, now) {
     dueDate = t.dueDate;
   } else {
     const d = new Date(t.lastDone || 0);
-    d.setDate(d.getDate() + freqDays(t.freq));
+    d.setDate(d.getDate() + cycleDays(t, t.lastDone));
     dueDate = localDateStr(d);
   }
   const due = atTime(dueDate, t.dueTime);
@@ -229,7 +261,7 @@ function baseStatus(t, now = Date.now()) {
     const today = new Date(); today.setHours(0, 0, 0, 0);
     return p === today.getTime() ? 'soon' : 'overdue';
   }
-  const d = freqDays(t.freq), s = daysSince(t.lastDone || 0, now);
+  const d = cycleDays(t, t.lastDone), s = daysSince(t.lastDone || 0, now);
   if (s >= d) return 'overdue';
   if (s >= d - 1) return 'soon';
   return 'ok';

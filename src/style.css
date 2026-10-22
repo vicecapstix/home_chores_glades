@@ -381,6 +381,8 @@ body[data-role="admin"] #btn-admin { display: flex; }
 /* WEEKDAY CHIPS */
 .day-chips { display: flex; gap: 4px; flex-wrap: wrap; width: 100%; }
 .day-chips.hidden { display: none; }
+.edit-interval { width: 70px; padding: 6px 8px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); font-size: 0.85rem; font-family: inherit; background: var(--bg); color: var(--text); }
+.edit-interval.hidden, #new-interval.hidden { display: none; }
 .day-chip input { position: absolute; opacity: 0; width: 1px; height: 1px; }
 .day-chip span { display: inline-block; min-width: 40px; min-height: 36px; line-height: 36px; text-align: center; border: 1px solid var(--border); border-radius: 20px; font-size: 0.8rem; cursor: pointer; background: var(--surface); color: var(--muted); }
 .day-chip input:checked + span { background: var(--accent); color: #fff; border-color: var(--accent); }

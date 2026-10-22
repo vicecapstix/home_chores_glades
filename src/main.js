@@ -140,7 +140,7 @@ initDialogA11y();
 })();
 
 // ── DOM event listeners ───────────────────────────────────────────────────────
-document.getElementById('new-freq').addEventListener('change', e => document.getElementById('new-days').classList.toggle('hidden', e.target.value !== 'weekdays'));
+document.getElementById('new-freq').addEventListener('change', e => { document.getElementById('new-days').classList.toggle('hidden', e.target.value !== 'weekdays'); document.getElementById('new-interval').classList.toggle('hidden', e.target.value !== 'interval'); });
 document.getElementById('new-task').addEventListener('keydown', e => { if (e.key === 'Enter') addTask(_isAdmin); });
 document.getElementById('new-member').addEventListener('keydown', e => { if (e.key === 'Enter') addMember(_isAdmin); });
 

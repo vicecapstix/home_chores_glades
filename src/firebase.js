@@ -141,6 +141,17 @@ export async function adjustMemberPoints(name, opts) {
   return { ok: !!res.committed, reason: res.committed ? '' : reason, member: res.snapshot?.val?.() ?? null };
 }
 
+// Atomic history append (#31): runs on the LIVE server array so concurrent
+// completions never overwrite each other, then trims to the newest `cap` (500).
+export async function appendHistory(entry, cap = 500) {
+  if (READONLY || !_db) return { ok: false };
+  const res = await runTransaction(ref(_db, 'state/history'), cur => {
+    const list = Array.isArray(cur) ? cur : (cur ? Object.values(cur) : []);
+    return list.concat([entry]).slice(-cap);
+  });
+  return { ok: !!res.committed };
+}
+
 export async function refundPoints(name, cost) {
   if (READONLY || !_db || !_live) return;
   await runTransaction(ref(_db, 'state/members/' + name + '/points'), cur => (cur || 0) + cost);
