@@ -3,7 +3,7 @@ import { READONLY, BADGES, CATEGORIES } from './config.js';
 import { patchPaths, adjustMemberPoints, appendHistory, patchTask, patchMember, patchRoot, removeTask, restoreTask, patchSubtask } from './firebase.js';
 import { showToast } from './ui.js';
 import { pushUndo } from './undo.js';
-import { esc, jsq, validTime, freqDays, daysSince, dueStatus, taskPoints, getWeekStart, localDateStr, prevScheduledStart, initialLastDone, nextRotationPerson, DAY_NAMES } from './utils.js';
+import { esc, jsq, validTime, freqDays, cycleDays, daysSince, dueStatus, taskPoints, getWeekStart, localDateStr, prevScheduledStart, initialLastDone, nextRotationPerson, DAY_NAMES } from './utils.js';
 
 // Re-export for other modules
 export { dueStatus, taskPoints, freqDays };
@@ -18,7 +18,7 @@ export function checkTaskResets() {
     if (t.freq === 'once') return;
     const due = t.freq === 'weekdays'
       ? (prevScheduledStart(t.days, now) !== null && prevScheduledStart(t.days, now) > (t.lastDone || 0))
-      : daysSince(t.lastDone || 0, now) >= freqDays(t.freq);
+      : daysSince(t.lastDone || 0, now) >= cycleDays(t.freq, t.lastDone);
     if (t.done && due) {
       t.done = false;
       t.lastDoneBy = null;
