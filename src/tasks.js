@@ -1,6 +1,6 @@
 import { state, getMembers } from './state.js';
 import { READONLY, BADGES, CATEGORIES } from './config.js';
-import { writeState, adjustMemberPoints, patchTask, patchMember, patchRoot, removeTask, restoreTask, patchSubtask } from './firebase.js';
+import { patchPaths, adjustMemberPoints, appendHistory, patchTask, patchMember, patchRoot, removeTask, restoreTask, patchSubtask } from './firebase.js';
 import { showToast } from './ui.js';
 import { pushUndo } from './undo.js';
 import { esc, jsq, validTime, freqDays, cycleDays, daysSince, dueStatus, taskPoints, getWeekStart, localDateStr, prevScheduledStart, initialLastDone, nextRotationPerson, DAY_NAMES } from './utils.js';
@@ -100,7 +100,7 @@ export async function addTask(isAdminFn) {
   document.querySelectorAll('#new-days input').forEach(i => { i.checked = false; });
   notesEl.value = '';
   notesEl.style.display = 'none';
-  try { await writeState(); } catch (err) { showToast('Save failed: ' + (err.code || err.message)); }
+  try { await patchPaths({ ['tasks/' + id]: state.tasks[id], nextId: state.nextId }); } catch (err) { showToast('Save failed: ' + (err.code || err.message)); }
 }
 
 // ── Edit / Save ───────────────────────────────────────────────────────────────
@@ -168,7 +168,15 @@ export async function saveTask(id, isAdminFn) {
   state.tasks[id].category   = card.querySelector('.edit-cat').value;
   state.tasks[id].person     = card.querySelector('.edit-person').value;
   state.tasks[id].notes      = card.querySelector('.edit-notes').value.trim();
-  try { await writeState(); } catch (err) { showToast('Save failed: ' + (err.code || err.message)); }
+  const t = state.tasks[id], p = 'tasks/' + id + '/';
+  const paths = {
+    [p + 'name']: t.name, [p + 'freq']: t.freq, [p + 'days']: t.days || null,
+    [p + 'dueDate']: t.dueDate, [p + 'dueTime']: t.dueTime || null,
+    [p + 'difficulty']: t.difficulty, [p + 'category']: t.category,
+    [p + 'person']: t.person, [p + 'notes']: t.notes, [p + 'rotation']: t.rotation || null,
+    [p + 'lastDone']: t.lastDone,
+  };
+  try { await patchPaths(paths); } catch (err) { showToast('Save failed: ' + (err.code || err.message)); }
 }
 
 // ── Toggle (check/uncheck) ────────────────────────────────────────────────────
@@ -282,9 +290,8 @@ export async function toggleTask(id, currentMemberFn, isAdminFn) {
     } catch (err) { showToast('Member update failed: ' + (err.code || err.message)); }
     // History
     const histEntry  = { taskId: id, taskName: t.name, person: awardee, completedAt: nowTs, points: taskPoints(t) };
-    const newHistory = (state.history || []).concat([histEntry]).slice(-500);
     try {
-      await patchRoot({ history: newHistory });
+      await appendHistory(histEntry);
     } catch (err) { showToast('History update failed: ' + (err.code || err.message)); }
   }
 }
