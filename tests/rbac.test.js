@@ -80,6 +80,7 @@ describe('bulk actions', () => {
     toggleSelectMode(); toggleSelect('t1');
     await bulkAssign();
     expect(state.tasks.t1.person).toBe('Bob');
+    expect(patchPaths).toHaveBeenCalledWith({ 'tasks/t1/person': 'Bob' });
     expect(writeState).not.toHaveBeenCalled();
   });
 });

@@ -9,7 +9,7 @@ vi.mock('../src/firebase.js', () => ({
 }));
 vi.mock('../src/ui.js', () => ({ showToast: vi.fn() }));
 vi.mock('../src/undo.js', () => ({ pushUndo: vi.fn() }));
-import { writeState, patchRoot } from '../src/firebase.js';
+import { writeState, patchRoot, patchPaths } from '../src/firebase.js';
 import { checkTaskResets, editTask, saveTask, rotationChipsHTML } from '../src/tasks.js';
 import { removeMember, renamePaths } from '../src/members.js';
 
@@ -80,7 +80,7 @@ describe('edit UI saves rotation (admin only)', () => {
     card.querySelectorAll('.edit-rotation input').forEach(i => { i.checked = true; });
     await saveTask('a', admin);
     expect(state.tasks.a.rotation).toEqual(['Ann', 'Bo']);
-    expect(writeState).toHaveBeenCalled();
+    expect(patchPaths).toHaveBeenCalled();
   });
   it('clears rotation when fewer than 2 are picked', async () => {
     state.tasks.a.rotation = ['Ann', 'Bo'];
