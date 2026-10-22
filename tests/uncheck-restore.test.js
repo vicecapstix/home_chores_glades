@@ -10,6 +10,7 @@ vi.mock('../src/firebase.js', () => ({
   patchMember: vi.fn(async (n, f) => { Object.assign(state.members[n], f); }),
   patchRoot: vi.fn(async f => { Object.assign(state, f); }),
   removeTask: vi.fn(), restoreTask: vi.fn(), patchSubtask: vi.fn(),
+  appendHistory: vi.fn(async e => { state.history = (state.history || []).concat([e]).slice(-500); return { ok: true }; }),
   adjustMemberPoints: vi.fn(async (n, o) => {
     const m = state.members[n];
     m.points += o.pts; m.completedCount = Math.max(0, m.completedCount + o.count);
