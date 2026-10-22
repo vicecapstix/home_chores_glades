@@ -3,7 +3,8 @@ import { READONLY } from './config.js';
 import { patchRoot } from './firebase.js';
 import { showToast } from './ui.js';
 import { openModal } from './modals.js';
-import { esc, jsq } from './utils.js';
+import { esc, jsq, goalHTML } from './utils.js';
+import { setGoal } from './savings.js';
 import { pendingFor, decidedFor } from './redemptions.js';
 
 export const MAX_REWARDS = 50;
@@ -14,6 +15,7 @@ const DEFAULT_ICON = '🎁';
 let editingId = '';
 let adminFn = () => false;
 let meFn = () => '';
+let goalTarget = '';
 
 // Validate raw form input; returns { reward } or { error }.
 export function validateReward(name, cost, icon) {
@@ -41,7 +43,9 @@ export function rewardsHTML(rewards, canEdit, opts = {}) {
       '<span class="reward-name">' + esc(r.name) + '</span>' +
       '<span class="reward-cost">' + esc(String(r.cost)) + ' pts</span>' +
       (opts.me
-        ? '<button class="btn-sm btn-accent" aria-label="Request ' + esc(r.name) + '"' + ((opts.points || 0) < r.cost ? ' disabled' : '') +
+        ? '<button class="btn-sm" aria-label="' + (opts.goalId === r.id ? 'Clear goal ' : 'Make goal ') + esc(r.name) + '"' +
+          ' onclick="window.setGoal(\'' + (opts.goalId === r.id ? '' : jsq(r.id)) + '\')">' + (opts.goalId === r.id ? 'Clear goal' : 'Make this my goal') + '</button>' +
+          '<button class="btn-sm btn-accent" aria-label="Request ' + esc(r.name) + '"' + ((opts.points || 0) < r.cost ? ' disabled' : '') +
           ' onclick="window.requestReward(\'' + jsq(r.id) + '\')">Request</button>'
         : '') +
       (canEdit
@@ -57,14 +61,20 @@ export function renderRewards() {
   if (!list) return;
   const canEdit = !READONLY && adminFn();
   const me = READONLY ? '' : meFn();
-  const member = me && state.members[me];
-  list.innerHTML = rewardsHTML(state.rewards, canEdit, member ? { me, points: member.points || 0 } : {});
+  const target = canEdit && state.members[goalTarget] ? goalTarget : me;
+  const member = target && state.members[target];
+  const sel = document.getElementById('goal-target');
+  if (sel) {
+    sel.classList.toggle('hidden', !canEdit);
+    sel.innerHTML = canEdit ? Object.keys(state.members).map(n => '<option value="' + esc(n) + '"' + (n === target ? ' selected' : '') + '>' + esc(n) + '</option>').join('') : '';
+  }
+  list.innerHTML = rewardsHTML(state.rewards, canEdit, member ? { me: target, points: member.points || 0, goalId: member.goalRewardId } : {});
   const pend = document.getElementById('rewards-pending');
   if (pend) {
     const mine = pendingFor(me);
     const all = pendingFor('');
     pend.innerHTML = READONLY ? '' :
-      (member ? '<div class="reward-pts">Your points: ' + esc(String(member.points || 0)) + '</div>' : '') +
+      (member ? '<div class="reward-pts">' + (target === me ? 'Your' : esc(target) + "'s") + ' points: ' + esc(String(member.points || 0)) + '</div>' + goalHTML(member, state.rewards) : '') +
       (mine.length ? '<div class="reward-pending-h">Your pending requests</div>' +
         mine.map(r => '<div class="reward-row"><span class="reward-name">' + esc(r.rewardName) + '</span><span class="reward-cost">' + esc(String(r.cost)) + ' pts</span></div>').join('') : '') +
       (member ? decidedFor(me).map(r => '<div class="reward-row"><span class="reward-name">' + esc(r.rewardName) + '</span><span class="reward-status ' + esc(r.status) + '">' +
@@ -157,3 +167,12 @@ export async function deleteReward(id, isAdminFn) {
     renderRewards();
   } catch (err) { showToast('Delete failed: ' + (err.code || err.message)); }
 }
+
+// "Make this my goal" / "Clear goal" (rewardId ''). Admins act on the member picked in #goal-target.
+export async function setGoalFor(rewardId, isAdminFn, currentMemberFn) {
+  if (READONLY) return;
+  const target = (isAdminFn() && state.members[goalTarget] ? goalTarget : '') || currentMemberFn();
+  if (await setGoal(target, rewardId, currentMemberFn, isAdminFn)) renderRewards();
+}
+
+export function pickGoalTarget(name) { goalTarget = name; renderRewards(); }
