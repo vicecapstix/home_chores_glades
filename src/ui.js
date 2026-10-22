@@ -58,7 +58,7 @@ export function openLeaderboard() {
 
 export function setLbTab(tab, btn) {
   lbTab = tab;
-  document.querySelectorAll('.lb-tab').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('#leaderboard-modal .lb-tab').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   renderLeaderboard();
 }

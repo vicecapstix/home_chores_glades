@@ -51,7 +51,7 @@ describe('lastWeekChampion', () => {
 describe('leaderboard Last week tab', () => {
   beforeEach(() => {
     state.members = { A: { name: 'A' }, B: { name: 'B' }, C: { name: 'C' } };
-    document.body.innerHTML = '<div id="lb-list"></div><div id="leaderboard-modal" class="hidden"></div><button class="lb-tab active" id="t1"></button><button class="lb-tab" id="t2"></button>';
+    document.body.innerHTML = '<div id="lb-list"></div><div id="leaderboard-modal" class="hidden"><button class="lb-tab active" id="t1"></button><button class="lb-tab" id="t2"></button></div>';
   });
   it('shares rank on ties and escapes names', () => {
     state.members['<b>x</b>'] = { name: '<b>x</b>' };
