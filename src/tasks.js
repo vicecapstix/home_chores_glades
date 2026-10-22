@@ -79,7 +79,7 @@ export async function addTask(isAdminFn) {
   const dueDate = freq === 'once' ? document.getElementById('new-duedate').value : '';
   const days    = freq === 'weekdays' ? readDays(document.getElementById('new-days')) : [];
   if (freq === 'weekdays' && !days.length) { showToast('Pick at least one day'); return; }
-  const interval = freq === 'interval' ? validInterval(document.getElementById('new-interval').value) : 0;
+  const interval = freq === 'interval' ? validInterval(document.getElementById('new-interval')?.value) : 0;
   if (freq === 'interval' && !interval) { showToast('Enter a whole number of days from ' + INTERVAL_MIN + ' to ' + INTERVAL_MAX); return; }
   const dueTime = validTime(document.getElementById('new-duetime')?.value);
   const notesEl = document.getElementById('new-notes');
@@ -100,8 +100,8 @@ export async function addTask(isAdminFn) {
   document.getElementById('new-duedate').style.display = 'none';
   document.getElementById('new-freq').value = 'weekly';
   document.getElementById('new-days').classList.add('hidden');
-  document.getElementById('new-interval').classList.add('hidden');
-  document.getElementById('new-interval').value = '';
+  document.getElementById('new-interval')?.classList.add('hidden');
+  if (document.getElementById('new-interval')) document.getElementById('new-interval').value = '';
   document.querySelectorAll('#new-days input').forEach(i => { i.checked = false; });
   notesEl.value = '';
   notesEl.style.display = 'none';
