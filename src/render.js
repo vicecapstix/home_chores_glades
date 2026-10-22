@@ -92,10 +92,11 @@ function _updateBulkBar() {
 export async function bulkAssign() {
   if (READONLY || !_isAdmin() || !selectedIds.size) return;
   const person = document.getElementById('bulk-person').value;
-  selectedIds.forEach(id => { if (state.tasks[id]) state.tasks[id].person = person; });
-  const { writeState } = await import('./firebase.js');
+  const paths = {};
+  selectedIds.forEach(id => { if (state.tasks[id]) { state.tasks[id].person = person; paths['tasks/' + id + '/person'] = person; } });
+  const { patchPaths } = await import('./firebase.js');
   const { showToast }  = await import('./ui.js');
-  try { await writeState(); } catch (err) { showToast('Save failed: ' + err.code); }
+  try { await patchPaths(paths); } catch (err) { showToast('Save failed: ' + err.code); }
   toggleSelectMode();
 }
 
