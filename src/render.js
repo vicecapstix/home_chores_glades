@@ -2,7 +2,7 @@ import { state, getMembers } from './state.js';
 import { PCOLS, BADGES, READONLY } from './config.js';
 import { renderTvStrip } from './tv.js';
 import { renderGoal } from './goal.js';
-import { esc, jsq, avatarPrefix, validTime, dueStatus, freqLabel, rotationTag, isMine, isSkipped, localDateStr, doneAgoLabel, currentStreak } from './utils.js';
+import { esc, jsq, avatarPrefix, validTime, dueStatus, freqLabel, rotationTag, isMine, isSkipped, localDateStr, doneAgoLabel, currentStreak, isStaleDoneOnce } from './utils.js';
 import { pColor } from './ui.js';
 
 // ── Session function references (set once via initRender) ─────────────────────
@@ -257,6 +257,10 @@ function _renderTasks() {
   else if (filter === 'done') tasks = tasks.filter(t => t.done);
   if (filterCat) tasks = tasks.filter(t => t.category === filterCat);
 
+  // Done one-offs from earlier days go to a collapsed section (hidden on the TV view) (#142).
+  const stale = tasks.filter(t => isStaleDoneOnce(t)).sort((a, b) => (b.lastDone || 0) - (a.lastDone || 0));
+  tasks = tasks.filter(t => !isStaleDoneOnce(t));
+
   const available = tasks.filter(t => !t.done && !t.person).sort((a, b) => (a.order || 0) - (b.order || 0));
   const rest      = tasks.filter(t => t.done || t.person);
   const statusOrder = { overdue: 0, soon: 1, ok: 2, done: 3 };
@@ -283,9 +287,16 @@ function _renderTasks() {
     sections[d.k].forEach(t => { html += cardHTML(t); });
     html += '</div>';
   }
-  if (!html) html = '<div class="empty">Nothing here — all clear!</div>';
+  const showStale = !READONLY && stale.length;
+  if (!html && !showStale) html = '<div class="empty">Nothing here — all clear!</div>';
   const taskList = document.getElementById('task-list');
   const kept = _captureInProgress(taskList);
+  const staleOpen = !!taskList.querySelector('details.done-once[open]');
+  if (showStale) {
+    html += '<details class="section done-once"' + (staleOpen ? ' open' : '') + '><summary class="section-head"><span class="section-dot dot-done"></span>Done (' + stale.length + ')</summary>' +
+      (_isAdmin() ? '<button class="btn-sm" onclick="window.clearDoneOnes()">Clear done one-offs</button>' : '') +
+      stale.map(cardHTML).join('') + '</details>';
+  }
   taskList.innerHTML = html;
   _restoreInProgress(taskList, kept);
   taskList.classList.toggle('select-mode', selectMode);

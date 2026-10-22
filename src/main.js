@@ -31,7 +31,7 @@ import {
   addTask, editTask, saveTask,
   toggleTask, deleteTask,
   toggleSubtasks, toggleSubtask, addSubtask, removeSubtask,
-  claimTask, moveTask, skipTask,
+  claimTask, moveTask, skipTask, clearDoneOnes,
 } from './tasks.js';
 
 import { checkPauseExpiry, renderPauseBanner, setPause, clearPause, pauseAdminHTML } from './pause.js';
@@ -191,6 +191,7 @@ window.cancelEdit    = function(id) {
 window.toggleTask    = id         => toggleTask(id, _currentMember, _isAdmin);
 window.deleteTask    = id         => deleteTask(id, _isAdmin);
 window.moveTask      = (id, dir)  => moveTask(id, dir, _isAdmin);
+window.clearDoneOnes = ()         => clearDoneOnes(_isAdmin);
 window.skipTask      = id         => skipTask(id, _isAdmin);
 window.toggleReorder = ()         => {
   const on = document.body.toggleAttribute('data-reorder');

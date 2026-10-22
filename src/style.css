@@ -465,3 +465,11 @@ button.check, button.subtask-check, button.sel-box { padding: 0; font: inherit; 
 button.check::after, button.subtask-check::after, button.sel-box::after { content: ''; position: absolute; inset: -10px; }
 button.subtask-check::after { inset: -13px; }
 button.check:focus-visible, button.subtask-check:focus-visible, button.sel-box:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Collapsed Done (N) section for old done one-offs (#142) */
+details.done-once > summary { cursor: pointer; list-style: none; }
+details.done-once > summary::-webkit-details-marker { display: none; }
+details.done-once > summary::after { content: '\25B8'; margin-left: auto; }
+details.done-once[open] > summary::after { content: '\25BE'; }
+details.done-once > .btn-sm { margin-bottom: var(--space-sm); }
+body[data-readonly] details.done-once { display: none; }

@@ -3,7 +3,7 @@ import { READONLY, BADGES, CATEGORIES } from './config.js';
 import { patchPaths, adjustMemberPoints, appendHistory, patchTask, patchMember, patchRoot, removeTask, restoreTask, patchSubtask } from './firebase.js';
 import { showToast } from './ui.js';
 import { pushUndo } from './undo.js';
-import { esc, jsq, validTime, validInterval, INTERVAL_MIN, INTERVAL_MAX, freqDays, cycleDays, daysSince, dueStatus, taskPoints, getWeekStart, localDateStr, prevScheduledStart, initialLastDone, nextRotationPerson, DAY_NAMES } from './utils.js';
+import { esc, jsq, validTime, validInterval, INTERVAL_MIN, INTERVAL_MAX, freqDays, cycleDays, daysSince, dueStatus, taskPoints, getWeekStart, localDateStr, prevScheduledStart, isStaleDoneOnce, initialLastDone, nextRotationPerson, DAY_NAMES } from './utils.js';
 
 // Re-export for other modules
 export { dueStatus, taskPoints, freqDays };
@@ -435,4 +435,20 @@ export async function moveTask(id, dir, isAdminFn) {
     await patchRoot(fields);
     ids.forEach(x => { state.tasks[x].order = changes[x]; });
   } catch (err) { showToast('Reorder failed: ' + (err.code || err.message)); }
+}
+
+// Admin: delete every done one-off from an earlier day in ONE multi-path update (#142).
+// History is untouched; the undo toast restores the tasks in one multi-path update too.
+export async function clearDoneOnes(isAdminFn) {
+  if (READONLY || !isAdminFn()) return;
+  const ids = Object.keys(state.tasks).filter(id => isStaleDoneOnce(state.tasks[id]));
+  if (!ids.length) return;
+  if (!confirm('Delete ' + ids.length + ' done one-off chore' + (ids.length > 1 ? 's' : '') + '? History is kept.')) return;
+  const saved = {}, gone = {};
+  ids.forEach(id => { saved['tasks/' + id] = { ...state.tasks[id] }; gone['tasks/' + id] = null; });
+  try {
+    await patchRoot(gone);
+    pushUndo({ label: ids.length + ' done one-off' + (ids.length > 1 ? 's' : ''), undo: () => patchRoot(saved) });
+    showToast('Cleared ' + ids.length + ' done one-off' + (ids.length > 1 ? 's' : ''));
+  } catch (err) { showToast('Clear failed: ' + (err.code || err.message)); }
 }
