@@ -11,6 +11,9 @@ export const state = {
   rewards:   {},
   redemptions: {},
   pause:     null,
+  admins:    null, // /admins {uid: memberName}; null until it exists (role fallback)
+  uid:       null, // current Firebase Auth UID
+  parentEmail: false, // true when signed in with an email account
 };
 
 // Derived convenience accessor — always computed fresh from state.members

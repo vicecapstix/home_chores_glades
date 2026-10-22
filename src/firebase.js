@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getDatabase, ref, set, remove, update, onValue, runTransaction } from 'firebase/database';
-import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
+import { getAuth, signInAnonymously, onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import { FB_URL, READONLY } from './config.js';
 import { state } from './state.js';
 
@@ -18,11 +18,45 @@ export function getDb() { return _db; }
 // Anonymous auth. Resolves (never rejects) with { ok, code, message } so the
 // caller can warn when Anonymous sign-in is not enabled. The app keeps loading
 // either way, so it works both before and after the rules require auth.
+let _onAuthChange = null;
+export function setAuthChangeHandler(fn) { _onAuthChange = fn; }
+
+// Parent (email + password) sign-in. The password is passed straight to Firebase
+// Auth and never stored. Resolves { ok } or { ok:false, message } (never rejects).
+export function describeParentError(e) {
+  const c = (e && e.code) || '';
+  if (c === 'auth/operation-not-allowed') return 'Parent sign-in is not enabled yet. Turn on Email/Password in Firebase Console → Authentication.';
+  if (c === 'auth/network-request-failed') return 'Network error. Check your connection and try again.';
+  if (c === 'auth/too-many-requests') return 'Too many attempts. Wait a few minutes and try again.';
+  if (c === 'auth/invalid-email') return 'That email address does not look right.';
+  if (c === 'auth/missing-password') return 'Enter your password.';
+  return 'Could not sign in. Check your email and password.';
+}
+export async function parentSignIn(email, password) {
+  if (READONLY) return { ok: false, message: 'Read-only view' };
+  if (!email || !password) return { ok: false, message: 'Enter your email and password.' };
+  try {
+    await signInWithEmailAndPassword(getAuth(_app), String(email).trim(), password);
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, code: e?.code || '', message: describeParentError(e) };
+  }
+}
+// Signing out lets onAuthStateChanged fall back to an anonymous session.
+export async function parentSignOut() {
+  if (READONLY) return { ok: false };
+  try { await signOut(getAuth(_app)); return { ok: true }; }
+  catch (e) { return { ok: false, message: 'Could not sign out.' }; }
+}
+
 export async function initAuth() {
   try {
     const auth = getAuth(_app);
     return await new Promise((resolve) => {
       onAuthStateChanged(auth, user => {
+        state.uid = user ? user.uid : null;
+        state.parentEmail = !!(user && user.email);
+        if (_onAuthChange) _onAuthChange();
         if (user) { resolve({ ok: true }); }
         else {
           signInAnonymously(auth).then(() => resolve({ ok: true }))
