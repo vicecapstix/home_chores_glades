@@ -2,7 +2,7 @@ import { state, getMembers } from './state.js';
 import { PCOLS, BADGES, READONLY } from './config.js';
 import { renderTvStrip } from './tv.js';
 import { renderGoal } from './goal.js';
-import { esc, jsq, avatarPrefix, validTime, dueStatus, freqLabel, rotationTag, isMine, isSkipped, localDateStr } from './utils.js';
+import { esc, jsq, avatarPrefix, validTime, dueStatus, freqLabel, rotationTag, isMine, isSkipped, localDateStr, doneAgoLabel, currentStreak } from './utils.js';
 import { pColor } from './ui.js';
 
 // ── Session function references (set once via initRender) ─────────────────────
@@ -65,6 +65,8 @@ export function toggleSelect(id) {
   const card = document.getElementById('tc-' + id);
   if (card) {
     card.classList.toggle('selected', selectedIds.has(id));
+    const cb = card.querySelector('.sel-box');
+    if (cb) cb.setAttribute('aria-checked', String(selectedIds.has(id)));
     const box = card.querySelector('.sel-box svg');
     if (box) box.style.display = selectedIds.has(id) ? 'block' : 'none';
   }
@@ -157,7 +159,7 @@ function _renderMembers() {
   document.getElementById('member-chips').innerHTML = members.map((m, i) => {
     const c = PCOLS[i % PCOLS.length];
     const mem = state.members[m] || {};
-    const streak = mem.streak || 0;
+    const streak = currentStreak(mem);
     const badgeIcons = (mem.badges || []).map(id => {
       const b = BADGES.find(b => b.id === id); return b ? b.icon : '';
     }).join('');
@@ -207,7 +209,7 @@ function _renderFilters() {
     { k: 'all',     label: 'All' },
     { k: 'pending', label: 'Pending' },
     { k: 'overdue', label: 'Overdue' },
-    { k: 'done',    label: 'Done today' },
+    { k: 'done',    label: 'Done' },
   ];
   let html = defs.map(d =>
     '<button class="filter-pill' + (filter === d.k ? ' active' : '') + '" onclick="window.setFilter(\'' + d.k + '\')">' +
@@ -251,7 +253,7 @@ function _renderTasks() {
     { k: 'overdue',   label: 'Overdue',    dot: 'dot-overdue' },
     { k: 'soon',      label: 'Due soon',   dot: 'dot-soon' },
     { k: 'ok',        label: 'Upcoming',   dot: 'dot-ok' },
-    { k: 'done',      label: 'Done today', dot: 'dot-done' },
+    { k: 'done',      label: 'Done', dot: 'dot-done' },
   ];
 
   let html = '';
@@ -313,7 +315,8 @@ export function cardHTML(t) {
   const dueTag = skipped ? '<span class="tag tag-ok">' + (localDateStr(new Date(t.skippedAt)) === localDateStr(new Date()) ? 'Skipped today' : 'Skipped') + '</span>'
                : s === 'overdue' ? '<span class="tag tag-overdue">Overdue</span>'
                : s === 'soon'    ? '<span class="tag tag-soon">Due soon</span>'
-               : s === 'ok'      ? '<span class="tag tag-ok">On track</span>' : '';
+               : s === 'ok'      ? '<span class="tag tag-ok">On track</span>'
+               : s === 'done' && t.lastDone ? '<span class="tag tag-ok">Done ' + doneAgoLabel(t.lastDone) + '</span>' : '';
   const diff = t.difficulty || 'easy';
   const diffTag = '<span class="tag tag-' + esc(diff) + '">' + esc(diff) + '</span>';
   const freqTag = t.freq === 'once'
@@ -335,9 +338,9 @@ export function cardHTML(t) {
   subs.forEach(st => {
     subRows +=
       '<div class="subtask-row">' +
-        '<div class="subtask-check' + (st.done ? ' checked' : '') + '" onclick="window.toggleSubtask(\'' + jsq(t.id) + '\',\'' + jsq(st.id) + '\')">' +
-          '<svg width="10" height="10" viewBox="0 0 12 12" fill="none"><polyline points="2,6 5,9 10,3" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
-        '</div>' +
+        '<button type="button" role="checkbox" aria-checked="' + !!st.done + '" aria-label="' + esc(st.name) + '" class="subtask-check' + (st.done ? ' checked' : '') + '" onclick="window.toggleSubtask(\'' + jsq(t.id) + '\',\'' + jsq(st.id) + '\')">' +
+          '<svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><polyline points="2,6 5,9 10,3" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
+        '</button>' +
         '<span class="subtask-name' + (st.done ? ' done' : '') + '">' + esc(st.name) + '</span>' +
         '<button class="subtask-del" onclick="window.removeSubtask(\'' + jsq(t.id) + '\',\'' + jsq(st.id) + '\')" title="Remove">×</button>' +
       '</div>';
@@ -355,10 +358,10 @@ export function cardHTML(t) {
   const cardClass  = 'task-card ' + s + (isSelected ? ' selected' : '');
   const cardClick  = selectMode ? ' onclick="window.toggleSelect(\'' + jsq(t.id) + '\')"' : '';
   const checkEl    = selectMode
-    ? '<div class="sel-box" onclick="event.stopPropagation();window.toggleSelect(\'' + jsq(t.id) + '\')"><svg width="10" height="10" viewBox="0 0 12 12" fill="none" style="display:' + (isSelected ? 'block' : 'none') + '"><polyline points="2,6 5,9 10,3" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>'
-    : '<div class="check' + (t.done ? ' checked' : '') + '" onclick="window.toggleTask(\'' + jsq(t.id) + '\')">' +
-        '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><polyline points="2,6 5,9 10,3" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
-      '</div>';
+    ? '<button type="button" role="checkbox" aria-checked="' + isSelected + '" aria-label="Select ' + esc(t.name) + '" class="sel-box" onclick="event.stopPropagation();window.toggleSelect(\'' + jsq(t.id) + '\')"><svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true" style="display:' + (isSelected ? 'block' : 'none') + '"><polyline points="2,6 5,9 10,3" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>'
+    : '<button type="button" role="checkbox" aria-checked="' + !!t.done + '" aria-label="' + esc(t.name) + '" class="check' + (t.done ? ' checked' : '') + '" onclick="window.toggleTask(\'' + jsq(t.id) + '\')">' +
+        '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><polyline points="2,6 5,9 10,3" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
+      '</button>';
 
   return '<div class="' + cardClass + '" id="tc-' + esc(t.id) + '" data-id="' + esc(t.id) + '"' + cardClick + '>' +
     '<div class="card-main">' +
