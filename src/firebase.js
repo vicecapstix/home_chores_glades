@@ -6,6 +6,9 @@ import { state } from './state.js';
 
 let _db = null;
 let _app = null;
+let _live = true; // false while showing cached data, until the first live snapshot
+
+export function setWritesEnabled(v) { _live = !!v; }
 
 export function initFirebase() {
   _app = initializeApp({ databaseURL: FB_URL }, 'homechores');
@@ -45,7 +48,7 @@ export function describeAuthFailure(res) {
 // ── Write helpers ─────────────────────────────────────────────────────────────
 
 export async function writeState() {
-  if (READONLY || !_db) return;
+  if (READONLY || !_db || !_live) return;
   try {
     await set(ref(_db, 'state'), {
       members:   Object.keys(state.members).length   ? state.members   : null,
@@ -63,44 +66,44 @@ export async function writeState() {
 }
 
 export async function patchTask(id, fields) {
-  if (READONLY || !_db) return;
+  if (READONLY || !_db || !_live) return;
   await update(ref(_db, 'state/tasks/' + id), fields);
 }
 
 export async function patchMember(name, fields) {
-  if (READONLY || !_db) return;
+  if (READONLY || !_db || !_live) return;
   await update(ref(_db, 'state/members/' + name), fields);
 }
 
 // Multi-path update rooted at /state: keys are relative paths, null deletes.
 export async function patchPaths(paths) {
-  if (READONLY || !_db) return;
+  if (READONLY || !_db || !_live) return;
   await update(ref(_db, 'state'), paths);
 }
 
 export async function patchRoot(fields) {
-  if (READONLY || !_db) return;
+  if (READONLY || !_db || !_live) return;
   await update(ref(_db, 'state'), fields);
 }
 
 export async function removeTask(id) {
-  if (READONLY || !_db) return;
+  if (READONLY || !_db || !_live) return;
   await remove(ref(_db, 'state/tasks/' + id));
 }
 
 export async function restoreTask(id, data) {
-  if (READONLY || !_db) return;
+  if (READONLY || !_db || !_live) return;
   await set(ref(_db, 'state/tasks/' + id), data);
 }
 
 export async function patchSubtask(taskId, subId, fields) {
-  if (READONLY || !_db) return;
+  if (READONLY || !_db || !_live) return;
   await update(ref(_db, 'state/tasks/' + taskId + '/subtasks/' + subId), fields);
 }
 
 // Atomic points spend: aborts (returns false) if the balance is below cost.
 export async function spendPoints(name, cost) {
-  if (READONLY || !_db) return false;
+  if (READONLY || !_db || !_live) return false;
   const res = await runTransaction(ref(_db, 'state/members/' + name + '/points'),
     cur => ((cur || 0) >= cost ? (cur || 0) - cost : undefined));
   return !!res.committed;
@@ -109,7 +112,7 @@ export async function spendPoints(name, cost) {
 // Atomically move a pending redemption to approved/denied. Returns false if it
 // no longer exists or was already decided (so a request is decided only once).
 export async function decideRedemption(id, status, by) {
-  if (READONLY || !_db) return false;
+  if (READONLY || !_db || !_live) return false;
   const res = await runTransaction(ref(_db, 'state/redemptions/' + id),
     cur => (cur && cur.status === 'pending' ? { ...cur, status, decidedAt: Date.now(), decidedBy: by } : undefined));
   return !!res.committed;
@@ -121,7 +124,7 @@ export async function decideRedemption(id, status, by) {
 // allowNegative a reversal that the balance cannot cover aborts untouched.
 // Returns { ok, reason: 'insufficient'|'missing'|'readonly', member }.
 export async function adjustMemberPoints(name, opts) {
-  if (READONLY || !_db) return { ok: false, reason: 'readonly' };
+  if (READONLY || !_db || !_live) return { ok: false, reason: 'readonly' };
   const { pts = 0, count = 0, weekStart, countWeek = true, allowNegative = false } = opts;
   let reason = '';
   const res = await runTransaction(ref(_db, 'state/members/' + name), cur => {
@@ -138,8 +141,19 @@ export async function adjustMemberPoints(name, opts) {
   return { ok: !!res.committed, reason: res.committed ? '' : reason, member: res.snapshot?.val?.() ?? null };
 }
 
+// Atomic history append (#31): runs on the LIVE server array so concurrent
+// completions never overwrite each other, then trims to the newest `cap` (500).
+export async function appendHistory(entry, cap = 500) {
+  if (READONLY || !_db) return { ok: false };
+  const res = await runTransaction(ref(_db, 'state/history'), cur => {
+    const list = Array.isArray(cur) ? cur : (cur ? Object.values(cur) : []);
+    return list.concat([entry]).slice(-cap);
+  });
+  return { ok: !!res.committed };
+}
+
 export async function refundPoints(name, cost) {
-  if (READONLY || !_db) return;
+  if (READONLY || !_db || !_live) return;
   await runTransaction(ref(_db, 'state/members/' + name + '/points'), cur => (cur || 0) + cost);
 }
 
