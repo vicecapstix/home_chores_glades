@@ -30,6 +30,7 @@ src/
   undo.js          — command-pattern undo stack (max 20, 5s toast window)
   a11y.js          — dialog accessibility: Esc to close, focus restore, Tab trap
   backup.js        — admin JSON backup download
+  cache.js         — device-local snapshot cache (localStorage) for offline start
   connection.js    — online/offline indicator (Firebase .info/connected)
   goal.js          — family daily goal bar + celebration (display only)
   history.js       — activity history modal

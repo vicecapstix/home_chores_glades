@@ -1,6 +1,6 @@
 import { state, getMembers } from './state.js';
 import { READONLY } from './config.js';
-import { writeState, patchMember, patchPaths } from './firebase.js';
+import { patchMember, patchPaths } from './firebase.js';
 import { showToast } from './ui.js';
 import { getWeekStart, AVATARS } from './utils.js';
 
@@ -31,7 +31,7 @@ export async function addMember(isAdminFn) {
   };
   inp.value = '';
   try {
-    await writeState();
+    await patchPaths({ ['members/' + name]: state.members[name] });
   } catch (err) {
     showToast('Save failed: ' + (err.code || err.message));
   }
@@ -50,19 +50,22 @@ export async function removeMember(name, isAdminFn, currentMemberFn, onSelfRemov
   if (!confirm('Remove ' + name + '? Their chores become unassigned.')) return;
   const wasSelf = !!currentMemberFn && currentMemberFn() === name;
   delete state.members[name];
+  const paths = { ['members/' + name]: null };
   Object.values(state.tasks).forEach(t => {
-    if (t.person === name) t.person = '';
+    if (t.person === name) { t.person = ''; paths['tasks/' + t.id + '/person'] = ''; }
     if (t.rotation) {
       const left = Object.values(t.rotation).filter(n => n !== name);
+      if (left.length === Object.values(t.rotation).length) return;
       if (left.length >= 2) t.rotation = left; else delete t.rotation;
+      paths['tasks/' + t.id + '/rotation'] = t.rotation || null;
     }
   });
   // Pending requests held points for a member who is gone: drop them (no refund).
   Object.entries(state.redemptions || {}).forEach(([id, r]) => {
-    if (r && r.member === name && r.status === 'pending') delete state.redemptions[id];
+    if (r && r.member === name && r.status === 'pending') { delete state.redemptions[id]; paths['redemptions/' + id] = null; }
   });
   try {
-    await writeState();
+    await patchPaths(paths);
     if (wasSelf && onSelfRemoved) onSelfRemoved();
   } catch (err) {
     showToast('Save failed: ' + (err.code || err.message));

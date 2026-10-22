@@ -93,6 +93,8 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
 body[data-readonly] #tv-synced { display: block; }
 #offline-banner { background: var(--warn-light); color: var(--warn); font-size: 0.85rem; text-align: center; padding: 6px var(--space-md); border-bottom: 1px solid var(--warn); }
 #offline-banner.hidden { display: none; }
+#cache-banner { background: var(--warn-light); color: var(--warn); font-size: 0.85rem; text-align: center; padding: 6px var(--space-md); border-bottom: 1px solid var(--warn); }
+#cache-banner.hidden { display: none; }
 .live-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); animation: pulse 2s infinite; flex-shrink: 0; }
 @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
 .header-stats { display: flex; gap: var(--space-lg); margin-left: auto; flex-wrap: wrap; }
@@ -379,6 +381,8 @@ body[data-role="admin"] #btn-admin { display: flex; }
 /* WEEKDAY CHIPS */
 .day-chips { display: flex; gap: 4px; flex-wrap: wrap; width: 100%; }
 .day-chips.hidden { display: none; }
+.edit-interval { width: 70px; padding: 6px 8px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); font-size: 0.85rem; font-family: inherit; background: var(--bg); color: var(--text); }
+.edit-interval.hidden, #new-interval.hidden { display: none; }
 .day-chip input { position: absolute; opacity: 0; width: 1px; height: 1px; }
 .day-chip span { display: inline-block; min-width: 40px; min-height: 36px; line-height: 36px; text-align: center; border: 1px solid var(--border); border-radius: 20px; font-size: 0.8rem; cursor: pointer; background: var(--surface); color: var(--muted); }
 .day-chip input:checked + span { background: var(--accent); color: #fff; border-color: var(--accent); }

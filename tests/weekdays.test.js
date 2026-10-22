@@ -3,12 +3,12 @@ import { state } from '../src/state.js';
 import { dueStatus, taskPoints, prevScheduledStart, initialLastDone, freqLabel } from '../src/utils.js';
 
 vi.mock('../src/firebase.js', () => ({
-  writeState: vi.fn().mockResolvedValue(undefined), patchTask: vi.fn(), patchMember: vi.fn(), patchRoot: vi.fn().mockResolvedValue(undefined),
+  writeState: vi.fn().mockResolvedValue(undefined), patchTask: vi.fn(), patchMember: vi.fn(), patchRoot: vi.fn().mockResolvedValue(undefined), patchPaths: vi.fn().mockResolvedValue(undefined),
   removeTask: vi.fn(), restoreTask: vi.fn(), patchSubtask: vi.fn(),
 }));
 vi.mock('../src/ui.js', () => ({ showToast: vi.fn() }));
 vi.mock('../src/undo.js', () => ({ pushUndo: vi.fn() }));
-import { writeState } from '../src/firebase.js';
+import { patchPaths } from '../src/firebase.js';
 import { showToast } from '../src/ui.js';
 import { checkTaskResets, addTask, saveTask, editTask, readDays } from '../src/tasks.js';
 
@@ -123,7 +123,7 @@ describe('add / edit UI', () => {
     expect(t.freq).toBe('weekdays');
     expect(t.days).toEqual([2, 4]);
     expect(t.lastDone).toBe(initialLastDone('weekdays')); // #69
-    expect(writeState).toHaveBeenCalled();
+    expect(patchPaths).toHaveBeenCalled();
   });
   it('addTask refuses a weekdays chore with no days', async () => {
     document.querySelectorAll('#new-days input').forEach(i => { i.checked = false; });
