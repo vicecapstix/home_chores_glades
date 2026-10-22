@@ -6,7 +6,7 @@ import { watchConnection, markSynced } from './connection.js';
 import { FB_URL, READONLY } from './config.js';
 import { state, getMembers, applySnapshot, migrateLegacyMembers } from './state.js';
 import { esc, jsq, avatarPrefix, AVATARS } from './utils.js';
-import { initFirebase, initAuth, describeAuthFailure } from './firebase.js';
+import { initFirebase, initAuth, describeAuthFailure, setWritesEnabled } from './firebase.js';
 import { initModalBackButton, openModal, closeModal } from './modals.js';
 import { initDialogA11y } from './a11y.js';
 import { popUndo } from './undo.js';
@@ -66,6 +66,7 @@ import { initTvMode } from './tv.js';
 import { startRollover } from './rollover.js';
 import { registerServiceWorker } from './pwa.js';
 import { downloadBackup } from './backup.js';
+import { saveSnapshot, loadSnapshot, clearSnapshot, setCacheBanner } from './cache.js';
 import { openHistory, setHistoryFilter, historyFilterClick } from './history.js';
 import { requestReward, decideRequest } from './redemptions.js';
 import { openRewards, saveReward, editReward, deleteReward, cancelRewardEdit, refreshRewards } from './rewards.js';
@@ -83,6 +84,15 @@ initDialogA11y();
 // ── Bootstrap: auth → Firebase listener ──────────────────────────────────────
 (async () => {
   const { app, db } = initFirebase();
+  // Show last-known data immediately (read-only) until the first live snapshot arrives
+  const cached = loadSnapshot();
+  if (cached) {
+    setWritesEnabled(false);
+    applySnapshot({ ...cached, members: migrateLegacyMembers(cached.members) });
+    setCacheBanner(true);
+    render();
+    renderPauseBanner();
+  }
   const authRes = await initAuth(); // wait for the token before listening
   if (!authRes.ok) showToast(describeAuthFailure(authRes));
   let firstLoad = true;
@@ -101,6 +111,9 @@ initDialogA11y();
       pause: val.pause || null,
     });
 
+    setWritesEnabled(true);
+    setCacheBanner(false);
+    saveSnapshot(state);
     checkPauseExpiry();
     checkTaskResets();
     render();
@@ -239,6 +252,10 @@ window.setPause = () => { const el = document.getElementById('pause-until'); ret
 window.clearPause = () => clearPause(_isAdmin).then(() => window.openAdminPanel());
 window.closeAdminPanel = function() {
   closeModal('admin-panel-modal');
+};
+window.clearSavedData = function() {
+  clearSnapshot();
+  showToast('Saved data cleared on this device');
 };
 window.downloadBackup = function() { downloadBackup(_isAdmin); };
 window.adminPanelSwitchUser = function() {
