@@ -5,7 +5,7 @@ import { showToast } from './ui.js';
 import { openModal } from './modals.js';
 import { esc, jsq, goalHTML } from './utils.js';
 import { setGoal } from './savings.js';
-import { pendingFor, decidedFor } from './redemptions.js';
+import { pendingFor, decidedFor, toGive } from './redemptions.js';
 
 export const MAX_REWARDS = 50;
 export const MAX_NAME = 40;
@@ -78,21 +78,35 @@ export function renderRewards() {
       (mine.length ? '<div class="reward-pending-h">Your pending requests</div>' +
         mine.map(r => '<div class="reward-row"><span class="reward-name">' + esc(r.rewardName) + '</span><span class="reward-cost">' + esc(String(r.cost)) + ' pts</span></div>').join('') : '') +
       (member ? decidedFor(me).map(r => '<div class="reward-row"><span class="reward-name">' + esc(r.rewardName) + '</span><span class="reward-status ' + esc(r.status) + '">' +
-        (r.status === 'approved' ? 'Approved' : 'Denied — points refunded') + '</span></div>').join('') : '') +
+        statusText(r) + '</span></div>').join('') : '') +
       (canEdit && all.length ? '<div class="reward-pending-h">' + all.length + ' request' + (all.length === 1 ? '' : 's') + ' awaiting approval</div>' +
         all.map(r => '<div class="reward-row"><span class="reward-name">' + esc(r.member) + ' — ' + esc(r.rewardName) + '</span><span class="reward-cost">' + esc(String(r.cost)) + ' pts</span>' +
           '<button class="btn-sm btn-accent" aria-label="Approve ' + esc(r.rewardName) + ' for ' + esc(r.member) + '" onclick="window.approveRedemption(\'' + jsq(r.id) + '\')">Approve</button>' +
-          '<button class="btn-sm" aria-label="Deny ' + esc(r.rewardName) + ' for ' + esc(r.member) + '" onclick="window.denyRedemption(\'' + jsq(r.id) + '\')">Deny</button></div>').join('') : '');
+          '<button class="btn-sm" aria-label="Deny ' + esc(r.rewardName) + ' for ' + esc(r.member) + '" onclick="window.denyRedemption(\'' + jsq(r.id) + '\')">Deny</button></div>').join('') : '') +
+      (canEdit ? toGiveHTML(toGive()) : '');
   }
   document.getElementById('rewards-admin')?.classList.toggle('hidden', !canEdit);
   updateRewardsBadge();
+}
+
+function statusText(r) {
+  if (r.status === 'denied') return 'Denied — points refunded';
+  return r.givenAt ? 'Given ✓ ' + new Date(r.givenAt).toLocaleDateString(undefined, { day: 'numeric', month: 'short' }) : 'Approved — waiting';
+}
+
+// Admin list of approved rewards still to hand over (#173).
+export function toGiveHTML(list) {
+  if (!list.length) return '';
+  return '<div class="reward-pending-h">To give (' + list.length + ')</div>' +
+    list.map(r => '<div class="reward-row"><span class="reward-name">' + esc(r.member) + ' — ' + esc(r.rewardName) + '</span>' +
+      '<button class="btn-sm btn-accent" aria-label="Mark ' + esc(r.rewardName) + ' as given to ' + esc(r.member) + '" onclick="window.markRewardGiven(\'' + jsq(r.id) + '\')">Given ✓</button></div>').join('');
 }
 
 // Pending-request count on the 🎁 button (admin only).
 export function updateRewardsBadge() {
   const b = document.getElementById('rewards-badge');
   if (!b) return;
-  const n = !READONLY && adminFn() ? pendingFor('').length : 0;
+  const n = !READONLY && adminFn() ? pendingFor('').length + toGive().length : 0;
   b.textContent = String(n);
   b.classList.toggle('hidden', !n);
 }
