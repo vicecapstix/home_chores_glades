@@ -1,6 +1,6 @@
 import { state } from './state.js';
 import { READONLY } from './config.js';
-import { adjustMemberPoints, patchRoot } from './firebase.js';
+import { adjustMemberPoints, appendHistory, removeHistoryEntry } from './firebase.js';
 import { showToast } from './ui.js';
 import { pushUndo } from './undo.js';
 import { getWeekStart } from './utils.js';
@@ -36,14 +36,14 @@ export async function adjustBonus(name, amount, reason, isAdminFn, currentMember
       r = await adjustMemberPoints(name, { ...opts, allowNegative: true });
     }
     if (!r.ok) { showToast('Points update failed'); return false; }
-    const entry = { type: 'bonus', person: name, points: amount, reason, by: currentMemberFn() || '', completedAt: Date.now() };
-    await patchRoot({ history: (state.history || []).concat([entry]).slice(-500) });
+    const entry = { type: 'bonus', taskName: 'Bonus: ' + reason, person: name, points: amount, reason, by: currentMemberFn() || '', completedAt: Date.now() };
+    await appendHistory(entry);
     pushUndo({
       label: (amount > 0 ? '+' : '') + amount + ' ' + name,
       verb: amount > 0 ? 'Awarded' : 'Deducted',
       undo: async () => {
         await adjustMemberPoints(name, { ...opts, pts: -amount, allowNegative: true });
-        await patchRoot({ history: (state.history || []).filter(e => !(e && e.type === 'bonus' && e.person === name && e.completedAt === entry.completedAt)) });
+        await removeHistoryEntry({ type: 'bonus', person: name, completedAt: entry.completedAt });
       },
     });
     return true;

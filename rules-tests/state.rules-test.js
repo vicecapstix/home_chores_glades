@@ -63,6 +63,12 @@ describe('firebase-rules.json on the emulator', () => {
     await assertFails(authed().ref('state/members/Bob').set({ name: 'Bob', role: 'owner' }));
     await assertSucceeds(authed().ref('state/members/Bob').set({ name: 'Bob', role: 'member' }));
   });
+  it('accepts a bonus history entry (has taskName + person) and rejects one without taskName (#183)', async () => {
+    const bonus = { type: 'bonus', taskName: 'Bonus: Helped', reason: 'Helped', person: 'Alice', points: 5, completedAt: 1 };
+    await assertSucceeds(authed().ref('state/history/0').set(bonus));
+    const { taskName, ...legacy } = bonus;
+    await assertFails(authed().ref('state/history/1').set(legacy));
+  });
   it('keeps the history cap at 500 entries (index 499 ok, 500 rejected)', async () => {
     const entry = { taskName: 't', person: 'Alice' };
     await assertSucceeds(authed().ref('state/history/499').set(entry));
