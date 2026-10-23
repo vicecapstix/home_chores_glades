@@ -9,6 +9,9 @@ export const PCOLS = [
   { bg: '#F0FAE8', text: '#2A5210' },
 ];
 
+// Max history entries kept (matches the draft rules' index regex). Single source of truth.
+export const HISTORY_CAP = 500;
+
 export const CATEGORIES = ['Kitchen', 'Bathroom', 'Bedroom', 'Garden', 'Living Room', 'Outdoor', 'Other'];
 
 export const BADGES = [
