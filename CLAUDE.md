@@ -88,7 +88,7 @@ Database path: `/state`
   nextId:    <number>
   templates: { "tpl<timestamp>": { id, name, tasks: [{name,freq,difficulty}] } }
   rewards:   { "<id>": { id, name, cost, icon } }
-  redemptions: { "<id>": { id, rewardId, rewardName, cost, member, requestedAt, status, … } }
+  redemptions: { "<id>": { id, rewardId, rewardName, cost, member, requestedAt, status, …, givenAt?, givenBy? } }
 ```
 
 Required rules (Firebase Console → Realtime Database → Rules):
