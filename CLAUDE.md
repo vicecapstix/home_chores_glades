@@ -41,6 +41,7 @@ src/
   redemptions.js   — reward requests: request, approve/deny, refund
   rewards.js       — rewards catalog UI
   rollover.js      — local timer so open screens roll over resets/due status
+  teamgoal.js      — family weekly points goal (state/teamGoal), bar + admin form
   tv.js            — TV dashboard helpers for ?readonly=1
   public/          — sw.js, manifest.webmanifest, icons (copied to dist/ by Vite)
 tests/             — Vitest unit tests (Firebase mocked; never touch a live DB)
@@ -88,6 +89,7 @@ Database path: `/state`
   nextId:    <number>
   templates: { "tpl<timestamp>": { id, name, tasks: [{name,freq,difficulty}] } }
   rewards:   { "<id>": { id, name, cost, icon } }
+  teamGoal:  { points, reward }  ← weekly family goal; progress computed from history
   redemptions: { "<id>": { id, rewardId, rewardName, cost, member, requestedAt, status, …, givenAt?, givenBy? } }
 ```
 
