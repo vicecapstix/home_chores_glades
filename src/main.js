@@ -36,7 +36,7 @@ import {
 } from './tasks.js';
 
 import { checkPauseExpiry, renderPauseBanner, setPause, clearPause, pauseAdminHTML } from './pause.js';
-import { addMember, removeMember, toggleRole, setAvatar, renameMember } from './members.js';
+import { addMember, removeMember, toggleRole, toggleRoleInPanel, setAvatar, renameMember } from './members.js';
 
 import {
   initRender, render, cardHTML,
@@ -224,7 +224,8 @@ window.bulkDelete       = ()      => bulkDelete();
 // Members
 window.addMember     = ()         => addMember(_isAdmin);
 window.removeMember  = name       => removeMember(name, _isAdmin, _currentMember, () => window.switchUser());
-window.toggleRole    = name       => toggleRole(name, _isAdmin);
+window.toggleRole    = name       => toggleRole(name, _isAdmin, _currentMember);
+window.toggleRoleInPanel = name   => toggleRoleInPanel(name, _isAdmin, _currentMember, () => window.openAdminPanel(), () => window.closeAdminPanel());
 window.setAvatar     = (name, a)  => setAvatar(name, a, _isAdmin);
 window.renameMember  = async name => {
   if (READONLY || !_isAdmin()) return;
@@ -247,7 +248,7 @@ window.openAdminPanel = function() {
         AVATARS.map(a => '<option value="' + a + '"' + (state.members[m]?.avatar === a ? ' selected' : '') + '>' + a + '</option>').join('') +
       '</select>' +
       '<span class="admin-member-role' + (isAdm ? ' is-admin' : '') + '">' + (isAdm ? '👑 Admin' : 'Member') + '</span>' +
-      '<button class="btn-sm" onclick="window.toggleRole(\'' + jsq(m) + '\');window.openAdminPanel()">Toggle</button>' +
+      '<button class="btn-sm" onclick="window.toggleRoleInPanel(\'' + jsq(m) + '\')">Toggle</button>' +
       '<button class="btn-sm" aria-label="Rename ' + esc(m) + '" onclick="window.renameMember(\'' + jsq(m) + '\')">Rename</button>' +
       '<button class="btn-sm" onclick="window.closeAdminPanel();window.openSetPin(\'' + jsq(m) + '\')">Set PIN</button>' +
       '<button class="btn-sm" aria-label="Adjust points for ' + esc(m) + '" onclick="window.adjustBonus(\'' + jsq(m) + '\')">± Points</button>' +
