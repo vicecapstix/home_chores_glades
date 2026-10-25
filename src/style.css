@@ -422,19 +422,30 @@ body[data-role="admin"] #btn-admin { display: flex; }
   .hstat-val { font-size: 1.25rem; }
 }
 
-/* TV DASHBOARD (readonly, >=1200px) */
+/* TV DASHBOARD (body.tv = ?readonly=1; works from 900px because many TV browsers report 960x540 / 1280x720) */
+@media (min-width: 900px) {
+  body.tv { overflow-x: hidden; }
+  body.tv #tv-clock { display: flex; flex-direction: column; margin-left: auto; text-align: right; }
+  body.tv .tv-time { font-family: 'DM Serif Display', serif; font-size: 3rem; line-height: 1; }
+  body.tv .tv-date { font-size: 1.1rem; color: var(--muted); }
+  body.tv #tv-strip { display: flex; flex-wrap: wrap; gap: var(--space-sm); width: 100%; order: 10; }
+  body.tv .tv-chip { padding: 6px 16px; border-radius: 20px; font-size: 1.1rem; }
+  body.tv #task-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-lg); align-items: start; }
+  body.tv .task-name { font-size: 1.4rem; overflow-wrap: anywhere; }
+  body.tv .section[data-k="overdue"] { grid-column: 1; grid-row: 1; }
+  body.tv .section[data-k="soon"] { grid-column: 2; grid-row: 1; }
+  body.tv .section[data-k="done"] { grid-column: 1 / -1; grid-row: 2; }
+  body.tv .section[data-k="available"] { grid-column: 1 / -1; grid-row: 3; }
+  body.tv .section[data-k="ok"] { grid-column: 1 / -1; grid-row: 4; }
+  body.tv .goal-text { font-size: 1.8rem; font-family: 'DM Serif Display', serif; }
+  body.tv .goal-track { height: 22px; border-radius: 11px; }
+  body.tv .goal-confetti { font-size: 3rem; top: -20px; }
+}
 @media (min-width: 1200px) {
-  body[data-readonly] #tv-clock { display: flex; flex-direction: column; margin-left: auto; text-align: right; }
-  body[data-readonly] .tv-time { font-family: 'DM Serif Display', serif; font-size: 3rem; line-height: 1; }
-  body[data-readonly] .tv-date { font-size: 1.1rem; color: var(--muted); }
-  body[data-readonly] #tv-strip { display: flex; flex-wrap: wrap; gap: var(--space-sm); width: 100%; order: 10; }
-  body[data-readonly] .tv-chip { padding: 6px 16px; border-radius: 20px; font-size: 1.1rem; }
-  body[data-readonly] #task-list { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-lg); align-items: start; }
-  body[data-readonly] .section[data-k="overdue"] { grid-column: 1; grid-row: 1; }
-  body[data-readonly] .section[data-k="soon"] { grid-column: 2; grid-row: 1; }
-  body[data-readonly] .section[data-k="done"] { grid-column: 3; grid-row: 1; }
-  body[data-readonly] .section[data-k="available"] { grid-column: 1 / -1; grid-row: 2; }
-  body[data-readonly] .section[data-k="ok"] { grid-column: 1 / -1; grid-row: 3; }
+  body.tv #task-list { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  body.tv .section[data-k="done"] { grid-column: 3; grid-row: 1; }
+  body.tv .section[data-k="available"] { grid-row: 2; }
+  body.tv .section[data-k="ok"] { grid-row: 3; }
 }
 /* FAMILY DAILY GOAL */
 .goal { position: relative; flex: 1 1 100%; order: 9; }
@@ -447,10 +458,6 @@ body[data-role="admin"] #btn-admin { display: flex; }
 .goal.celebrate .goal-confetti { display: block; animation: goal-pop 2.2s ease-out forwards; }
 @keyframes goal-pop { 0% { transform: translateY(8px) scale(0.6); opacity: 0; } 20% { opacity: 1; } 100% { transform: translateY(-18px) scale(1.2); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .goal.celebrate .goal-confetti { animation: none; display: none; } .goal-fill { transition: none; } }
-@media (min-width: 1200px) {
-  body[data-readonly] .goal-text { font-size: 1.8rem; font-family: 'DM Serif Display', serif; }
-  body[data-readonly] .goal-track { height: 22px; border-radius: 11px; }
-  body[data-readonly] .goal-confetti { font-size: 3rem; top: -20px; }
 }
 .edit-duetime { padding: 6px 8px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); font-size: 0.85rem; font-family: inherit; background: var(--bg); color: var(--text); }
 
