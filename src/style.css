@@ -10,6 +10,7 @@
   --warn-light: #FDF0EA;
   --soon: #6B4800;
   --soon-light: #FEF6E4;
+  --accent-fg: #2D6A4F;
   --done: #3A3A38;
   --radius: 12px;
   --radius-sm: 8px;
@@ -166,7 +167,7 @@ body[data-readonly] #tv-synced { display: block; }
 .tag-freq { background: var(--bg); color: var(--muted); border: 1px solid var(--border); }
 .tag-overdue { background: var(--warn-light); color: var(--warn); }
 .tag-soon { background: var(--soon-light); color: var(--soon); }
-.tag-ok { background: var(--accent-light); color: var(--accent); }
+.tag-ok { background: var(--accent-light); color: var(--accent-fg); }
 .del { width: 28px; height: 28px; min-width: 40px; min-height: 40px; border: none; background: none; cursor: pointer; color: var(--muted); font-size: 1.1rem; border-radius: 6px; display: flex; align-items: center; justify-content: center; opacity: 0; flex-shrink: 0; }
 .task-card:hover .del { opacity: 0.5; }
 .del:hover { opacity: 1 !important; background: var(--bg); }
@@ -192,7 +193,7 @@ body[data-readonly] #tv-synced { display: block; }
 .edit-notes:focus { outline: none; border-color: var(--accent); }
 
 /* DIFFICULTY TAGS */
-.tag-easy { background: var(--accent-light); color: var(--accent); }
+.tag-easy { background: var(--accent-light); color: var(--accent-fg); }
 .tag-medium { background: var(--soon-light); color: var(--soon); }
 .tag-hard { background: var(--warn-light); color: var(--warn); }
 
@@ -322,6 +323,7 @@ body[data-role="admin"] #btn-admin { display: flex; }
   --soon: #F4BE50;
   --warn-light: #3D1A08;
   --soon-light: #3D2A00;
+  --accent-fg: #7BD3A0; /* readable green on --accent-light in dark mode */
 }
 
 /* THEME TOGGLE BUTTON */
@@ -418,7 +420,8 @@ body[data-role="admin"] #btn-admin { display: flex; }
   .member-add { flex-wrap: wrap; width: 100%; margin-left: 0; }
   .add-bar { gap: 6px; }
   .pin-card { padding: 2rem 1.25rem; }
-  .header-stats { gap: 0.75rem; }
+  /* tap targets >= 44x44 (#36) */
+  .subtask-del, .move-btn, .theme-toggle { min-width: 44px; min-height: 44px; }  .header-stats { gap: 0.75rem; }
   .hstat-val { font-size: 1.25rem; }
 }
 

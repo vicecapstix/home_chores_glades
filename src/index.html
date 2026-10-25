@@ -81,9 +81,9 @@
       <button class="lb-close" aria-label="Close" onclick="window.closeModal('stats-modal')">×</button>
     </div>
     <div class="lb-tabs">
-      <button class="lb-tab active" id="stats-tab-week" onclick="window.setStatsTab('week',this)">This week</button>
-      <button class="lb-tab" id="stats-tab-month" onclick="window.setStatsTab('month',this)">This month</button>
-      <button class="lb-tab" id="stats-tab-alltime" onclick="window.setStatsTab('alltime',this)">All time</button>
+      <button class="lb-tab active" aria-pressed="true" id="stats-tab-week" onclick="window.setStatsTab('week',this)">This week</button>
+      <button class="lb-tab" aria-pressed="false" id="stats-tab-month" onclick="window.setStatsTab('month',this)">This month</button>
+      <button class="lb-tab" aria-pressed="false" id="stats-tab-alltime" onclick="window.setStatsTab('alltime',this)">All time</button>
     </div>
     <div id="stats-chart" class="stats-chart"></div>
     <div class="stats-export">
@@ -140,9 +140,9 @@
       <button class="lb-close" aria-label="Close" onclick="window.closeModal('leaderboard-modal')">×</button>
     </div>
     <div class="lb-tabs">
-      <button class="lb-tab active" id="lb-tab-alltime" onclick="window.setLbTab('alltime',this)">All time</button>
-      <button class="lb-tab" id="lb-tab-week" onclick="window.setLbTab('week',this)">This week</button>
-      <button class="lb-tab" id="lb-tab-lastweek" onclick="window.setLbTab('lastweek',this)">Last week</button>
+      <button class="lb-tab active" aria-pressed="true" id="lb-tab-alltime" onclick="window.setLbTab('alltime',this)">All time</button>
+      <button class="lb-tab" aria-pressed="false" id="lb-tab-week" onclick="window.setLbTab('week',this)">This week</button>
+      <button class="lb-tab" aria-pressed="false" id="lb-tab-lastweek" onclick="window.setLbTab('lastweek',this)">Last week</button>
     </div>
     <div id="lb-list"></div>
   </div>

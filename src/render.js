@@ -233,14 +233,14 @@ function _renderFilters() {
     { k: 'done',    label: 'Done' },
   ];
   let html = defs.map(d =>
-    '<button class="filter-pill' + (filter === d.k ? ' active' : '') + '" onclick="window.setFilter(\'' + d.k + '\')">' +
+    '<button class="filter-pill' + (filter === d.k ? ' active' : '') + '" aria-pressed="' + (filter === d.k) + '" onclick="window.setFilter(\'' + d.k + '\')">' +
     d.label + '<span class="count">' + counts[d.k] + '</span></button>'
   ).join('');
   const cats = [...new Set(tasks.map(t => t.category).filter(Boolean))].sort();
   if (cats.length) {
     html += '<span style="width:1px;background:var(--border);margin:0 4px;align-self:stretch;flex-shrink:0;display:inline-block;"></span>';
     html += cats.map(c =>
-      '<button class="filter-pill' + (filterCat === c ? ' active' : '') + '" onclick="window.setCatFilter(\'' + jsq(c) + '\')">' + esc(c) + '</button>'
+      '<button class="filter-pill' + (filterCat === c ? ' active' : '') + '" aria-pressed="' + (filterCat === c) + '" onclick="window.setCatFilter(\'' + jsq(c) + '\')">' + esc(c) + '</button>'
     ).join('');
   }
   container.innerHTML = html;
@@ -310,9 +310,13 @@ function _captureInProgress(list) {
   const active = document.activeElement;
   const typing = active && list.contains(active) && /^(INPUT|TEXTAREA|SELECT)$/.test(active.tagName) ? active : null;
   const nodes = [...list.querySelectorAll('.task-card')].filter(c => c.classList.contains('editing') || (typing && c.contains(typing)));
+  // The focused button (check, edit, ...) is remembered by task id + its first class, so the new node can be refocused.
+  const btn = active && active.tagName === 'BUTTON' && list.contains(active) ? active : null;
+  const card = btn && btn.closest('.task-card');
+  const focus = card && btn.classList[0] ? { id: card.dataset.id, cls: btn.classList[0], n: [...card.querySelectorAll('button.' + btn.classList[0])].indexOf(btn) } : null;
   const caret = typing && typeof typing.selectionStart === 'number' ? [typing.selectionStart, typing.selectionEnd] : null;
   return {
-    nodes, typing, caret,
+    nodes, typing, caret, focus,
     open: [...list.querySelectorAll('.task-card')].filter(c => c.querySelector('.subtask-list.open')).map(c => c.dataset.id),
     typed: [...list.querySelectorAll('.task-card')]
       .map(c => [c.dataset.id, c.querySelector('.subtask-add input')])
@@ -329,6 +333,10 @@ function _restoreInProgress(list, kept) {
     c?.querySelector('.subtask-list')?.classList.add('open');
   });
   kept.typed.forEach(([id, v]) => { const i = byId(id)?.querySelector('.subtask-add input'); if (i && !i.value) i.value = v; });
+  if (kept.focus && !kept.typing) {
+    const el = byId(kept.focus.id)?.querySelectorAll('button.' + kept.focus.cls)[Math.max(0, kept.focus.n)];
+    if (el && document.activeElement !== el) el.focus();
+  }
   if (kept.typing && list.contains(kept.typing)) {
     kept.typing.focus();
     if (kept.caret) { try { kept.typing.setSelectionRange(kept.caret[0], kept.caret[1]); } catch (e) { /* non-text input */ } }
