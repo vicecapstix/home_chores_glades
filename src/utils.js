@@ -283,7 +283,13 @@ export function todayProgress(tasks, now = Date.now()) {
     }
     if (isSkipped(t)) continue;
     const s = dueStatus(t, now);
-    const dueToday = t.freq === 'once' ? t.dueDate === today : t.freq === 'weekdays' && s === 'soon';
+    let dueToday = t.freq === 'once' ? t.dueDate === today : t.freq === 'weekdays' && s === 'soon';
+    // Recurring chore with a due time: 'soon' until the time passes, but still due today (#161).
+    if (!dueToday && s === 'soon' && t.freq !== 'once' && t.freq !== 'weekdays' && validTime(t.dueTime)) {
+      const d = new Date(t.lastDone || 0);
+      d.setDate(d.getDate() + cycleDays(t, t.lastDone));
+      dueToday = localDateStr(d) === today;
+    }
     if (s === 'overdue' || dueToday) total++;
   }
   return { done, total };
