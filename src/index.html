@@ -108,6 +108,17 @@
   </div>
 </div>
 
+<!-- WEEK PLANNER MODAL -->
+<div id="week-modal" class="hidden" role="dialog" aria-modal="true" aria-labelledby="week-title" onclick="window.closeModal('week-modal')">
+  <div class="lb-card week-card" onclick="event.stopPropagation()">
+    <div class="lb-header">
+      <span class="lb-title" id="week-title">🗓 This week</span>
+      <button class="lb-close" aria-label="Close" onclick="window.closeModal('week-modal')">×</button>
+    </div>
+    <div id="week-list"></div>
+  </div>
+</div>
+
 <!-- REWARDS MODAL -->
 <div id="rewards-modal" class="hidden" role="dialog" aria-modal="true" aria-labelledby="rewards-title" onclick="window.closeModal('rewards-modal')">
   <div class="lb-card rewards-card" onclick="event.stopPropagation()">
@@ -204,6 +215,7 @@
   <button class="theme-toggle" onclick="window.toggleTheme()" title="Toggle dark mode" aria-label="Toggle dark mode" id="theme-btn">🌙</button>
   <button class="theme-toggle" onclick="window.openLeaderboard()" title="Leaderboard" aria-label="Leaderboard">🏆</button>
   <button class="theme-toggle" onclick="window.openHistory()" title="Activity" aria-label="Activity">🕘</button>
+  <button class="theme-toggle" onclick="window.openWeek()" title="Week" aria-label="Week planner">🗓</button>
   <button class="theme-toggle" onclick="window.openRewards()" title="Rewards" aria-label="Rewards" style="position:relative">🎁<span id="rewards-badge" class="rewards-badge hidden" aria-label="pending requests"></span></button>
   <button class="theme-toggle" onclick="window.openStats()" title="Stats" aria-label="Stats">📊</button>
   <button class="theme-toggle" onclick="window.openTemplates()" title="Templates" aria-label="Templates">📋</button>

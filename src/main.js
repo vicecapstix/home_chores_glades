@@ -69,6 +69,7 @@ import { registerServiceWorker } from './pwa.js';
 import { downloadBackup } from './backup.js';
 import { saveSnapshot, loadSnapshot, clearSnapshot, setCacheBanner } from './cache.js';
 import { openHistory, setHistoryFilter, historyFilterClick } from './history.js';
+import { openWeek } from './week.js';
 import { requestReward, decideRequest, markGiven } from './redemptions.js';
 import { openRewards, saveReward, editReward, deleteReward, cancelRewardEdit, refreshRewards, setGoalFor, pickGoalTarget } from './rewards.js';
 registerServiceWorker();
@@ -335,6 +336,9 @@ window.exportCSV     = (f,t)      => exportCSV(f, t);
 window.openHistory      = ()      => openHistory();
 window.setHistoryFilter = m       => setHistoryFilter(m);
 window.historyFilterClick = e    => historyFilterClick(e);
+
+// Week planner (read-only)
+window.openWeek = () => openWeek();
 
 // Rewards catalog (everyone can browse; admin-only edits are guarded in rewards.js)
 window.openRewards       = ()     => openRewards(_isAdmin, _currentMember);
