@@ -291,6 +291,8 @@ body[data-reorder] .move-btns { display: flex; }
 .rewards-admin input { padding: 6px 8px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); font-family: inherit; font-size: 0.9rem; background: var(--bg); color: var(--text); }
 .rewards-admin #reward-name { flex: 1 1 140px; }
 .rewards-admin #reward-cost { width: 80px; }
+.rewards-admin #reward-perweek { width: 84px; }
+.reward-limit { font-size: 0.75rem; opacity: 0.8; white-space: nowrap; }
 .rewards-admin #reward-icon { width: 56px; text-align: center; }
 body[data-role="member"] .rewards-admin { display: none !important; }
 .rewards-admin.hidden, #reward-cancel.hidden { display: none; }

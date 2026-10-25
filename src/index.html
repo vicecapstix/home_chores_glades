@@ -126,6 +126,8 @@
       <input type="number" id="reward-cost" placeholder="Points" min="1" max="999" inputmode="numeric" />
       <label for="reward-icon" class="sr-only">Icon (emoji)</label>
       <input type="text" id="reward-icon" placeholder="🎁" maxlength="4" />
+      <label for="reward-perweek" class="sr-only">Limit per week (optional, 1 to 14)</label>
+      <input type="number" id="reward-perweek" placeholder="Max/wk" min="1" max="14" inputmode="numeric" title="Optional: most times one person can request this per week" />
       <button type="submit" class="btn-sm btn-accent" id="reward-save">Add reward</button>
       <button type="button" class="btn-sm hidden" id="reward-cancel" onclick="window.cancelRewardEdit()">Cancel</button>
     </form>

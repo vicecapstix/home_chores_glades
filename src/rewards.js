@@ -5,11 +5,12 @@ import { showToast } from './ui.js';
 import { openModal } from './modals.js';
 import { esc, jsq, goalHTML } from './utils.js';
 import { setGoal } from './savings.js';
-import { pendingFor, decidedFor, toGive } from './redemptions.js';
+import { pendingFor, decidedFor, toGive, usedThisWeek } from './redemptions.js';
 
 export const MAX_REWARDS = 50;
 export const MAX_NAME = 40;
 export const MAX_COST = 999;
+export const MAX_PER_WEEK = 14;
 const DEFAULT_ICON = '🎁';
 
 let editingId = '';
@@ -18,13 +19,17 @@ let meFn = () => '';
 let goalTarget = '';
 
 // Validate raw form input; returns { reward } or { error }.
-export function validateReward(name, cost, icon) {
+export function validateReward(name, cost, icon, perWeek) {
   const n = String(name || '').trim().slice(0, MAX_NAME);
   if (!n) return { error: 'Reward needs a name' };
   const c = Number(cost);
   if (!Number.isInteger(c) || c < 1 || c > MAX_COST) return { error: 'Cost must be 1–' + MAX_COST + ' points' };
   const i = Array.from(String(icon || '').trim()).slice(0, 2).join('') || DEFAULT_ICON;
-  return { reward: { name: n, cost: c, icon: i } };
+  const pw = String(perWeek == null ? '' : perWeek).trim();
+  if (!pw) return { reward: { name: n, cost: c, icon: i } };
+  const w = Number(pw);
+  if (!Number.isInteger(w) || w < 1 || w > MAX_PER_WEEK) return { error: 'Weekly limit must be 1–' + MAX_PER_WEEK };
+  return { reward: { name: n, cost: c, icon: i, perWeek: w } };
 }
 
 export function sortedRewards(rewards) {
@@ -32,6 +37,9 @@ export function sortedRewards(rewards) {
     .filter(r => r && r.id && r.name)
     .sort((a, b) => (a.cost - b.cost) || String(a.name).localeCompare(String(b.name)));
 }
+
+const atLimit = (r, me) => !!r.perWeek && usedThisWeek(state.redemptions, r.id, me) >= r.perWeek;
+const limitText = (r, me) => Math.min(usedThisWeek(state.redemptions, r.id, me), r.perWeek) + '/' + r.perWeek + ' this week';
 
 // opts.me / opts.points: when set, each row gets a Request button for that member.
 export function rewardsHTML(rewards, canEdit, opts = {}) {
@@ -42,11 +50,12 @@ export function rewardsHTML(rewards, canEdit, opts = {}) {
       '<span class="reward-icon" aria-hidden="true">' + esc(r.icon || DEFAULT_ICON) + '</span>' +
       '<span class="reward-name">' + esc(r.name) + '</span>' +
       '<span class="reward-cost">' + esc(String(r.cost)) + ' pts</span>' +
+      (r.perWeek ? '<span class="reward-limit">' + (opts.me ? esc(limitText(r, opts.me)) : esc(r.perWeek + ' per week')) + '</span>' : '') +
       (opts.me
         ? '<button class="btn-sm" aria-label="' + (opts.goalId === r.id ? 'Clear goal ' : 'Make goal ') + esc(r.name) + '"' +
           ' onclick="window.setGoal(\'' + (opts.goalId === r.id ? '' : jsq(r.id)) + '\')">' + (opts.goalId === r.id ? 'Clear goal' : 'Make this my goal') + '</button>' +
-          '<button class="btn-sm btn-accent" aria-label="Request ' + esc(r.name) + '"' + ((opts.points || 0) < r.cost ? ' disabled' : '') +
-          ' onclick="window.requestReward(\'' + jsq(r.id) + '\')">Request</button>'
+          '<button class="btn-sm btn-accent" aria-label="Request ' + esc(r.name) + '"' + ((opts.points || 0) < r.cost || atLimit(r, opts.me) ? ' disabled' : '') +
+          ' onclick="window.requestReward(\'' + jsq(r.id) + '\')">' + (atLimit(r, opts.me) ? esc(limitText(r, opts.me)) : 'Request') + '</button>'
         : '') +
       (canEdit
         ? '<button class="btn-sm" aria-label="Edit ' + esc(r.name) + '" onclick="window.editReward(\'' + jsq(r.id) + '\')">Edit</button>' +
@@ -131,7 +140,7 @@ function field(id) { return document.getElementById(id); }
 
 export function cancelRewardEdit() {
   editingId = '';
-  ['reward-name', 'reward-cost', 'reward-icon'].forEach(id => { if (field(id)) field(id).value = ''; });
+  ['reward-name', 'reward-cost', 'reward-icon', 'reward-perweek'].forEach(id => { if (field(id)) field(id).value = ''; });
   const b = field('reward-save'); if (b) b.textContent = 'Add reward';
   field('reward-cancel')?.classList.add('hidden');
 }
@@ -144,6 +153,7 @@ export function editReward(id, isAdminFn) {
   field('reward-name').value = r.name;
   field('reward-cost').value = r.cost;
   field('reward-icon').value = r.icon || '';
+  if (field('reward-perweek')) field('reward-perweek').value = r.perWeek || '';
   field('reward-save').textContent = 'Save reward';
   field('reward-cancel')?.classList.remove('hidden');
   field('reward-name').focus();
@@ -151,7 +161,7 @@ export function editReward(id, isAdminFn) {
 
 export async function saveReward(isAdminFn) {
   if (READONLY || !isAdminFn()) return;
-  const { reward, error } = validateReward(field('reward-name').value, field('reward-cost').value, field('reward-icon').value);
+  const { reward, error } = validateReward(field('reward-name').value, field('reward-cost').value, field('reward-icon').value, field('reward-perweek')?.value);
   if (error) { showToast(error); return; }
   if (!state.rewards) state.rewards = {};
   const isEdit = !!editingId && !!state.rewards[editingId];
