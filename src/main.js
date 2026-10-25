@@ -36,7 +36,7 @@ import {
 } from './tasks.js';
 
 import { checkPauseExpiry, renderPauseBanner, setPause, clearPause, pauseAdminHTML } from './pause.js';
-import { addMember, removeMember, toggleRole, setAvatar, renameMember } from './members.js';
+import { addMember, backfillColors, removeMember, toggleRole, setAvatar, renameMember } from './members.js';
 
 import {
   initRender, render, cardHTML,
@@ -133,6 +133,7 @@ initDialogA11y();
           initNotifications(_currentMember);
           maybeShowDailySummary();
           render(); // re-render with correct role
+          backfillColors(_isAdmin);
         });
       }
     }

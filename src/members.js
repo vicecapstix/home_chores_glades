@@ -1,5 +1,5 @@
-import { state, getMembers } from './state.js';
-import { READONLY } from './config.js';
+import { state, getMembers, nextColorIdx } from './state.js';
+import { READONLY, PCOLS } from './config.js';
 import { patchMember, patchPaths } from './firebase.js';
 import { showToast } from './ui.js';
 import { getWeekStart, AVATARS } from './utils.js';
@@ -28,12 +28,33 @@ export async function addMember(isAdminFn) {
     pinHash: '', points: 0, weekPoints: 0, weekStart: getWeekStart(),
     streak: 0, lastStreakDate: null,
     badges: [], completedCount: 0,
+    colorIdx: nextColorIdx(),
   };
   inp.value = '';
   try {
     await patchPaths({ ['members/' + name]: state.members[name] });
   } catch (err) {
     showToast('Save failed: ' + (err.code || err.message));
+  }
+}
+
+// Admin, once per page load: give members that lack a colorIdx the colour they show today,
+// in one multi-path update, so nobody's colour changes afterwards (#166).
+let _colorsBackfilled = false;
+export async function backfillColors(isAdminFn) {
+  if (READONLY || _colorsBackfilled || !isAdminFn()) return;
+  const names = Object.values(state.members).map(m => m.name);
+  const paths = {};
+  names.forEach((n, i) => {
+    if (!Number.isInteger(state.members[n].colorIdx)) paths['members/' + n + '/colorIdx'] = i % PCOLS.length;
+  });
+  _colorsBackfilled = true;
+  if (!Object.keys(paths).length) return;
+  try {
+    await patchPaths(paths);
+  } catch (err) {
+    _colorsBackfilled = false;
+    console.error('Colour backfill failed:', err);
   }
 }
 

@@ -177,7 +177,7 @@ function _renderMembers() {
   const members = getMembers();
   const admin   = _isAdmin();
   document.getElementById('member-chips').innerHTML = members.map((m, i) => {
-    const c = PCOLS[i % PCOLS.length];
+    const c = pColor(m) || PCOLS[0];
     const mem = state.members[m] || {};
     const streak = currentStreak(mem);
     const badgeIcons = (mem.badges || []).map(id => {
