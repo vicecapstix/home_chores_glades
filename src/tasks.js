@@ -1,6 +1,6 @@
 import { state, getMembers } from './state.js';
 import { READONLY, BADGES, CATEGORIES } from './config.js';
-import { patchPaths, adjustMemberPoints, appendHistory, patchTask, patchMember, patchRoot, removeTask, restoreTask, patchSubtask } from './firebase.js';
+import { patchPaths, adjustMemberPoints, appendHistory, removeHistoryEntry, patchTask, patchMember, patchRoot, removeTask, restoreTask, patchSubtask } from './firebase.js';
 import { showToast } from './ui.js';
 import { pushUndo } from './undo.js';
 import { esc, jsq, validTime, validInterval, INTERVAL_MIN, INTERVAL_MAX, freqDays, cycleDays, daysSince, dueStatus, taskPoints, getWeekStart, localDateStr, prevScheduledStart, isStaleDoneOnce, initialLastDone, nextRotationPerson, DAY_NAMES } from './utils.js';
@@ -200,14 +200,11 @@ function ownershipBlock(t, me, isAdminFn) {
 
 // Uncheck (#32): drop this completion's history entry and give back the streak it added.
 async function undoCompletionRecords(id, t, c) {
-  const hist = state.history || [];
-  let idx = -1;
-  for (let i = hist.length - 1; i >= 0; i--) {
-    if (hist[i].taskId === id && hist[i].completedAt === c.at && (!c.by || hist[i].person === c.by)) { idx = i; break; }
-  }
-  if (idx < 0) return;
-  const rest = hist.filter((_, i) => i !== idx);
-  try { await patchRoot({ history: rest }); } catch (err) { showToast('History update failed: ' + (err.code || err.message)); return; }
+  let r;
+  try { r = await removeHistoryEntry({ taskId: id, completedAt: c.at, person: c.by || undefined }); }
+  catch (err) { showToast('History update failed: ' + (err.code || err.message)); return; }
+  if (!r.removed) return;
+  const rest = r.rest;
   const m = c.by && state.members[c.by];
   if (!m || c.prevStreakDate === undefined || c.prevStreakDate === null) return;
   const day = localDateStr(new Date(c.at));

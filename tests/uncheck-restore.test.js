@@ -10,6 +10,13 @@ vi.mock('../src/firebase.js', () => ({
   patchMember: vi.fn(async (n, f) => { Object.assign(state.members[n], f); }),
   patchRoot: vi.fn(async f => { Object.assign(state, f); }),
   removeTask: vi.fn(), restoreTask: vi.fn(), patchSubtask: vi.fn(),
+  removeHistoryEntry: vi.fn(async m => {
+    const h = state.history || []; let idx = -1;
+    for (let i = h.length - 1; i >= 0; i--) if (h[i].completedAt === m.completedAt && (m.person === undefined || h[i].person === m.person) && (m.taskId === undefined || h[i].taskId === m.taskId) && (m.type === undefined || h[i].type === m.type)) { idx = i; break; }
+    if (idx < 0) return { ok: false, removed: false, rest: h };
+    state.history = h.filter((_, i) => i !== idx);
+    return { ok: true, removed: true, rest: state.history };
+  }),
   appendHistory: vi.fn(async e => { state.history = (state.history || []).concat([e]).slice(-500); return { ok: true }; }),
   adjustMemberPoints: vi.fn(async (n, o) => {
     const m = state.members[n];
