@@ -10,7 +10,14 @@
 <meta name="theme-color" content="#2D6A4F" />
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet" />
 <script>
-  try { if (localStorage.getItem('fc_theme') === 'dark') document.documentElement.setAttribute('data-theme','dark'); } catch(e) {}
+  // Theme before first paint: 'dark'/'light' are explicit; anything else is Auto (follow the device).
+  try {
+    var v = null; try { v = localStorage.getItem('fc_theme'); } catch(e) {}
+    var d = v === 'dark' || (v !== 'light' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    if (d) document.documentElement.setAttribute('data-theme','dark');
+    var m = document.querySelector('meta[name="theme-color"]');
+    if (m) m.setAttribute('content', d ? '#1A1A18' : '#2D6A4F');
+  } catch(e) {}
 </script>
 <script type="module" src="./main.js"></script>
 </head>
@@ -201,7 +208,7 @@
   <div class="live-dot" title="Live sync"></div>
   <div id="tv-synced" aria-live="off"></div>
   <button class="theme-toggle hidden" id="btn-notify" onclick="window.enableNotifications()" title="Enable overdue reminders" aria-label="Enable overdue reminders">🔔</button>
-  <button class="theme-toggle" onclick="window.toggleTheme()" title="Toggle dark mode" aria-label="Toggle dark mode" id="theme-btn">🌙</button>
+  <button class="theme-toggle" onclick="window.toggleTheme()" title="Theme: Auto. Tap for Light" aria-label="Theme: Auto. Tap for Light" id="theme-btn">🌓</button>
   <button class="theme-toggle" onclick="window.openLeaderboard()" title="Leaderboard" aria-label="Leaderboard">🏆</button>
   <button class="theme-toggle" onclick="window.openHistory()" title="Activity" aria-label="Activity">🕘</button>
   <button class="theme-toggle" onclick="window.openRewards()" title="Rewards" aria-label="Rewards" style="position:relative">🎁<span id="rewards-badge" class="rewards-badge hidden" aria-label="pending requests"></span></button>

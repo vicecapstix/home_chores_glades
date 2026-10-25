@@ -3,6 +3,7 @@ import { PCOLS, BADGES, READONLY } from './config.js';
 import { openModal, closeModal } from './modals.js';
 import { patchPaths } from './firebase.js';
 import { esc, jsq, avatarPrefix, sha256, initialLastDone, validInterval, dueStatus, localDateStr, currentStreak, currentWeekPoints, weekRecap, lastWeekChampion } from './utils.js';
+import { cycleTheme, initTheme } from './theme.js';
 import { isAdmin } from './auth.js';
 
 // ── pColor helper ─────────────────────────────────────────────────────────────
@@ -26,26 +27,10 @@ export function showToast(msg) {
 
 // ── Theme ─────────────────────────────────────────────────────────────────────
 
-export function toggleTheme() {
-  const html = document.documentElement;
-  const isDark = html.getAttribute('data-theme') === 'dark';
-  if (isDark) {
-    html.removeAttribute('data-theme');
-    document.getElementById('theme-btn').textContent = '🌙';
-    try { localStorage.setItem('fc_theme', 'light'); } catch(e) {}
-  } else {
-    html.setAttribute('data-theme', 'dark');
-    document.getElementById('theme-btn').textContent = '☀️';
-    try { localStorage.setItem('fc_theme', 'dark'); } catch(e) {}
-  }
-}
+// Cycles Auto -> Light -> Dark (logic lives in theme.js).
+export function toggleTheme() { return cycleTheme(); }
 
-export function syncThemeButton() {
-  const btn = document.getElementById('theme-btn');
-  if (btn && document.documentElement.getAttribute('data-theme') === 'dark') {
-    btn.textContent = '☀️';
-  }
-}
+export function syncThemeButton() { initTheme(); }
 
 // ── Leaderboard ───────────────────────────────────────────────────────────────
 
