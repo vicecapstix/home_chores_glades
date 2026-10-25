@@ -83,16 +83,21 @@ export function lastWeekHTML() {
 }
 
 function renderLeaderboard() {
-  if (lbTab === 'lastweek') { document.getElementById('lb-list').innerHTML = lastWeekHTML(); return; }
+  document.getElementById('lb-list').innerHTML = leaderboardHTML(lbTab);
+}
+
+// Rows for a leaderboard tab ('alltime' | 'week' | 'lastweek'); also used by the TV cycle (#148).
+export function leaderboardHTML(tab) {
+  if (tab === 'lastweek') return lastWeekHTML();
   const sorted = Object.values(state.members).slice().sort((a, b) => {
-    const va = lbTab === 'week' ? currentWeekPoints(a) : (a.points || 0);
-    const vb = lbTab === 'week' ? currentWeekPoints(b) : (b.points || 0);
+    const va = tab === 'week' ? currentWeekPoints(a) : (a.points || 0);
+    const vb = tab === 'week' ? currentWeekPoints(b) : (b.points || 0);
     return vb - va;
   });
-  document.getElementById('lb-list').innerHTML = sorted.map((m, i) => {
+  return sorted.map((m, i) => {
     const c = pColor(m.name) || { bg: '#EEE', text: '#333' };
     const streak = currentStreak(m);
-    const pts = lbTab === 'week' ? currentWeekPoints(m) : (m.points || 0);
+    const pts = tab === 'week' ? currentWeekPoints(m) : (m.points || 0);
     const badgeIcons = (m.badges || []).map(id => {
       const b = BADGES.find(b => b.id === id); return b ? b.icon : '';
     }).join('');

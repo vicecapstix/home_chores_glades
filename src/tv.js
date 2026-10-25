@@ -1,6 +1,6 @@
 // TV dashboard helpers for ?readonly=1 — display only, no Firebase access.
 import { state, getMembers } from './state.js';
-import { PCOLS, READONLY } from './config.js';
+import { PCOLS, READONLY, TV_CYCLE } from './config.js';
 import { esc, avatarPrefix, currentWeekPoints, currentStreak, lastWeekChampion, goalHTML } from './utils.js';
 
 export function applyTvMode(readonly, body = document.body) {
@@ -45,6 +45,48 @@ export function renderTvStrip() {
   const el = document.getElementById('tv-strip');
   if (el) el.innerHTML = tvStripHTML();
 }
+
+// ── TV auto-cycle (#148): ?readonly=1&cycle=1 rotates Chores -> Leaderboard -> Rewards ──────────
+// Display only: panels are built from already-synced state by injected helpers; no Firebase access.
+export const CYCLE_MS = 30000, KEY_PAUSE_MS = 120000;
+export const PANELS = ['chores', 'leaderboard', 'rewards'];
+const PANEL_TITLES = { leaderboard: '🏆 Leaderboard', rewards: '🎁 Rewards' };
+
+export function createTvCycle({ panelHTML, body = document.body, now = () => Date.now() }) {
+  let idx = 0, pausedUntil = 0, timer = null;
+  const el = () => document.getElementById('tv-panel');
+  function show() {
+    const name = PANELS[idx], panel = el();
+    body.classList.toggle('tv-panel-on', name !== 'chores');
+    if (!panel) return;
+    panel.classList.toggle('hidden', name === 'chores');
+    panel.setAttribute('aria-label', PANEL_TITLES[name] || 'Chores');
+    panel.innerHTML = name === 'chores' ? '' : '<h2 class="tv-panel-title">' + esc(PANEL_TITLES[name]) + '</h2>' + panelHTML(name);
+    panel.classList.remove('tv-slide'); void panel.offsetWidth; panel.classList.add('tv-slide'); // CSS drops the animation under prefers-reduced-motion
+  }
+  const go = n => { idx = (n + PANELS.length) % PANELS.length; show(); };
+  function onKey(e) {
+    pausedUntil = now() + KEY_PAUSE_MS;
+    if (e.key === 'ArrowRight') go(idx + 1);
+    else if (e.key === 'ArrowLeft') go(idx - 1);
+  }
+  function tick() { if (now() >= pausedUntil) go(idx + 1); }
+  return {
+    start() { show(); timer = setInterval(tick, CYCLE_MS); document.addEventListener('keydown', onKey); },
+    stop() { clearInterval(timer); document.removeEventListener('keydown', onKey); },
+    refresh: show, // re-render the current panel after a data snapshot
+    current: () => PANELS[idx],
+  };
+}
+
+let _cycle = null;
+export function initTvCycle(panelHTML) {
+  if (!READONLY || !TV_CYCLE) return null;
+  _cycle = createTvCycle({ panelHTML });
+  _cycle.start();
+  return _cycle;
+}
+export function refreshTvCycle() { if (_cycle) _cycle.refresh(); }
 
 let _lock = null;
 export async function requestWakeLock(nav = globalThis.navigator) {
