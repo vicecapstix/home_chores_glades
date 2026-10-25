@@ -87,17 +87,20 @@ function renderLeaderboard() {
   const sorted = Object.values(state.members).slice().sort((a, b) => {
     const va = lbTab === 'week' ? currentWeekPoints(a) : (a.points || 0);
     const vb = lbTab === 'week' ? currentWeekPoints(b) : (b.points || 0);
-    return vb - va;
+    return vb - va || String(a.name).localeCompare(String(b.name)); // ties: stable, by name (#170)
   });
+  let rank = 0, prevPts = null;
   document.getElementById('lb-list').innerHTML = sorted.map((m, i) => {
     const c = pColor(m.name) || { bg: '#EEE', text: '#333' };
     const streak = currentStreak(m);
     const pts = lbTab === 'week' ? currentWeekPoints(m) : (m.points || 0);
+    if (pts !== prevPts) rank = i + 1; // equal points share a rank: 1, 1, 3
+    prevPts = pts;
     const badgeIcons = (m.badges || []).map(id => {
       const b = BADGES.find(b => b.id === id); return b ? b.icon : '';
     }).join('');
     return '<div class="lb-row">' +
-      '<span class="lb-rank">' + (i + 1) + '</span>' +
+      '<span class="lb-rank">' + rank + '</span>' +
       '<span class="lb-name" style="background:' + c.bg + ';color:' + c.text + ';">' + esc(avatarPrefix(m)) + esc(m.name) + '</span>' +
       '<span class="lb-pts">' + pts + ' pts</span>' +
       (streak > 0 ? '<span class="lb-streak">🔥 ' + streak + '</span>' : '') +
