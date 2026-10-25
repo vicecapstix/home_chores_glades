@@ -1,8 +1,8 @@
 import { state, getMembers } from './state.js';
-import { PCOLS, BADGES, READONLY } from './config.js';
+import { PCOLS, BADGES, CATEGORIES, READONLY } from './config.js';
 import { openModal, closeModal } from './modals.js';
 import { patchPaths } from './firebase.js';
-import { esc, jsq, avatarPrefix, sha256, initialLastDone, validInterval, dueStatus, localDateStr, currentStreak, currentWeekPoints, weekRecap, lastWeekChampion } from './utils.js';
+import { esc, jsq, avatarPrefix, sha256, initialLastDone, validInterval, validTime, dueStatus, localDateStr, currentStreak, currentWeekPoints, weekRecap, lastWeekChampion } from './utils.js';
 import { isAdmin } from './auth.js';
 
 // ── pColor helper ─────────────────────────────────────────────────────────────
@@ -221,6 +221,22 @@ function renderTemplates() {
     : '<div class="empty">No templates saved yet.</div>';
 }
 
+// Template entry for one chore (#139): keeps category, notes, due time and subtask names
+// (never done state, assignee, points or history). Empty fields are omitted.
+const MAX_TPL_SUBTASKS = 20;
+export function templateTask(t) {
+  const subs = Object.values(t.subtasks || {}).map(s => String((s && s.name) || '').trim().slice(0, 100)).filter(Boolean).slice(0, MAX_TPL_SUBTASKS);
+  return {
+    name: t.name, freq: t.freq, difficulty: t.difficulty || 'easy',
+    ...(t.freq === 'weekdays' ? { days: t.days || [] } : {}),
+    ...(t.freq === 'interval' ? { intervalDays: validInterval(t.intervalDays) || 7 } : {}),
+    ...(CATEGORIES.includes(t.category) && t.category ? { category: t.category } : {}),
+    ...(t.notes ? { notes: String(t.notes).slice(0, 300) } : {}),
+    ...(validTime(t.dueTime) ? { dueTime: t.dueTime } : {}),
+    ...(subs.length ? { subtasks: subs } : {}),
+  };
+}
+
 export function saveTemplate() {
   if (READONLY || !isAdmin()) return;
   const input = document.getElementById('tpl-name-input');
@@ -234,7 +250,7 @@ export function saveTemplate() {
   const id = 'tpl' + Date.now();
   const tpl = {
     id, name,
-    tasks: chores.map(t => ({ name: t.name, freq: t.freq, difficulty: t.difficulty || 'easy', ...(t.freq === 'weekdays' ? { days: t.days || [] } : {}), ...(t.freq === 'interval' ? { intervalDays: validInterval(t.intervalDays) || 7 } : {}) })),
+    tasks: chores.map(templateTask),
   };
   state.templates[id] = tpl;
   input.value = '';
@@ -257,6 +273,11 @@ export function applyTemplate(id) {
       ...(t.freq === 'interval' ? { intervalDays: validInterval(t.intervalDays) || 7 } : {}),
       done: false, lastDone: initialLastDone(t),
       person: '', order: Date.now() + added,
+      // Fields below are absent on legacy templates (#139)
+      category: CATEGORIES.includes(t.category) ? t.category : '', notes: String(t.notes || '').slice(0, 300),
+      dueDate: t.freq === 'once' ? localDateStr() : '', ...(validTime(t.dueTime) ? { dueTime: t.dueTime } : {}),
+      subtasks: Object.fromEntries((Array.isArray(t.subtasks) ? t.subtasks : []).slice(0, MAX_TPL_SUBTASKS).map((n, i) =>
+        ['s' + Date.now() + i, { id: 's' + Date.now() + i, name: String(n).slice(0, 100), done: false }])),
     };
     paths['tasks/' + taskId] = state.tasks[taskId];
     state.nextId++;
