@@ -1,4 +1,4 @@
-import { setPauseUntil } from './utils.js';
+import { setPauseUntil, setAwayMembers } from './utils.js';
 
 // Central mutable state — all modules import this object directly.
 // Mutations are visible to all importers since objects are passed by reference.
@@ -31,6 +31,7 @@ export function applySnapshot(val) {
   state.rewards   = val.rewards   || {};
   state.redemptions = val.redemptions || {};
   state.pause = val.pause && val.pause.until ? val.pause : null;
+  setAwayMembers(state.members);
   setPauseUntil(state.pause ? state.pause.until : '');
 }
 

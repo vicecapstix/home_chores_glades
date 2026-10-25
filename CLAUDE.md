@@ -41,6 +41,7 @@ src/
   redemptions.js   — reward requests: request, approve/deny, refund
   rewards.js       — rewards catalog UI
   rollover.js      — local timer so open screens roll over resets/due status
+  away.js          — per-member away mode (members/<name>/awayUntil), expiry + return patch
   tv.js            — TV dashboard helpers for ?readonly=1
   public/          — sw.js, manifest.webmanifest, icons (copied to dist/ by Vite)
 tests/             — Vitest unit tests (Firebase mocked; never touch a live DB)

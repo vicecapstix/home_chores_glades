@@ -74,17 +74,22 @@ export function rotationList(rotation, memberNames) {
   const names = Array.isArray(rotation) ? rotation : Object.values(rotation || {});
   return names.filter((n, i) => typeof n === 'string' && memberNames.includes(n) && names.indexOf(n) === i);
 }
-export function nextRotationPerson(rotation, current, memberNames) {
+// `away` (#176): names to skip; null when everyone else in the rotation is away.
+export function nextRotationPerson(rotation, current, memberNames, away = []) {
   const list = rotationList(rotation, memberNames);
   if (list.length < 2) return null;
   const i = list.indexOf(current);
-  return list[(i + 1) % list.length]; // not in the list (or unassigned): start at the first
+  for (let k = 1; k <= list.length; k++) {
+    const n = list[(i + k) % list.length]; // not in the list (or unassigned): start at the first
+    if (n !== current && !away.includes(n)) return n;
+  }
+  return null;
 }
 
 // Small "🔁 next: Bo" tag for a rotating chore (display only; same logic as the reset).
 export function rotationTag(t, memberNames) {
   if (!t.rotation || t.freq === 'once') return '';
-  const next = nextRotationPerson(t.rotation, t.person, memberNames);
+  const next = nextRotationPerson(t.rotation, t.person, memberNames, awayNames());
   return next ? '<span class="tag tag-freq" title="Rotates on reset">🔁 next: ' + esc(next) + '</span>' : '';
 }
 
@@ -211,8 +216,23 @@ let _pausedUntil = '';
 export function setPauseUntil(d) { _pausedUntil = d || ''; }
 export function isPausedNow(now = Date.now()) { return !!_pausedUntil && localDateStr(new Date(now)) <= _pausedUntil; }
 
+// Away mode (#176): per-member awayUntil (YYYY-MM-DD, inclusive). Armed from applySnapshot.
+let _away = {};
+export function setAwayMembers(members) {
+  _away = {};
+  Object.values(members || {}).forEach(m => { if (m && m.name && /^\d{4}-\d{2}-\d{2}$/.test(m.awayUntil || '')) _away[m.name] = m.awayUntil; });
+}
+export function isAwayNow(name, now = Date.now()) { return !!name && !!_away[name] && localDateStr(new Date(now)) <= _away[name]; }
+export function awayText(m) {
+  if (!m || !/^\d{4}-\d{2}-\d{2}$/.test(m.awayUntil || '') || m.awayUntil < localDateStr()) return '';
+  const [y, mo, d] = m.awayUntil.split('-').map(Number);
+  return '🏕 away until ' + new Date(y, mo - 1, d).toLocaleDateString([], { weekday: 'short' });
+}
+export function awayNames(now = Date.now()) { return Object.keys(_away).filter(n => isAwayNow(n, now)); }
+
 export function dueStatus(t, now = Date.now()) {
   if (!t.done && isPausedNow(now)) return 'ok'; // holiday pause: nothing is due
+  if (!t.done && isAwayNow(t.person, now)) return 'ok'; // assignee is away
   const s = rawDueStatus(t, now);
   // A skipped occurrence counts as on track until it would be overdue again.
   return isSkipped(t) && s !== 'overdue' ? 'ok' : s;
