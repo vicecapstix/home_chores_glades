@@ -1,7 +1,7 @@
 import { initializeApp } from 'firebase/app';
 import { getDatabase, ref, set, remove, update, onValue, runTransaction } from 'firebase/database';
 import { getAuth, signInAnonymously, onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'firebase/auth';
-import { FB_URL, READONLY } from './config.js';
+import { FB_URL, READONLY, HISTORY_CAP } from './config.js';
 import { state } from './state.js';
 
 let _db = null;
@@ -175,15 +175,35 @@ export async function adjustMemberPoints(name, opts) {
   return { ok: !!res.committed, reason: res.committed ? '' : reason, member: res.snapshot?.val?.() ?? null };
 }
 
+const toList = cur => (Array.isArray(cur) ? cur : (cur ? Object.values(cur) : []));
+
 // Atomic history append (#31): runs on the LIVE server array so concurrent
-// completions never overwrite each other, then trims to the newest `cap` (500).
-export async function appendHistory(entry, cap = 500) {
+// completions never overwrite each other, then trims to the newest `cap`.
+export async function appendHistory(entry, cap = HISTORY_CAP) {
   if (READONLY || !_db) return { ok: false };
-  const res = await runTransaction(ref(_db, 'state/history'), cur => {
-    const list = Array.isArray(cur) ? cur : (cur ? Object.values(cur) : []);
-    return list.concat([entry]).slice(-cap);
-  });
+  const res = await runTransaction(ref(_db, 'state/history'), cur => toList(cur).concat([entry]).slice(-cap));
   return { ok: !!res.committed };
+}
+
+// Atomic removal of ONE history entry (#183) on the LIVE array, so entries other
+// devices appended meanwhile survive. `match` = { completedAt, person?, taskId?, type? };
+// the newest matching entry goes. Returns { ok, removed, rest } (rest = live list after removal).
+export async function removeHistoryEntry(match) {
+  if (READONLY || !_db) return { ok: false, removed: false, rest: null };
+  let rest = null, found = false;
+  const hit = e => e && e.completedAt === match.completedAt && (match.person === undefined || e.person === match.person) &&
+    (match.taskId === undefined || e.taskId === match.taskId) && (match.type === undefined || e.type === match.type);
+  const res = await runTransaction(ref(_db, 'state/history'), cur => {
+    const list = toList(cur);
+    let idx = -1;
+    for (let i = list.length - 1; i >= 0; i--) { if (hit(list[i])) { idx = i; break; } }
+    found = idx >= 0;
+    if (idx < 0) { rest = list; return cur === null ? null : undefined; } // null: let the SDK retry on the server value
+    rest = list.filter((_, i) => i !== idx);
+    return rest;
+  });
+  const removed = !!res.committed && found;
+  return { ok: !!res.committed, removed, rest };
 }
 
 export async function refundPoints(name, cost) {

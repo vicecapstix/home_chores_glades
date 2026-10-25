@@ -5,10 +5,18 @@ let adjustResult;
 vi.mock('../src/firebase.js', () => ({
   adjustMemberPoints: vi.fn(async () => adjustResult),
   patchRoot: vi.fn().mockResolvedValue(undefined),
+  appendHistory: vi.fn(async e => { state.history = (state.history || []).concat([e]).slice(-500); return { ok: true }; }),
+  removeHistoryEntry: vi.fn(async m => {
+    const h = state.history || []; let idx = -1;
+    for (let i = h.length - 1; i >= 0; i--) if (h[i].completedAt === m.completedAt && (m.person === undefined || h[i].person === m.person) && (m.taskId === undefined || h[i].taskId === m.taskId) && (m.type === undefined || h[i].type === m.type)) { idx = i; break; }
+    if (idx < 0) return { ok: false, removed: false, rest: h };
+    state.history = h.filter((_, i) => i !== idx);
+    return { ok: true, removed: true, rest: state.history };
+  }),
 }));
 vi.mock('../src/ui.js', () => ({ showToast: vi.fn() }));
 vi.mock('../src/undo.js', () => ({ pushUndo: vi.fn() }));
-import { adjustMemberPoints, patchRoot } from '../src/firebase.js';
+import { adjustMemberPoints, appendHistory } from '../src/firebase.js';
 import { showToast } from '../src/ui.js';
 import { pushUndo } from '../src/undo.js';
 import { adjustBonus, validateBonus } from '../src/bonus.js';
@@ -32,7 +40,7 @@ describe('adjustBonus', () => {
     const opts = adjustMemberPoints.mock.calls[0][1];
     expect(adjustMemberPoints.mock.calls[0][0]).toBe('Alice');
     expect(opts).toMatchObject({ pts: 5, count: 0, countWeek: true });
-    const h = patchRoot.mock.calls[0][0].history;
+    const h = state.history;
     expect(h).toHaveLength(1);
     expect(h[0]).toMatchObject({ type: 'bonus', person: 'Alice', points: 5, reason: 'Helped Grandma', by: 'Dad' });
     expect(typeof h[0].completedAt).toBe('number');
@@ -42,7 +50,7 @@ describe('adjustBonus', () => {
   it('deduction does not touch week points', async () => {
     await adjustBonus('Alice', -3, 'Broke a plate', admin, asDad);
     expect(adjustMemberPoints.mock.calls[0][1]).toMatchObject({ pts: -3, countWeek: false });
-    expect(patchRoot.mock.calls[0][0].history[0].points).toBe(-3);
+    expect(state.history[0].points).toBe(-3);
   });
 
   it('asks for confirmation before going below 0 and aborts when declined', async () => {
@@ -51,30 +59,29 @@ describe('adjustBonus', () => {
     expect(await adjustBonus('Alice', -40, 'Oops', admin, asDad, confirmFn)).toBe(false);
     expect(confirmFn).toHaveBeenCalled();
     expect(adjustMemberPoints).toHaveBeenCalledTimes(1);
-    expect(patchRoot).not.toHaveBeenCalled();
+    expect(appendHistory).not.toHaveBeenCalled();
   });
 
   it('goes below 0 when confirmed', async () => {
     adjustMemberPoints.mockResolvedValueOnce({ ok: false, reason: 'insufficient' });
     expect(await adjustBonus('Alice', -40, 'Oops', admin, asDad, () => true)).toBe(true);
     expect(adjustMemberPoints.mock.calls[1][1]).toMatchObject({ pts: -40, allowNegative: true });
-    expect(patchRoot).toHaveBeenCalled();
+    expect(appendHistory).toHaveBeenCalled();
   });
 
   it('keeps history capped at 500', async () => {
     state.history = Array.from({ length: 500 }, (_, i) => ({ taskName: 'x', person: 'Alice', completedAt: i + 1, points: 1 }));
     await adjustBonus('Alice', 1, 'r', admin, asDad);
-    const h = patchRoot.mock.calls[0][0].history;
+    const h = state.history;
     expect(h).toHaveLength(500);
     expect(h[499].type).toBe('bonus');
   });
 
   it('undo reverses the points and removes the history entry', async () => {
     await adjustBonus('Alice', 5, 'Help', admin, asDad);
-    state.history = patchRoot.mock.calls[0][0].history;
     await pushUndo.mock.calls[0][0].undo();
     expect(adjustMemberPoints.mock.calls[1][1]).toMatchObject({ pts: -5, allowNegative: true });
-    expect(patchRoot.mock.calls[1][0].history).toHaveLength(0);
+    expect(state.history).toHaveLength(0);
   });
 
   it.each([[0], [51], [-51], [1.5], [NaN]])('rejects amount %s', async amt => {
@@ -94,7 +101,7 @@ describe('adjustBonus', () => {
   it('is a no-op for non-admins', async () => {
     expect(await adjustBonus('Alice', 5, 'r', nobody, asDad)).toBe(false);
     expect(adjustMemberPoints).not.toHaveBeenCalled();
-    expect(patchRoot).not.toHaveBeenCalled();
+    expect(appendHistory).not.toHaveBeenCalled();
   });
 
   it('is a no-op for unknown members', async () => {
