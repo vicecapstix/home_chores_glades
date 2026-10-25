@@ -38,6 +38,7 @@ src/
   history.js       — activity history modal
   pause.js         — holiday/pause mode
   pwa.js           — service worker registration
+  week.js          — "This week" planner modal (display only)
   redemptions.js   — reward requests: request, approve/deny, refund
   rewards.js       — rewards catalog UI
   rollover.js      — local timer so open screens roll over resets/due status
