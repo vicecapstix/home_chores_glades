@@ -337,8 +337,8 @@
 
 <!-- TOASTS -->
 <div class="toast" id="toast" role="status" aria-live="polite">Saved</div>
-<div class="toast" id="undo-toast" style="right:auto;left:1.5rem;pointer-events:auto;">
-  <span id="undo-label">Deleted</span> — <span style="text-decoration:underline;cursor:pointer;color:#fff;" onclick="window.popUndo()">Undo</span>
+<div class="toast" id="undo-toast" role="status" aria-live="polite">
+  <span id="undo-label">Deleted</span> — <button type="button" id="undo-btn" class="undo-btn" aria-label="Undo" onclick="window.popUndo()">Undo</button>
 </div>
 
 </body>

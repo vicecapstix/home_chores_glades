@@ -309,6 +309,10 @@ body[data-role="admin"] #btn-admin { display: flex; }
 /* TOAST */
 .toast { position: fixed; bottom: var(--space-lg); right: var(--space-lg); background: var(--done); color: #fff; font-size: 0.8rem; padding: var(--space-sm) 16px; border-radius: var(--radius-sm); opacity: 0; transform: translateY(8px); transition: all 0.25s; pointer-events: none; z-index: 100; }
 .toast.show { opacity: 1; transform: translateY(0); }
+#undo-toast { right: auto; left: 1.5rem; }
+#undo-toast.show { pointer-events: auto; }
+.undo-btn { background: none; border: none; padding: 4px 2px; font: inherit; color: #fff; text-decoration: underline; cursor: pointer; }
+.undo-btn:focus-visible { outline: 2px solid #fff; outline-offset: 2px; border-radius: 2px; }
 
 /* DARK MODE */
 [data-theme="dark"] {
@@ -420,6 +424,9 @@ body[data-role="admin"] #btn-admin { display: flex; }
   .pin-card { padding: 2rem 1.25rem; }
   .header-stats { gap: 0.75rem; }
   .hstat-val { font-size: 1.25rem; }
+  /* stack the two toasts instead of overlapping */
+  .toast { max-width: calc(100vw - 2 * var(--space-md)); right: var(--space-md); }
+  #undo-toast { left: var(--space-md); right: var(--space-md); bottom: calc(var(--space-lg) + 3rem); }
 }
 
 /* TV DASHBOARD (readonly, >=1200px) */
