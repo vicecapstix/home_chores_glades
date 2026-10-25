@@ -22,6 +22,13 @@ export function decidedFor(member, limit = 5) {
     .slice(0, limit);
 }
 
+// Approved requests the parents have not handed out yet, oldest approval first (#173).
+export function toGive() {
+  return Object.values(state.redemptions || {})
+    .filter(r => r && r.status === 'approved' && !r.givenAt)
+    .sort((a, b) => (a.decidedAt || a.requestedAt || 0) - (b.decidedAt || b.requestedAt || 0));
+}
+
 // Ids to drop (oldest non-pending first) so one more entry fits under the cap.
 export function idsToDrop(redemptions) {
   const all = Object.values(redemptions || {});
@@ -95,4 +102,23 @@ export async function decideRequest(id, status, isAdminFn, currentMemberFn) {
     }
     showToast((status === 'approved' ? 'Approved ' : 'Denied ') + r.rewardName);
   } finally { deciding = false; }
+}
+
+// Admin marks an approved reward as handed over (#173). Status stays 'approved'.
+export async function markGiven(id, isAdminFn, currentMemberFn) {
+  if (READONLY || !isAdminFn()) return;
+  const r = state.redemptions?.[id];
+  if (!r || r.status !== 'approved' || r.givenAt) return;
+  const at = Date.now(), by = currentMemberFn() || 'admin';
+  try { await patchRoot({ ['redemptions/' + id + '/givenAt']: at, ['redemptions/' + id + '/givenBy']: by }); }
+  catch (err) { showToast('Update failed: ' + (err.code || err.message)); return; }
+  r.givenAt = at; r.givenBy = by;
+  showToast('Marked ' + r.rewardName + ' as given to ' + r.member);
+  pushUndo({
+    label: r.rewardName, verb: 'Given',
+    undo: async () => {
+      await patchRoot({ ['redemptions/' + id + '/givenAt']: null, ['redemptions/' + id + '/givenBy']: null });
+      delete r.givenAt; delete r.givenBy;
+    },
+  });
 }
