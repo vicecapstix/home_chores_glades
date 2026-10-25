@@ -200,8 +200,8 @@ export function openTemplates() {
   openModal('templates-modal');
 }
 
-const MAX_TEMPLATES = 20;
-const MAX_TEMPLATE_TASKS = 100;
+export const MAX_TEMPLATES = 20;
+export const MAX_TEMPLATE_TASKS = 100;
 // Firebase drops empty arrays, so a stored template may have no `tasks` key.
 const tplTasks = tpl => (tpl && Array.isArray(tpl.tasks) ? tpl.tasks : []);
 

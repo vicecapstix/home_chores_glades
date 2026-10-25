@@ -310,10 +310,28 @@
     </div>
     <div id="admin-member-list" style="margin:0.5rem 0;"></div>
     <button class="btn-lg" style="width:100%;margin-top:0.5rem;" onclick="window.downloadBackup()" title="Saves a JSON copy of chores, points and history. PINs are not included.">Download backup</button>
+    <button class="btn-lg" style="width:100%;margin-top:0.5rem;" onclick="window.pickRestoreFile()" title="Replace chores, points and history from a backup file. A safety backup is downloaded first.">Restore backup…</button>
+    <label for="restore-file" class="sr-only">Backup file (.json)</label>
+    <input type="file" id="restore-file" class="sr-only" tabindex="-1" accept=".json,application/json" onchange="window.onRestoreFile(this)" />
     <button id="admin-parent-in" class="btn-lg" style="width:100%;margin-top:0.5rem;" onclick="window.openParentSignIn()">Parent sign in</button>
     <button id="admin-parent-out" class="btn-lg hidden" style="width:100%;margin-top:0.5rem;" onclick="window.parentSignOut()">Parent sign out</button>
     <button class="btn-lg" style="width:100%;margin-top:0.5rem;" onclick="window.clearSavedData()" title="Removes the offline copy stored on this device only.">Clear saved data on this device</button>
     <button class="btn-lg" style="width:100%;margin-top:0.5rem;" onclick="window.adminPanelSwitchUser()">Switch User</button>
+  </div>
+</div>
+
+<!-- RESTORE BACKUP -->
+<div id="restore-modal" class="hidden" role="dialog" aria-modal="true" aria-labelledby="restore-title" onclick="window.cancelRestore()">
+  <div class="lb-card" onclick="event.stopPropagation()" style="max-width:360px;">
+    <div class="lb-header">
+      <span class="lb-title" id="restore-title">Restore backup</span>
+      <button class="lb-close" aria-label="Close" onclick="window.cancelRestore()">×</button>
+    </div>
+    <div id="restore-summary"></div>
+    <p>This replaces the current chores, points, rewards and history. PINs are kept. A safety backup of the current data downloads first.</p>
+    <label for="restore-confirm">Type RESTORE to confirm</label>
+    <input type="text" id="restore-confirm" autocomplete="off" oninput="window.onRestoreInput(this.value)" />
+    <button id="restore-go" class="btn-lg" style="width:100%;margin-top:0.5rem;" disabled onclick="window.confirmRestore()">Restore</button>
   </div>
 </div>
 

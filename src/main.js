@@ -67,6 +67,7 @@ import { initTvMode } from './tv.js';
 import { startRollover } from './rollover.js';
 import { registerServiceWorker } from './pwa.js';
 import { downloadBackup } from './backup.js';
+import { prepareRestore, onRestoreInput, cancelRestore, confirmRestore } from './restore.js';
 import { saveSnapshot, loadSnapshot, clearSnapshot, setCacheBanner } from './cache.js';
 import { openHistory, setHistoryFilter, historyFilterClick } from './history.js';
 import { requestReward, decideRequest, markGiven } from './redemptions.js';
@@ -298,6 +299,11 @@ window.clearSavedData = function() {
   showToast('Saved data cleared on this device');
 };
 window.downloadBackup = function() { downloadBackup(_isAdmin); };
+window.pickRestoreFile = function() { if (READONLY || !_isAdmin()) return; document.getElementById('restore-file').click(); };
+window.onRestoreFile = function(inp) { const f = inp.files && inp.files[0]; inp.value = ''; return prepareRestore(f, _isAdmin); };
+window.onRestoreInput = v => onRestoreInput(v);
+window.cancelRestore = cancelRestore;
+window.confirmRestore = () => confirmRestore(document.getElementById('restore-confirm').value, _isAdmin);
 window.adminPanelSwitchUser = function() {
   window.closeAdminPanel();
   window.switchUser();
