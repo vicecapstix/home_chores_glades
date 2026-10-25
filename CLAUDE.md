@@ -37,6 +37,7 @@ src/
   goal.js          — family daily goal bar + celebration (display only)
   history.js       — activity history modal
   pause.js         — holiday/pause mode
+  progress.js      — "My progress" modal: last 4 weeks of points/completions
   pwa.js           — service worker registration
   redemptions.js   — reward requests: request, approve/deny, refund
   rewards.js       — rewards catalog UI

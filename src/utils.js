@@ -167,6 +167,29 @@ export function weekRecap(history, weekStart) {
     .sort((a, b) => b.points - a.points || a.name.localeCompare(b.name));
 }
 
+// A member's last `n` local weeks (Monday start), oldest first, from history (#149).
+// Bonus/deduction entries count in points only. partial = the capped history may not reach back
+// to the start of that week, so its totals can be incomplete.
+export function memberWeeks(history, member, now = Date.now(), n = 4, cap = 500) {
+  const [y, m, d] = getWeekStart(now).split('-').map(Number);
+  const list = history || [];
+  const oldest = list.reduce((mn, e) => Math.min(mn, e && e.completedAt ? e.completedAt : Infinity), Infinity);
+  const capped = list.length >= cap;
+  const weeks = [];
+  for (let i = n - 1; i >= 0; i--) {
+    const start = new Date(y, m - 1, d - 7 * i).getTime();
+    const end = new Date(y, m - 1, d - 7 * i + 7).getTime();
+    let points = 0, count = 0;
+    list.forEach(e => {
+      if (!e || e.person !== member || !(e.completedAt >= start && e.completedAt < end)) return;
+      points += e.points || 0;
+      if (e.type !== 'bonus') count++;
+    });
+    weeks.push({ weekStart: localDateStr(new Date(start)), points, count, partial: capped && oldest > start });
+  }
+  return weeks;
+}
+
 // Last week's winner(s); ties are shared. truncated = the capped history may
 // not reach back to the start of that week, so totals can be incomplete.
 export function lastWeekChampion(history, from, cap = 500) {

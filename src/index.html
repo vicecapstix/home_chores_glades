@@ -108,6 +108,17 @@
   </div>
 </div>
 
+<!-- PROGRESS MODAL -->
+<div id="progress-modal" class="hidden" role="dialog" aria-modal="true" aria-labelledby="progress-title" onclick="window.closeModal('progress-modal')">
+  <div class="lb-card prog-card" onclick="event.stopPropagation()">
+    <div class="lb-header">
+      <span class="lb-title" id="progress-title">📈 Progress</span>
+      <button class="lb-close" aria-label="Close" onclick="window.closeModal('progress-modal')">×</button>
+    </div>
+    <div id="progress-list"></div>
+  </div>
+</div>
+
 <!-- REWARDS MODAL -->
 <div id="rewards-modal" class="hidden" role="dialog" aria-modal="true" aria-labelledby="rewards-title" onclick="window.closeModal('rewards-modal')">
   <div class="lb-card rewards-card" onclick="event.stopPropagation()">

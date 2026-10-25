@@ -69,6 +69,7 @@ import { registerServiceWorker } from './pwa.js';
 import { downloadBackup } from './backup.js';
 import { saveSnapshot, loadSnapshot, clearSnapshot, setCacheBanner } from './cache.js';
 import { openHistory, setHistoryFilter, historyFilterClick } from './history.js';
+import { openProgress } from './progress.js';
 import { requestReward, decideRequest, markGiven } from './redemptions.js';
 import { openRewards, saveReward, editReward, deleteReward, cancelRewardEdit, refreshRewards, setGoalFor, pickGoalTarget } from './rewards.js';
 registerServiceWorker();
@@ -250,6 +251,7 @@ window.openAdminPanel = function() {
       '<button class="btn-sm" onclick="window.toggleRole(\'' + jsq(m) + '\');window.openAdminPanel()">Toggle</button>' +
       '<button class="btn-sm" aria-label="Rename ' + esc(m) + '" onclick="window.renameMember(\'' + jsq(m) + '\')">Rename</button>' +
       '<button class="btn-sm" onclick="window.closeAdminPanel();window.openSetPin(\'' + jsq(m) + '\')">Set PIN</button>' +
+      '<button class="btn-sm" aria-label="Progress for ' + esc(m) + '" onclick="window.closeAdminPanel();window.openProgress(\'' + jsq(m) + '\')">Progress</button>' +
       '<button class="btn-sm" aria-label="Adjust points for ' + esc(m) + '" onclick="window.adjustBonus(\'' + jsq(m) + '\')">± Points</button>' +
       '</div>';
   }).join('') + pauseAdminHTML();
@@ -335,6 +337,9 @@ window.exportCSV     = (f,t)      => exportCSV(f, t);
 window.openHistory      = ()      => openHistory();
 window.setHistoryFilter = m       => setHistoryFilter(m);
 window.historyFilterClick = e    => historyFilterClick(e);
+
+// My progress (read-only; members see their own, admins anyone's — enforced in progress.js)
+window.openProgress = name => openProgress(name || _currentMember(), _isAdmin, _currentMember);
 
 // Rewards catalog (everyone can browse; admin-only edits are guarded in rewards.js)
 window.openRewards       = ()     => openRewards(_isAdmin, _currentMember);
