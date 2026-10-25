@@ -4,6 +4,7 @@ import { renderTvStrip } from './tv.js';
 import { renderGoal } from './goal.js';
 import { esc, jsq, avatarPrefix, validTime, dueStatus, freqLabel, rotationTag, isMine, isSkipped, localDateStr, doneAgoLabel, currentStreak, goalHTML, isStaleDoneOnce } from './utils.js';
 import { pColor } from './ui.js';
+import { syncTagHTML } from './pending.js';
 
 // ── Session function references (set once via initRender) ─────────────────────
 let _isAdmin       = () => false;
@@ -402,7 +403,7 @@ export function cardHTML(t) {
         '<span class="task-name">' + esc(t.name) + subsBadge + '</span>' +
         notesLine +
       '</div>' +
-      '<div class="task-meta">' + dueTag + diffTag + freqTag + timeTag + rotationTag(t, getMembers()) + catTag + personTag + '</div>' +
+      '<div class="task-meta">' + dueTag + diffTag + freqTag + timeTag + rotationTag(t, getMembers()) + syncTagHTML(t.id) + catTag + personTag + '</div>' +
       chevronBtn +
       '<span class="move-btns">' +
         '<button class="move-btn" aria-label="Move ' + esc(t.name) + ' up" onclick="event.stopPropagation();window.moveTask(\'' + jsq(t.id) + '\',-1)">▲</button>' +
