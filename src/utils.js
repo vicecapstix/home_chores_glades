@@ -218,6 +218,18 @@ export function dueStatus(t, now = Date.now()) {
   return isSkipped(t) && s !== 'overdue' ? 'ok' : s;
 }
 
+// Due-time reminder (#150): true when the chore's dueTime moment falls on today, has passed, and the
+// chore is not done, skipped or paused (dueStatus covers done/skip/pause by reporting not-overdue).
+export function dueTimePassedToday(t, now = Date.now()) {
+  if (!t || t.done || !validTime(t.dueTime) || dueStatus(t, now) !== 'overdue') return false;
+  const today = localDateStr(new Date(now));
+  if (t.freq === 'once') return t.dueDate === today;
+  if (t.freq === 'weekdays') return (t.days || []).map(Number).includes(new Date(now).getDay());
+  const d = new Date(t.lastDone || 0);
+  d.setDate(d.getDate() + cycleDays(t, t.lastDone));
+  return localDateStr(d) === today;
+}
+
 // A one-off chore ticked on an earlier local day: shown in the collapsed Done section (#142).
 export function isStaleDoneOnce(t, now = Date.now()) {
   return t.freq === 'once' && !!t.done && !!t.lastDone && localDateStr(new Date(t.lastDone)) < localDateStr(new Date(now));
