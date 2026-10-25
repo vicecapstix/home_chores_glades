@@ -93,6 +93,10 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
 body[data-readonly] #tv-synced { display: block; }
 #offline-banner { background: var(--warn-light); color: var(--warn); font-size: 0.85rem; text-align: center; padding: 6px var(--space-md); border-bottom: 1px solid var(--warn); }
 #offline-banner.hidden { display: none; }
+#btn-install { width: auto; padding: 0 10px; font-size: 0.85rem; }
+body[data-readonly] #btn-install, body[data-readonly] #ios-install-hint { display: none; }
+#ios-install-hint { background: var(--accent-light); color: var(--text); font-size: 0.85rem; text-align: center; padding: 6px var(--space-md); border-bottom: 1px solid var(--border); }
+#ios-install-hint.hidden { display: none; }
 #cache-banner { background: var(--warn-light); color: var(--warn); font-size: 0.85rem; text-align: center; padding: 6px var(--space-md); border-bottom: 1px solid var(--warn); }
 #cache-banner.hidden { display: none; }
 .live-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); animation: pulse 2s infinite; flex-shrink: 0; }

@@ -66,12 +66,14 @@ if (READONLY) {
 import { initTvMode } from './tv.js';
 import { startRollover } from './rollover.js';
 import { registerServiceWorker } from './pwa.js';
+import { initInstall, installApp, dismissIosHint } from './install.js';
 import { downloadBackup } from './backup.js';
 import { saveSnapshot, loadSnapshot, clearSnapshot, setCacheBanner } from './cache.js';
 import { openHistory, setHistoryFilter, historyFilterClick } from './history.js';
 import { requestReward, decideRequest, markGiven } from './redemptions.js';
 import { openRewards, saveReward, editReward, deleteReward, cancelRewardEdit, refreshRewards, setGoalFor, pickGoalTarget } from './rewards.js';
 registerServiceWorker();
+initInstall();
 initTvMode();
 startRollover(render);
 
@@ -176,6 +178,8 @@ window.memberPinBack = ()    => memberPinBack();
 window.switchUser    = ()    => switchUser(window._fcLoginCallback);
 
 // Theme & misc
+window.installApp     = ()    => installApp();
+window.dismissIosHint = ()   => dismissIosHint();
 window.toggleTheme   = ()    => toggleTheme();
 window.toggleNewNote = function() {
   const ta = document.getElementById('new-notes');

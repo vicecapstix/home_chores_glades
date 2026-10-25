@@ -316,3 +316,8 @@ export function goalHTML(member, rewards) {
     '<span class="goal-bar" role="progressbar" aria-label="' + esc('Goal: ' + g.reward.name) + '" aria-valuemin="0" aria-valuemax="' + g.cost +
     '" aria-valuenow="' + shown + '"><span class="goal-fill" style="width:' + g.pct + '%"></span></span></span>';
 }
+
+// `?view=mine` (home-screen shortcut) opens on the Mine filter.
+export function viewFromSearch(search) {
+  return new URLSearchParams(search || '').get('view') === 'mine' ? 'mine' : '';
+}
