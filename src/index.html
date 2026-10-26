@@ -27,6 +27,8 @@
 <!-- READ-ONLY BANNER -->
 <div id="readonly-banner" class="hidden">👁 View only</div>
 
+<div id="ios-install-hint" class="hidden" role="status">To install: tap Share, then Add to Home Screen. <button type="button" class="btn-sm" onclick="window.dismissIosHint()">Got it</button></div>
+
 <!-- OFFLINE BANNER -->
 <div id="pause-banner" class="hidden" role="status"></div>
 <div id="cache-banner" class="hidden" role="status">Showing saved data — connecting…</div>
@@ -229,6 +231,7 @@
   <div id="tv-clock" aria-hidden="true"></div>
   <div class="live-dot" title="Live sync"></div>
   <div id="tv-synced" aria-live="off"></div>
+  <button class="theme-toggle hidden" id="btn-install" onclick="window.installApp()" title="Install FamilyFlow on this device" aria-label="Install FamilyFlow on this device">Install</button>
   <button class="theme-toggle hidden" id="btn-notify" onclick="window.enableNotifications()" title="Enable overdue reminders" aria-label="Enable overdue reminders">🔔</button>
   <button class="theme-toggle" onclick="window.toggleTheme()" title="Theme: Auto. Tap for Light" aria-label="Theme: Auto. Tap for Light" id="theme-btn">🌓</button>
   <button class="theme-toggle" onclick="window.openLeaderboard()" title="Leaderboard" aria-label="Leaderboard">🏆</button>

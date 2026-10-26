@@ -3,7 +3,7 @@ import { PCOLS, BADGES, READONLY } from './config.js';
 import { renderTvStrip } from './tv.js';
 import { renderGoal } from './goal.js';
 import { renderTeamGoal } from './teamgoal.js';
-import { esc, jsq, taskPoints, avatarPrefix, validTime, dueStatus, freqLabel, rotationTag, isMine, isSkipped, localDateStr, doneAgoLabel, currentStreak, goalHTML, isStaleDoneOnce } from './utils.js';
+import { esc, jsq, taskPoints, avatarPrefix, validTime, dueStatus, freqLabel, rotationTag, isMine, isSkipped, localDateStr, doneAgoLabel, currentStreak, goalHTML, isStaleDoneOnce, viewFromSearch } from './utils.js';
 import { pColor } from './ui.js';
 import { syncTagHTML } from './pending.js';
 
@@ -30,7 +30,7 @@ function _applyMineDefault() {
   if (_mineDefaulted || READONLY || !me) return;
   _mineDefaulted = true;
   const phone = typeof window.matchMedia === 'function' && window.matchMedia('(max-width: 700px)').matches;
-  if (phone) filter = 'mine';
+  if (phone || viewFromSearch(location.search) === 'mine') filter = 'mine';
 }
 
 // Called after every login. When a different member takes over the device, drop the previous

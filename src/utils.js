@@ -346,6 +346,11 @@ export function goalHTML(member, rewards) {
     '" aria-valuenow="' + shown + '"><span class="goal-fill" style="width:' + g.pct + '%"></span></span></span>';
 }
 
+// `?view=mine` (home-screen shortcut) opens on the Mine filter.
+export function viewFromSearch(search) {
+  return new URLSearchParams(search || '').get('view') === 'mine' ? 'mine' : '';
+}
+
 // Week planner (#143): Mon..Sun (local) of the week containing `now`, with the chores due each day.
 // Display only. weekdays/daily repeat; weekly, fortnightly, monthly and "every N days" appear once on
 // their next due date (overdue ones sit on today); one-offs on dueDate. Days under a holiday pause are empty.
