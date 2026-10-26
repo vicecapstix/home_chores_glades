@@ -2,14 +2,15 @@ import { adjustBonus, BONUS_MAX, BONUS_REASON_MAX } from './bonus.js';
 import './style.css';
 
 import { onValue, ref } from 'firebase/database';
-import { watchConnection, markSynced } from './connection.js';
+import { watchConnection, markSynced, setPendingCount } from './connection.js';
+import { setPendingHandler, retrySync } from './pending.js';
 
 import { FB_URL, READONLY } from './config.js';
 import { state, getMembers, applySnapshot, migrateLegacyMembers } from './state.js';
 import { esc, jsq, avatarPrefix, AVATARS } from './utils.js';
 import { initFirebase, initAuth, describeAuthFailure, setWritesEnabled, setAuthChangeHandler, parentSignIn, parentSignOut } from './firebase.js';
 import { initModalBackButton, openModal, closeModal } from './modals.js';
-import { initDialogA11y } from './a11y.js';
+import { initDialogA11y, initCardArrowNav } from './a11y.js';
 import { popUndo } from './undo.js';
 
 import {
@@ -22,7 +23,7 @@ import {
 } from './ui.js';
 
 import {
-  currentMember, isAdmin, handleFirstLoad, completeParentLogin,
+  currentMember, isAdmin, handleFirstLoad, checkSession, completeParentLogin,
   memberSelect, memberPinKey, memberPinDel, memberPinBack,
   switchUser,
 } from './auth.js';
@@ -35,12 +36,13 @@ import {
   claimTask, moveTask, skipTask, clearDoneOnes,
 } from './tasks.js';
 
+import { setTeamGoal, clearTeamGoal, teamGoalAdminHTML } from './teamgoal.js';
 import { checkPauseExpiry, renderPauseBanner, setPause, clearPause, pauseAdminHTML } from './pause.js';
-import { addMember, removeMember, toggleRole, setAvatar, renameMember } from './members.js';
+import { addMember, backfillColors, removeMember, toggleRole, toggleRoleInPanel, setAvatar, renameMember } from './members.js';
 
 import {
   initRender, render, cardHTML,
-  setFilter, setCatFilter,
+  setFilter, setCatFilter, syncViewToMember,
   toggleSelectMode, toggleSelect,
   bulkAssign, bulkDelete,
   initMemberChipClicks,
@@ -67,8 +69,12 @@ import { initTvMode } from './tv.js';
 import { startRollover } from './rollover.js';
 import { registerServiceWorker } from './pwa.js';
 import { downloadBackup } from './backup.js';
+import { prepareRestore, onRestoreInput, cancelRestore, confirmRestore } from './restore.js';
+import { printChart } from './printchart.js';
 import { saveSnapshot, loadSnapshot, clearSnapshot, setCacheBanner } from './cache.js';
 import { openHistory, setHistoryFilter, historyFilterClick } from './history.js';
+import { openProgress } from './progress.js';
+import { openWeek } from './week.js';
 import { requestReward, decideRequest, markGiven } from './redemptions.js';
 import { openRewards, saveReward, editReward, deleteReward, cancelRewardEdit, refreshRewards, setGoalFor, pickGoalTarget } from './rewards.js';
 registerServiceWorker();
@@ -81,6 +87,7 @@ syncThemeButton();
 // ── Modal back-button support ─────────────────────────────────────────────────
 initModalBackButton();
 initDialogA11y();
+initCardArrowNav();
 
 // ── Bootstrap: auth → Firebase listener ──────────────────────────────────────
 (async () => {
@@ -98,6 +105,7 @@ initDialogA11y();
   if (!authRes.ok) showToast(describeAuthFailure(authRes));
   let firstLoad = true;
   watchConnection(db, { onValue, ref });
+  setPendingHandler(n => { setPendingCount(n); render(); });
   // /admins {uid: name}: readable when signed in, never client-writable (#97)
   onValue(ref(db, 'admins'), snap => { state.admins = snap.val() || null; render(); },
     () => { state.admins = null; });
@@ -114,6 +122,7 @@ initDialogA11y();
       rewards:   val.rewards   || {},
       redemptions: val.redemptions || {},
       pause: val.pause || null,
+      teamGoal: val.teamGoal || null,
     });
 
     setWritesEnabled(true);
@@ -130,11 +139,15 @@ initDialogA11y();
       firstLoad = false;
       if (!READONLY) {
         handleFirstLoad(() => {
+          syncViewToMember();
           initNotifications(_currentMember);
           maybeShowDailySummary();
           render(); // re-render with correct role
+          backfillColors(_isAdmin);
         });
       }
+    } else if (checkSession(showToast)) {
+      render();
     }
   }, err => {
     showToast(/permission/i.test(err.code || err.message || '') && !authRes.ok
@@ -193,6 +206,7 @@ window.cancelEdit    = function(id) {
   const card = document.getElementById('tc-' + id);
   if (t && card) card.outerHTML = cardHTML(t);
 };
+window.retrySync = id => retrySync(id);
 window.toggleTask    = id         => toggleTask(id, _currentMember, _isAdmin);
 window.deleteTask    = id         => deleteTask(id, _isAdmin);
 window.moveTask      = (id, dir)  => moveTask(id, dir, _isAdmin);
@@ -224,7 +238,8 @@ window.bulkDelete       = ()      => bulkDelete();
 // Members
 window.addMember     = ()         => addMember(_isAdmin);
 window.removeMember  = name       => removeMember(name, _isAdmin, _currentMember, () => window.switchUser());
-window.toggleRole    = name       => toggleRole(name, _isAdmin);
+window.toggleRole    = name       => toggleRole(name, _isAdmin, _currentMember);
+window.toggleRoleInPanel = name   => toggleRoleInPanel(name, _isAdmin, _currentMember, () => window.openAdminPanel(), () => window.closeAdminPanel());
 window.setAvatar     = (name, a)  => setAvatar(name, a, _isAdmin);
 window.renameMember  = async name => {
   if (READONLY || !_isAdmin()) return;
@@ -247,17 +262,20 @@ window.openAdminPanel = function() {
         AVATARS.map(a => '<option value="' + a + '"' + (state.members[m]?.avatar === a ? ' selected' : '') + '>' + a + '</option>').join('') +
       '</select>' +
       '<span class="admin-member-role' + (isAdm ? ' is-admin' : '') + '">' + (isAdm ? '👑 Admin' : 'Member') + '</span>' +
-      '<button class="btn-sm" onclick="window.toggleRole(\'' + jsq(m) + '\');window.openAdminPanel()">Toggle</button>' +
+      '<button class="btn-sm" onclick="window.toggleRoleInPanel(\'' + jsq(m) + '\')">Toggle</button>' +
       '<button class="btn-sm" aria-label="Rename ' + esc(m) + '" onclick="window.renameMember(\'' + jsq(m) + '\')">Rename</button>' +
       '<button class="btn-sm" onclick="window.closeAdminPanel();window.openSetPin(\'' + jsq(m) + '\')">Set PIN</button>' +
+      '<button class="btn-sm" aria-label="Progress for ' + esc(m) + '" onclick="window.closeAdminPanel();window.openProgress(\'' + jsq(m) + '\')">Progress</button>' +
       '<button class="btn-sm" aria-label="Adjust points for ' + esc(m) + '" onclick="window.adjustBonus(\'' + jsq(m) + '\')">± Points</button>' +
       '</div>';
-  }).join('') + pauseAdminHTML();
+  }).join('') + pauseAdminHTML() + teamGoalAdminHTML();
   document.getElementById('admin-parent-in').classList.toggle('hidden', !!state.parentEmail);
   document.getElementById('admin-parent-out').classList.toggle('hidden', !state.parentEmail);
   openModal('admin-panel-modal');
 };
 window.setPause = () => { const el = document.getElementById('pause-until'); return setPause(el && el.value, _isAdmin, _currentMember).then(() => window.openAdminPanel()); };
+window.setTeamGoal = () => setTeamGoal(document.getElementById('tg-points')?.value, document.getElementById('tg-reward')?.value, _isAdmin).then(ok => ok && window.openAdminPanel());
+window.clearTeamGoal = () => clearTeamGoal(_isAdmin).then(ok => ok && window.openAdminPanel());
 window.clearPause = () => clearPause(_isAdmin).then(() => window.openAdminPanel());
 // Parent sign in (#97)
 window.openParentSignIn = function() {
@@ -298,6 +316,12 @@ window.clearSavedData = function() {
   showToast('Saved data cleared on this device');
 };
 window.downloadBackup = function() { downloadBackup(_isAdmin); };
+window.pickRestoreFile = function() { if (READONLY || !_isAdmin()) return; document.getElementById('restore-file').click(); };
+window.onRestoreFile = function(inp) { const f = inp.files && inp.files[0]; inp.value = ''; return prepareRestore(f, _isAdmin); };
+window.onRestoreInput = v => onRestoreInput(v);
+window.cancelRestore = cancelRestore;
+window.confirmRestore = () => confirmRestore(document.getElementById('restore-confirm').value, _isAdmin);
+window.printChart = function() { printChart(_isAdmin); };
 window.adminPanelSwitchUser = function() {
   window.closeAdminPanel();
   window.switchUser();
@@ -335,6 +359,11 @@ window.exportCSV     = (f,t)      => exportCSV(f, t);
 window.openHistory      = ()      => openHistory();
 window.setHistoryFilter = m       => setHistoryFilter(m);
 window.historyFilterClick = e    => historyFilterClick(e);
+
+// My progress (read-only; members see their own, admins anyone's — enforced in progress.js)
+window.openProgress = name => openProgress(name || _currentMember(), _isAdmin, _currentMember);
+// Week planner (read-only)
+window.openWeek = () => openWeek();
 
 // Rewards catalog (everyone can browse; admin-only edits are guarded in rewards.js)
 window.openRewards       = ()     => openRewards(_isAdmin, _currentMember);
