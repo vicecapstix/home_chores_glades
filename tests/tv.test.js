@@ -1,9 +1,9 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { state } from '../src/state.js';
 import { getWeekStart, localDateStr } from '../src/utils.js';
-import { applyTvMode, formatClock, updateClock, tvStripHTML, requestWakeLock } from '../src/tv.js';
+import { applyTvMode, formatClock, updateClock, tvStripHTML, requestWakeLock, createTvCycle, initTvCycle } from '../src/tv.js';
 
 const src = f => readFileSync(resolve(__dirname, '../src', f), 'utf8');
 
@@ -99,5 +99,71 @@ describe('layout wiring', () => {
     const html = src('index.html');
     expect(html).toContain('id="tv-clock"');
     expect(html).toContain('id="tv-strip"');
+  });
+});
+
+describe('TV auto-cycle (#148)', () => {
+  let cycle, panelHTML;
+  const key = k => document.dispatchEvent(new KeyboardEvent('keydown', { key: k }));
+  const panel = () => document.getElementById('tv-panel');
+  beforeEach(() => {
+    vi.useFakeTimers();
+    document.body.innerHTML = '<section id="tv-panel" class="hidden"></section><main id="main-content"></main>';
+    panelHTML = vi.fn(n => '<p>' + n + ' <b>x</b></p>');
+    cycle = createTvCycle({ panelHTML });
+    cycle.start();
+  });
+  afterEach(() => { cycle.stop(); vi.useRealTimers(); });
+
+  it('starts on chores and rotates every 30 s: chores -> leaderboard -> rewards -> chores', () => {
+    expect(cycle.current()).toBe('chores');
+    expect(panel().classList.contains('hidden')).toBe(true);
+    vi.advanceTimersByTime(30000);
+    expect(cycle.current()).toBe('leaderboard');
+    expect(panel().classList.contains('hidden')).toBe(false);
+    expect(document.body.classList.contains('tv-panel-on')).toBe(true);
+    expect(panel().innerHTML).toContain('leaderboard');
+    vi.advanceTimersByTime(30000);
+    expect(cycle.current()).toBe('rewards');
+    vi.advanceTimersByTime(30000);
+    expect(cycle.current()).toBe('chores');
+    expect(document.body.classList.contains('tv-panel-on')).toBe(false);
+  });
+  it('arrow keys move between panels (wrapping) and pause cycling for 2 minutes', () => {
+    key('ArrowRight');
+    expect(cycle.current()).toBe('leaderboard');
+    key('ArrowLeft'); key('ArrowLeft');
+    expect(cycle.current()).toBe('rewards');
+    vi.advanceTimersByTime(90000); // ticks at 30/60/90 s are skipped
+    expect(cycle.current()).toBe('rewards');
+    vi.advanceTimersByTime(30000); // 120 s after the key: resumes
+    expect(cycle.current()).toBe('chores');
+  });
+  it('any other key pauses without moving', () => {
+    key('x');
+    vi.advanceTimersByTime(119000);
+    expect(cycle.current()).toBe('chores');
+    vi.advanceTimersByTime(1000);
+    expect(cycle.current()).toBe('leaderboard');
+  });
+  it('escapes the title and refresh re-renders the current panel', () => {
+    key('ArrowRight');
+    panelHTML.mockClear();
+    cycle.refresh();
+    expect(panelHTML).toHaveBeenCalledWith('leaderboard');
+    expect(panel().querySelector('.tv-panel-title').textContent).toContain('Leaderboard');
+  });
+  it('is display only: markup, no Firebase imports, no animation under reduced motion', () => {
+    const t = src('tv.js');
+    expect(t).not.toMatch(/from '\.\/firebase\.js'/);
+    expect(t).toContain('if (!READONLY || !TV_CYCLE) return null');
+    expect(src('index.html')).toContain('id="tv-panel"');
+    expect(src('style.css')).toMatch(/prefers-reduced-motion: reduce\) \{ #tv-panel\.tv-slide \{ animation: none; \} \}/);
+  });
+});
+
+describe('TV auto-cycle gating', () => {
+  it('initTvCycle does nothing unless readonly + cycle=1 (this suite has neither)', () => {
+    expect(initTvCycle(() => '')).toBeNull();
   });
 });

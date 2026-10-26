@@ -66,7 +66,8 @@ if (READONLY) {
   document.getElementById('readonly-banner').classList.remove('hidden');
 }
 
-import { initTvMode } from './tv.js';
+import { initTvMode, initTvCycle, refreshTvCycle } from './tv.js';
+import { leaderboardHTML } from './ui.js';
 import { startRollover } from './rollover.js';
 import { registerServiceWorker } from './pwa.js';
 import { initInstall, installApp, dismissIosHint } from './install.js';
@@ -78,10 +79,13 @@ import { openHistory, setHistoryFilter, historyFilterClick } from './history.js'
 import { openProgress } from './progress.js';
 import { openWeek } from './week.js';
 import { requestReward, decideRequest, markGiven } from './redemptions.js';
-import { openRewards, saveReward, editReward, deleteReward, cancelRewardEdit, refreshRewards, setGoalFor, pickGoalTarget } from './rewards.js';
+import { rewardsHTML, openRewards, saveReward, editReward, deleteReward, cancelRewardEdit, refreshRewards, setGoalFor, pickGoalTarget } from './rewards.js';
 registerServiceWorker();
 initInstall();
 initTvMode();
+initTvCycle(name => name === 'leaderboard'
+  ? '<h3>This week</h3>' + leaderboardHTML('week') + '<h3>Last week</h3>' + leaderboardHTML('lastweek')
+  : rewardsHTML(state.rewards, false));
 startRollover(render);
 
 // ── Theme sync on load ────────────────────────────────────────────────────────
@@ -137,6 +141,7 @@ initCardArrowNav();
     render();
     renderPauseBanner();
     refreshRewards(_isAdmin);
+    refreshTvCycle();
     markSynced();
 
     if (firstLoad) {
