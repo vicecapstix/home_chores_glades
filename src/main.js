@@ -2,7 +2,8 @@ import { adjustBonus, BONUS_MAX, BONUS_REASON_MAX } from './bonus.js';
 import './style.css';
 
 import { onValue, ref } from 'firebase/database';
-import { watchConnection, markSynced } from './connection.js';
+import { watchConnection, markSynced, setPendingCount } from './connection.js';
+import { setPendingHandler, retrySync } from './pending.js';
 
 import { FB_URL, READONLY } from './config.js';
 import { state, getMembers, applySnapshot, migrateLegacyMembers } from './state.js';
@@ -98,6 +99,7 @@ initDialogA11y();
   if (!authRes.ok) showToast(describeAuthFailure(authRes));
   let firstLoad = true;
   watchConnection(db, { onValue, ref });
+  setPendingHandler(n => { setPendingCount(n); render(); });
   // /admins {uid: name}: readable when signed in, never client-writable (#97)
   onValue(ref(db, 'admins'), snap => { state.admins = snap.val() || null; render(); },
     () => { state.admins = null; });
@@ -193,6 +195,7 @@ window.cancelEdit    = function(id) {
   const card = document.getElementById('tc-' + id);
   if (t && card) card.outerHTML = cardHTML(t);
 };
+window.retrySync = id => retrySync(id);
 window.toggleTask    = id         => toggleTask(id, _currentMember, _isAdmin);
 window.deleteTask    = id         => deleteTask(id, _isAdmin);
 window.moveTask      = (id, dir)  => moveTask(id, dir, _isAdmin);
