@@ -2,7 +2,8 @@ import { adjustBonus, BONUS_MAX, BONUS_REASON_MAX } from './bonus.js';
 import './style.css';
 
 import { onValue, ref } from 'firebase/database';
-import { watchConnection, markSynced } from './connection.js';
+import { watchConnection, markSynced, setPendingCount } from './connection.js';
+import { setPendingHandler, retrySync } from './pending.js';
 
 import { FB_URL, READONLY } from './config.js';
 import { state, getMembers, applySnapshot, migrateLegacyMembers } from './state.js';
@@ -35,12 +36,13 @@ import {
   claimTask, moveTask, skipTask, clearDoneOnes,
 } from './tasks.js';
 
+import { setTeamGoal, clearTeamGoal, teamGoalAdminHTML } from './teamgoal.js';
 import { checkPauseExpiry, renderPauseBanner, setPause, clearPause, pauseAdminHTML } from './pause.js';
 import { addMember, removeMember, toggleRole, setAvatar, renameMember } from './members.js';
 
 import {
   initRender, render, cardHTML,
-  setFilter, setCatFilter,
+  setFilter, setCatFilter, syncViewToMember,
   toggleSelectMode, toggleSelect,
   bulkAssign, bulkDelete,
   initMemberChipClicks,
@@ -99,6 +101,7 @@ initCardArrowNav();
   if (!authRes.ok) showToast(describeAuthFailure(authRes));
   let firstLoad = true;
   watchConnection(db, { onValue, ref });
+  setPendingHandler(n => { setPendingCount(n); render(); });
   // /admins {uid: name}: readable when signed in, never client-writable (#97)
   onValue(ref(db, 'admins'), snap => { state.admins = snap.val() || null; render(); },
     () => { state.admins = null; });
@@ -115,6 +118,7 @@ initCardArrowNav();
       rewards:   val.rewards   || {},
       redemptions: val.redemptions || {},
       pause: val.pause || null,
+      teamGoal: val.teamGoal || null,
     });
 
     setWritesEnabled(true);
@@ -131,6 +135,7 @@ initCardArrowNav();
       firstLoad = false;
       if (!READONLY) {
         handleFirstLoad(() => {
+          syncViewToMember();
           initNotifications(_currentMember);
           maybeShowDailySummary();
           render(); // re-render with correct role
@@ -194,6 +199,7 @@ window.cancelEdit    = function(id) {
   const card = document.getElementById('tc-' + id);
   if (t && card) card.outerHTML = cardHTML(t);
 };
+window.retrySync = id => retrySync(id);
 window.toggleTask    = id         => toggleTask(id, _currentMember, _isAdmin);
 window.deleteTask    = id         => deleteTask(id, _isAdmin);
 window.moveTask      = (id, dir)  => moveTask(id, dir, _isAdmin);
@@ -253,12 +259,14 @@ window.openAdminPanel = function() {
       '<button class="btn-sm" onclick="window.closeAdminPanel();window.openSetPin(\'' + jsq(m) + '\')">Set PIN</button>' +
       '<button class="btn-sm" aria-label="Adjust points for ' + esc(m) + '" onclick="window.adjustBonus(\'' + jsq(m) + '\')">± Points</button>' +
       '</div>';
-  }).join('') + pauseAdminHTML();
+  }).join('') + pauseAdminHTML() + teamGoalAdminHTML();
   document.getElementById('admin-parent-in').classList.toggle('hidden', !!state.parentEmail);
   document.getElementById('admin-parent-out').classList.toggle('hidden', !state.parentEmail);
   openModal('admin-panel-modal');
 };
 window.setPause = () => { const el = document.getElementById('pause-until'); return setPause(el && el.value, _isAdmin, _currentMember).then(() => window.openAdminPanel()); };
+window.setTeamGoal = () => setTeamGoal(document.getElementById('tg-points')?.value, document.getElementById('tg-reward')?.value, _isAdmin).then(ok => ok && window.openAdminPanel());
+window.clearTeamGoal = () => clearTeamGoal(_isAdmin).then(ok => ok && window.openAdminPanel());
 window.clearPause = () => clearPause(_isAdmin).then(() => window.openAdminPanel());
 // Parent sign in (#97)
 window.openParentSignIn = function() {

@@ -27,6 +27,7 @@ src/
   render.js        — DOM rendering: render(), cardHTML(), filters, select/bulk mode
   modals.js        — modal stack manager + browser back-button support
   notifications.js — overdue browser notifications (30-min interval check)
+  pending.js       — in-memory tracker of unsynced task writes (not-synced tag, retry)
   undo.js          — command-pattern undo stack (max 20, 5s toast window)
   a11y.js          — dialog accessibility: Esc to close, focus restore, Tab trap
   savings.js       — member saving goal: pin a reward, progress bar on chip and TV
@@ -41,6 +42,7 @@ src/
   redemptions.js   — reward requests: request, approve/deny, refund
   rewards.js       — rewards catalog UI
   rollover.js      — local timer so open screens roll over resets/due status
+  teamgoal.js      — family weekly points goal (state/teamGoal), bar + admin form
   tv.js            — TV dashboard helpers for ?readonly=1
   public/          — sw.js, manifest.webmanifest, icons (copied to dist/ by Vite)
 tests/             — Vitest unit tests (Firebase mocked; never touch a live DB)
@@ -88,6 +90,7 @@ Database path: `/state`
   nextId:    <number>
   templates: { "tpl<timestamp>": { id, name, tasks: [{name,freq,difficulty}] } }
   rewards:   { "<id>": { id, name, cost, icon } }
+  teamGoal:  { points, reward }  ← weekly family goal; progress computed from history
   redemptions: { "<id>": { id, rewardId, rewardName, cost, member, requestedAt, status, …, givenAt?, givenBy? } }
 ```
 
