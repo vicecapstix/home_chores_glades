@@ -1,4 +1,4 @@
-import { state, getMembers } from './state.js';
+import { state, getMembers, memberColor } from './state.js';
 import { PCOLS, READONLY } from './config.js';
 import { esc, jsq, sha256 } from './utils.js';
 
@@ -113,7 +113,7 @@ export function showMemberSelector(onLoginComplete) {
   document.getElementById('pin-member-name').textContent = '';
   document.getElementById('pin-member-pin').classList.add('hidden');
   document.getElementById('pin-member-chips').innerHTML = members.map((m, i) => {
-    const c = PCOLS[i % PCOLS.length];
+    const c = memberColor(m, members) || PCOLS[0];
     return '<button class="pin-member-chip" style="background:' + c.bg + ';color:' + c.text + ';" ' +
       'onclick="window.memberSelect(\'' + jsq(m) + '\')">' + esc(m) + '</button>';
   }).join('');

@@ -1,4 +1,4 @@
-import { state, getMembers } from './state.js';
+import { state, getMembers, memberColor } from './state.js';
 import { PCOLS, BADGES, READONLY } from './config.js';
 import { openModal, closeModal } from './modals.js';
 import { patchPaths } from './firebase.js';
@@ -8,11 +8,7 @@ import { isAdmin } from './auth.js';
 
 // ── pColor helper ─────────────────────────────────────────────────────────────
 
-export function pColor(name) {
-  const members = getMembers();
-  const i = members.indexOf(name);
-  return i >= 0 ? PCOLS[i % PCOLS.length] : null;
-}
+export function pColor(name) { return memberColor(name); }
 
 // ── Toast ─────────────────────────────────────────────────────────────────────
 
@@ -140,7 +136,7 @@ function renderStats() {
   const members = getMembers();
   if (!members.length) { el.innerHTML = '<div class="empty">No members yet.</div>'; return; }
   el.innerHTML = members.map((m, i) => {
-    const c = PCOLS[i % PCOLS.length];
+    const c = pColor(m) || PCOLS[0];
     const count = counts[m] || 0;
     const pct = Math.round(count / max * 100);
     return '<div class="stats-row">' +

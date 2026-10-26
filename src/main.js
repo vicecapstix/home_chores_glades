@@ -38,7 +38,7 @@ import {
 
 import { setTeamGoal, clearTeamGoal, teamGoalAdminHTML } from './teamgoal.js';
 import { checkPauseExpiry, renderPauseBanner, setPause, clearPause, pauseAdminHTML } from './pause.js';
-import { addMember, removeMember, toggleRole, setAvatar, renameMember } from './members.js';
+import { addMember, backfillColors, removeMember, toggleRole, setAvatar, renameMember } from './members.js';
 
 import {
   initRender, render, cardHTML,
@@ -141,6 +141,7 @@ initCardArrowNav();
           initNotifications(_currentMember);
           maybeShowDailySummary();
           render(); // re-render with correct role
+          backfillColors(_isAdmin);
         });
       }
     } else if (checkSession(showToast)) {

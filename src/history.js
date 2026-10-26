@@ -1,5 +1,4 @@
-import { state, getMembers } from './state.js';
-import { PCOLS } from './config.js';
+import { state, getMembers, memberColor } from './state.js';
 import { openModal } from './modals.js';
 import { esc } from './utils.js';
 
@@ -47,8 +46,7 @@ export function historyHTML(history, members, member, redemptions) {
   const rows = historyEvents(history, redemptions, member);
   if (!rows.length) return '<div class="empty">No completions yet.</div>';
   return rows.map(e => {
-    const i = members.indexOf(e.person);
-    const c = i >= 0 ? PCOLS[i % PCOLS.length] : { bg: 'var(--bg)', text: 'var(--muted)' };
+    const c = memberColor(e.person, members) || { bg: 'var(--bg)', text: 'var(--muted)' };
     return '<div class="hist-row">' +
       '<span class="lb-name hist-who" style="background:' + c.bg + ';color:' + c.text + '">' + esc(e.person || 'Anyone') + '</span>' +
       '<span class="hist-task">' + esc(e.label) + '</span>' +
