@@ -248,6 +248,7 @@ body[data-reorder] .move-btns { display: flex; }
 /* MODALS — shared overlay pattern */
 #leaderboard-modal,
 #history-modal,
+#week-modal,
 #rewards-modal,
 #stats-modal,
 #summary-modal,
@@ -256,6 +257,7 @@ body[data-reorder] .move-btns { display: flex; }
 #admin-panel-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; z-index: 998; }
 #leaderboard-modal.hidden,
 #history-modal.hidden,
+#week-modal.hidden,
 #rewards-modal.hidden,
 #stats-modal.hidden,
 #summary-modal.hidden,
@@ -274,6 +276,26 @@ body[data-reorder] .move-btns { display: flex; }
 .hist-task { flex: 1; min-width: 120px; font-size: 0.9rem; }
 .hist-when { font-size: 0.75rem; color: var(--muted); }
 .hist-pts { font-size: 0.8rem; font-weight: 600; color: var(--accent); }
+
+/* WEEK PLANNER — stacked on phones, 7 columns on wide screens */
+.week-card { width: min(560px, 94vw); max-height: 85vh; overflow-y: auto; }
+#week-list { display: grid; gap: 10px; }
+.wk-day { border: 1px solid var(--border); border-radius: 10px; padding: 8px 10px; }
+.wk-day h3 { font-size: 0.95rem; margin-bottom: 4px; }
+.wk-today { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
+.wk-badge { font-size: 0.7rem; background: var(--accent); color: #fff; border-radius: 8px; padding: 1px 6px; vertical-align: middle; }
+.wk-day ul { list-style: none; margin: 0; padding: 0; }
+.wk-item { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; padding: 4px 0; font-size: 0.9rem; }
+.wk-time { font-weight: 600; color: var(--muted); font-size: 0.8rem; }
+.wk-name { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.wk-done .wk-name { text-decoration: line-through; color: var(--muted); }
+.wk-who { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (min-width: 900px) {
+  .week-card { width: min(1200px, 96vw); }
+  #week-list { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+}
+body[data-readonly] .wk-item { font-size: 1.1rem; }
+body[data-readonly] .wk-day h3 { font-size: 1.3rem; }
 
 /* REWARDS CATALOG */
 .rewards-card { width: min(480px, 94vw); }
