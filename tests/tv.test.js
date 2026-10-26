@@ -77,8 +77,8 @@ describe('wake lock is guarded', () => {
 
 describe('layout wiring', () => {
   const css = src('style.css');
-  it('has a >=1200px readonly 3-column grid', () => {
-    expect(css).toMatch(/@media \(min-width: 1200px\)[\s\S]*body\[data-readonly\] #task-list \{[^}]*grid-template-columns: repeat\(3, 1fr\)/);
+  it('has a >=1200px body.tv 3-column grid', () => {
+    expect(css).toMatch(/@media \(min-width: 1200px\)[\s\S]*body\.tv #task-list \{[^}]*grid-template-columns: repeat\(3, minmax\(0, 1fr\)\)/);
   });
   it('places overdue / soon / done in columns 1-3', () => {
     ['overdue:1', 'soon:2', 'done:3'].forEach(p => {

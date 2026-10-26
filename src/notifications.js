@@ -1,5 +1,6 @@
 import { state } from './state.js';
-import { dueStatus, localDateStr } from './utils.js';
+import { READONLY } from './config.js';
+import { dueStatus, localDateStr, dueTimePassedToday } from './utils.js';
 
 let _notifiedIds = new Set();
 const _pending = new Map();
@@ -48,8 +49,8 @@ function scheduleOverdueCheck() {
 
 // Android Chrome/PWAs throw on `new Notification()`; use the service worker there.
 // Resolves true only when a notification was actually shown.
-async function showOverdue(body) {
-  const opts = { body, icon: './icon-192.png', tag: 'ff-overdue-' + body };
+async function showOverdue(body, tag = 'ff-overdue-' + body) {
+  const opts = { body, icon: './icon-192.png', tag };
   try {
     const sw = typeof navigator !== 'undefined' && navigator.serviceWorker;
     if (sw && sw.getRegistration && await sw.getRegistration()) {
@@ -83,4 +84,38 @@ export function runOverdueCheck() {
   return Promise.all(jobs);
 }
 
-export function _resetForTests() { _notifiedIds = new Set(); _pending.clear(); _started = false; _currentMember = () => ''; }
+// Due-time reminders (#150): one local notification per chore per day once its dueTime passes.
+// Runs on the rollover tick (no timer of its own); phones/tablets only, never the TV or while paused.
+const DUE_KEY = 'ff_due_notified';
+const _duePending = new Set();
+
+function dueSeen() {
+  try {
+    const v = JSON.parse(localStorage.getItem(DUE_KEY) || 'null');
+    if (v && v.date === localDateStr() && Array.isArray(v.ids)) return v.ids;
+  } catch(e) {}
+  return [];
+}
+function markDueSeen(id) {
+  try { localStorage.setItem(DUE_KEY, JSON.stringify({ date: localDateStr(), ids: [...new Set([...dueSeen(), id])] })); } catch(e) {}
+}
+
+export function selectDueTimeTasks(tasks, me, now = Date.now()) {
+  if (!me) return [];
+  return Object.values(tasks || {}).filter(t => (!t.person || t.person === me) && dueTimePassedToday(t, now));
+}
+
+export function runDueTimeCheck(now = Date.now()) {
+  if (READONLY || !notificationsSupported() || Notification.permission !== 'granted') return Promise.resolve();
+  const seen = dueSeen();
+  return Promise.all(selectDueTimeTasks(state.tasks, _currentMember(), now).map(t => {
+    if (seen.includes(t.id) || _duePending.has(t.id)) return null;
+    _duePending.add(t.id);
+    return showOverdue(t.name + ' was due at ' + t.dueTime, 'ff-due-' + t.id).then(ok => {
+      _duePending.delete(t.id);
+      if (ok) markDueSeen(t.id); // only mark once actually shown
+    });
+  }));
+}
+
+export function _resetForTests() { _duePending.clear(); _notifiedIds = new Set(); _pending.clear(); _started = false; _currentMember = () => ''; }

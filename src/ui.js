@@ -1,19 +1,21 @@
-import { state, getMembers } from './state.js';
-import { PCOLS, BADGES, READONLY } from './config.js';
+import { state, getMembers, memberColor } from './state.js';
+import { PCOLS, BADGES, CATEGORIES, READONLY } from './config.js';
 import { openModal, closeModal } from './modals.js';
 import { patchPaths } from './firebase.js';
-import { esc, jsq, avatarPrefix, sha256, initialLastDone, validInterval, dueStatus, localDateStr, currentStreak, currentWeekPoints, weekRecap, lastWeekChampion } from './utils.js';
+import { esc, jsq, avatarPrefix, sha256, initialLastDone, validInterval, validTime, dueStatus, localDateStr, currentStreak, currentWeekPoints, weekRecap, lastWeekChampion } from './utils.js';
+import { cycleTheme, initTheme } from './theme.js';
 import { isAdmin } from './auth.js';
 
 // ── pColor helper ─────────────────────────────────────────────────────────────
 
-export function pColor(name) {
-  const members = getMembers();
-  const i = members.indexOf(name);
-  return i >= 0 ? PCOLS[i % PCOLS.length] : null;
-}
+export function pColor(name) { return memberColor(name); }
 
 // ── Toast ─────────────────────────────────────────────────────────────────────
+
+// Status messages stay long enough to read (WCAG 2.2.1): >= 5 s, ~60 ms per character, max 10 s.
+export function toastDuration(msg) {
+  return Math.min(10000, Math.max(5000, String(msg || '').length * 60));
+}
 
 export function showToast(msg) {
   const t = document.getElementById('toast');
@@ -21,31 +23,15 @@ export function showToast(msg) {
   t.textContent = msg || 'Saved';
   t.classList.add('show');
   clearTimeout(t._tid);
-  t._tid = setTimeout(() => t.classList.remove('show'), 1800);
+  t._tid = setTimeout(() => t.classList.remove('show'), toastDuration(t.textContent));
 }
 
 // ── Theme ─────────────────────────────────────────────────────────────────────
 
-export function toggleTheme() {
-  const html = document.documentElement;
-  const isDark = html.getAttribute('data-theme') === 'dark';
-  if (isDark) {
-    html.removeAttribute('data-theme');
-    document.getElementById('theme-btn').textContent = '🌙';
-    try { localStorage.setItem('fc_theme', 'light'); } catch(e) {}
-  } else {
-    html.setAttribute('data-theme', 'dark');
-    document.getElementById('theme-btn').textContent = '☀️';
-    try { localStorage.setItem('fc_theme', 'dark'); } catch(e) {}
-  }
-}
+// Cycles Auto -> Light -> Dark (logic lives in theme.js).
+export function toggleTheme() { return cycleTheme(); }
 
-export function syncThemeButton() {
-  const btn = document.getElementById('theme-btn');
-  if (btn && document.documentElement.getAttribute('data-theme') === 'dark') {
-    btn.textContent = '☀️';
-  }
-}
+export function syncThemeButton() { initTheme(); }
 
 // ── Leaderboard ───────────────────────────────────────────────────────────────
 
@@ -60,6 +46,7 @@ export function setLbTab(tab, btn) {
   lbTab = tab;
   document.querySelectorAll('#leaderboard-modal .lb-tab').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
+  document.querySelectorAll('#leaderboard-modal .lb-tab').forEach(b => b.setAttribute('aria-pressed', String(b === btn)));
   renderLeaderboard();
 }
 
@@ -92,17 +79,20 @@ export function leaderboardHTML(tab) {
   const sorted = Object.values(state.members).slice().sort((a, b) => {
     const va = tab === 'week' ? currentWeekPoints(a) : (a.points || 0);
     const vb = tab === 'week' ? currentWeekPoints(b) : (b.points || 0);
-    return vb - va;
+    return vb - va || String(a.name).localeCompare(String(b.name)); // ties: stable, by name (#170)
   });
+  let rank = 0, prevPts = null;
   return sorted.map((m, i) => {
     const c = pColor(m.name) || { bg: '#EEE', text: '#333' };
     const streak = currentStreak(m);
     const pts = tab === 'week' ? currentWeekPoints(m) : (m.points || 0);
+    if (pts !== prevPts) rank = i + 1; // equal points share a rank: 1, 1, 3
+    prevPts = pts;
     const badgeIcons = (m.badges || []).map(id => {
       const b = BADGES.find(b => b.id === id); return b ? b.icon : '';
     }).join('');
     return '<div class="lb-row">' +
-      '<span class="lb-rank">' + (i + 1) + '</span>' +
+      '<span class="lb-rank">' + rank + '</span>' +
       '<span class="lb-name" style="background:' + c.bg + ';color:' + c.text + ';">' + esc(avatarPrefix(m)) + esc(m.name) + '</span>' +
       '<span class="lb-pts">' + pts + ' pts</span>' +
       (streak > 0 ? '<span class="lb-streak">🔥 ' + streak + '</span>' : '') +
@@ -124,6 +114,7 @@ export function setStatsTab(tab, btn) {
   statsTab = tab;
   document.querySelectorAll('#stats-modal .lb-tab').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
+  document.querySelectorAll('#stats-modal .lb-tab').forEach(b => b.setAttribute('aria-pressed', String(b === btn)));
   renderStats();
 }
 
@@ -153,7 +144,7 @@ function renderStats() {
   const members = getMembers();
   if (!members.length) { el.innerHTML = '<div class="empty">No members yet.</div>'; return; }
   el.innerHTML = members.map((m, i) => {
-    const c = PCOLS[i % PCOLS.length];
+    const c = pColor(m) || PCOLS[0];
     const count = counts[m] || 0;
     const pct = Math.round(count / max * 100);
     return '<div class="stats-row">' +
@@ -205,8 +196,8 @@ export function openTemplates() {
   openModal('templates-modal');
 }
 
-const MAX_TEMPLATES = 20;
-const MAX_TEMPLATE_TASKS = 100;
+export const MAX_TEMPLATES = 20;
+export const MAX_TEMPLATE_TASKS = 100;
 // Firebase drops empty arrays, so a stored template may have no `tasks` key.
 const tplTasks = tpl => (tpl && Array.isArray(tpl.tasks) ? tpl.tasks : []);
 
@@ -226,6 +217,22 @@ function renderTemplates() {
     : '<div class="empty">No templates saved yet.</div>';
 }
 
+// Template entry for one chore (#139): keeps category, notes, due time and subtask names
+// (never done state, assignee, points or history). Empty fields are omitted.
+const MAX_TPL_SUBTASKS = 20;
+export function templateTask(t) {
+  const subs = Object.values(t.subtasks || {}).map(s => String((s && s.name) || '').trim().slice(0, 100)).filter(Boolean).slice(0, MAX_TPL_SUBTASKS);
+  return {
+    name: t.name, freq: t.freq, difficulty: t.difficulty || 'easy',
+    ...(t.freq === 'weekdays' ? { days: t.days || [] } : {}),
+    ...(t.freq === 'interval' ? { intervalDays: validInterval(t.intervalDays) || 7 } : {}),
+    ...(CATEGORIES.includes(t.category) && t.category ? { category: t.category } : {}),
+    ...(t.notes ? { notes: String(t.notes).slice(0, 300) } : {}),
+    ...(validTime(t.dueTime) ? { dueTime: t.dueTime } : {}),
+    ...(subs.length ? { subtasks: subs } : {}),
+  };
+}
+
 export function saveTemplate() {
   if (READONLY || !isAdmin()) return;
   const input = document.getElementById('tpl-name-input');
@@ -239,7 +246,7 @@ export function saveTemplate() {
   const id = 'tpl' + Date.now();
   const tpl = {
     id, name,
-    tasks: chores.map(t => ({ name: t.name, freq: t.freq, difficulty: t.difficulty || 'easy', ...(t.freq === 'weekdays' ? { days: t.days || [] } : {}), ...(t.freq === 'interval' ? { intervalDays: validInterval(t.intervalDays) || 7 } : {}) })),
+    tasks: chores.map(templateTask),
   };
   state.templates[id] = tpl;
   input.value = '';
@@ -262,6 +269,11 @@ export function applyTemplate(id) {
       ...(t.freq === 'interval' ? { intervalDays: validInterval(t.intervalDays) || 7 } : {}),
       done: false, lastDone: initialLastDone(t),
       person: '', order: Date.now() + added,
+      // Fields below are absent on legacy templates (#139)
+      category: CATEGORIES.includes(t.category) ? t.category : '', notes: String(t.notes || '').slice(0, 300),
+      dueDate: t.freq === 'once' ? localDateStr() : '', ...(validTime(t.dueTime) ? { dueTime: t.dueTime } : {}),
+      subtasks: Object.fromEntries((Array.isArray(t.subtasks) ? t.subtasks : []).slice(0, MAX_TPL_SUBTASKS).map((n, i) =>
+        ['s' + Date.now() + i, { id: 's' + Date.now() + i, name: String(n).slice(0, 100), done: false }])),
     };
     paths['tasks/' + taskId] = state.tasks[taskId];
     state.nextId++;

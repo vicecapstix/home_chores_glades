@@ -3,6 +3,7 @@ import { READONLY } from './config.js';
 import { patchRoot, spendPoints, refundPoints, decideRedemption } from './firebase.js';
 import { showToast } from './ui.js';
 import { pushUndo } from './undo.js';
+import { getWeekStart } from './utils.js';
 
 export const MAX_REDEMPTIONS = 100;
 let busy = false;
@@ -39,6 +40,16 @@ export function idsToDrop(redemptions) {
     .slice(0, over).map(r => r.id);
 }
 
+// Reward limits (#181): pending/approved requests by `member` for `rewardId` in the local
+// Mon-Sun week containing `now`. Denied requests do not count.
+export function usedThisWeek(redemptions, rewardId, member, now = Date.now()) {
+  const [y, m, d] = getWeekStart(now).split('-').map(Number);
+  const start = new Date(y, m - 1, d).getTime();
+  const end = new Date(y, m - 1, d + 7).getTime();
+  return Object.values(redemptions || {}).filter(r => r && r.rewardId === rewardId && r.member === member &&
+    (r.status === 'pending' || r.status === 'approved') && r.requestedAt >= start && r.requestedAt < end).length;
+}
+
 export async function requestReward(rewardId, currentMemberFn) {
   if (READONLY || busy) return;
   const me = currentMemberFn();
@@ -47,6 +58,9 @@ export async function requestReward(rewardId, currentMemberFn) {
   if (!m) { showToast('Select a member first'); return; }
   if (!reward) return;
   if ((m.points || 0) < reward.cost) { showToast('Not enough points'); return; }
+  if (reward.perWeek && usedThisWeek(state.redemptions, rewardId, me) >= reward.perWeek) {
+    showToast('Limit reached: ' + reward.perWeek + ' per week'); return;
+  }
   const drops = idsToDrop(state.redemptions);
   if (Object.keys(state.redemptions || {}).length - drops.length >= MAX_REDEMPTIONS) {
     showToast('Too many pending requests'); return;
