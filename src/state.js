@@ -11,6 +11,7 @@ export const state = {
   rewards:   {},
   redemptions: {},
   pause:     null,
+  teamGoal:  null, // { points, reward } weekly family goal (#174)
   admins:    null, // /admins {uid: memberName}; null until it exists (role fallback)
   uid:       null, // current Firebase Auth UID
   parentEmail: false, // true when signed in with an email account
@@ -31,6 +32,7 @@ export function applySnapshot(val) {
   state.rewards   = val.rewards   || {};
   state.redemptions = val.redemptions || {};
   state.pause = val.pause && val.pause.until ? val.pause : null;
+  state.teamGoal = val.teamGoal && val.teamGoal.points ? val.teamGoal : null;
   setPauseUntil(state.pause ? state.pause.until : '');
 }
 
