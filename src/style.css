@@ -276,6 +276,7 @@ body[data-reorder] .move-btns { display: flex; }
 .hist-task { flex: 1; min-width: 120px; font-size: 0.9rem; }
 .hist-when { font-size: 0.75rem; color: var(--muted); }
 .hist-pts { font-size: 0.8rem; font-weight: 600; color: var(--accent); }
+.hist-pts.neg { color: var(--warn); }
 
 /* WEEK PLANNER — stacked on phones, 7 columns on wide screens */
 .week-card { width: min(560px, 94vw); max-height: 85vh; overflow-y: auto; }
