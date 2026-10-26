@@ -42,7 +42,7 @@ export function renderHistory() {
   if (!pills || !list) return;
   pills.innerHTML = ['']
     .concat(members)
-    .map(m => '<button class="lb-tab' + (m === filter ? ' active' : '') + '" data-member="' + esc(m) + '">' +
+    .map(m => '<button class="lb-tab' + (m === filter ? ' active' : '') + '" aria-pressed="' + (m === filter) + '" data-member="' + esc(m) + '">' +
       (m ? esc(m) : 'Everyone') + '</button>').join('');
   list.innerHTML = historyHTML(state.history, members, filter);
 }
