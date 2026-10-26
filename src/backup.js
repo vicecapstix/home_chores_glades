@@ -33,7 +33,7 @@ export function backupFilename(now = new Date()) {
 
 // Admin-only. Uses local state only: no Firebase read or write.
 export function downloadBackup(isAdminFn) {
-  if (READONLY || !isAdminFn()) return;
+  if (READONLY || !isAdminFn()) return false;
   try {
     const now = new Date();
     const blob = new Blob([JSON.stringify(buildBackup(state, now), null, 2)], { type: 'application/json' });
@@ -46,7 +46,9 @@ export function downloadBackup(isAdminFn) {
     a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
     showToast('Backup downloaded');
+    return true;
   } catch (e) {
     showToast('Backup failed');
+    return false;
   }
 }

@@ -2,8 +2,10 @@ import { state, getMembers } from './state.js';
 import { PCOLS, BADGES, READONLY } from './config.js';
 import { renderTvStrip } from './tv.js';
 import { renderGoal } from './goal.js';
-import { esc, jsq, avatarPrefix, validTime, dueStatus, freqLabel, rotationTag, isMine, isSkipped, localDateStr, doneAgoLabel, currentStreak, goalHTML, isStaleDoneOnce } from './utils.js';
+import { renderTeamGoal } from './teamgoal.js';
+import { esc, jsq, taskPoints, avatarPrefix, validTime, dueStatus, freqLabel, rotationTag, isMine, isSkipped, localDateStr, doneAgoLabel, currentStreak, goalHTML, isStaleDoneOnce } from './utils.js';
 import { pColor } from './ui.js';
+import { syncTagHTML } from './pending.js';
 
 // ── Session function references (set once via initRender) ─────────────────────
 let _isAdmin       = () => false;
@@ -31,16 +33,32 @@ function _applyMineDefault() {
   if (phone) filter = 'mine';
 }
 
+// Called after every login. When a different member takes over the device, drop the previous
+// member's filter / category / select mode so they start from their own default view (#169).
+let _viewMember;
+export function syncViewToMember() {
+  const me = _currentMember();
+  if (_viewMember !== undefined && me !== _viewMember) {
+    filter = 'all';
+    filterCat = '';
+    selectMode = false;
+    selectedIds = new Set();
+    _mineDefaulted = false;
+    const btn = document.getElementById('btn-select');
+    if (btn) btn.textContent = 'Select';
+    _updateBulkBar();
+  }
+  _viewMember = me;
+}
+
 export function setFilter(f) {
   filter    = f;
-  filterCat = '';
   _renderFilters();
   _renderTasks();
 }
 
 export function setCatFilter(c) {
   filterCat = filterCat === c ? '' : c;
-  filter    = 'all';
   _renderFilters();
   _renderTasks();
 }
@@ -151,6 +169,7 @@ export function render() {
   _renderTasks();
   renderTvStrip();
   renderGoal(Object.values(state.tasks || {}));
+  renderTeamGoal();
   if (!READONLY) {
     document.body.setAttribute('data-role', _isAdmin() ? 'admin' : 'member');
   }
@@ -177,7 +196,7 @@ function _renderMembers() {
   const members = getMembers();
   const admin   = _isAdmin();
   document.getElementById('member-chips').innerHTML = members.map((m, i) => {
-    const c = PCOLS[i % PCOLS.length];
+    const c = pColor(m) || PCOLS[0];
     const mem = state.members[m] || {};
     const streak = currentStreak(mem);
     const badgeIcons = (mem.badges || []).map(id => {
@@ -213,17 +232,23 @@ function _renderMemberSelect() {
 
 // ── Filters ───────────────────────────────────────────────────────────────────
 
+// Does task t pass the status filter k? (status and category filters combine with AND, #172)
+function _statusPass(k, t) {
+  if (k === 'mine') return isMine(t, _currentMember());
+  if (k === 'pending') return !t.done;
+  if (k === 'overdue') return dueStatus(t) === 'overdue';
+  if (k === 'done') return !!t.done;
+  return true;
+}
+
 function _renderFilters() {
   const container = document.getElementById('filters');
   if (!container) return;
   const tasks = _visibleTasks();
-  const counts = {
-    all:     tasks.length,
-    pending: tasks.filter(t => !t.done).length,
-    overdue: tasks.filter(t => dueStatus(t) === 'overdue').length,
-    done:    tasks.filter(t => t.done).length,
-    mine:    tasks.filter(t => isMine(t, _currentMember())).length,
-  };
+  // Status pill counts respect the active category; category counts respect the active status.
+  const inCat = filterCat ? tasks.filter(t => t.category === filterCat) : tasks;
+  const counts = {};
+  for (const k of ['all', 'pending', 'overdue', 'done', 'mine']) counts[k] = inCat.filter(t => _statusPass(k, t)).length;
   const me = !READONLY && _currentMember();
   const defs = [
     ...(me ? [{ k: 'mine', label: 'Mine' }] : []),
@@ -233,14 +258,16 @@ function _renderFilters() {
     { k: 'done',    label: 'Done' },
   ];
   let html = defs.map(d =>
-    '<button class="filter-pill' + (filter === d.k ? ' active' : '') + '" onclick="window.setFilter(\'' + d.k + '\')">' +
+    '<button class="filter-pill' + (filter === d.k ? ' active' : '') + '" aria-pressed="' + (filter === d.k) + '" onclick="window.setFilter(\'' + d.k + '\')">' +
     d.label + '<span class="count">' + counts[d.k] + '</span></button>'
   ).join('');
+  if (me) html += '<button class="filter-pill" aria-label="My progress" onclick="window.openProgress()">📈 My progress</button>';
   const cats = [...new Set(tasks.map(t => t.category).filter(Boolean))].sort();
   if (cats.length) {
     html += '<span style="width:1px;background:var(--border);margin:0 4px;align-self:stretch;flex-shrink:0;display:inline-block;"></span>';
     html += cats.map(c =>
-      '<button class="filter-pill' + (filterCat === c ? ' active' : '') + '" onclick="window.setCatFilter(\'' + jsq(c) + '\')">' + esc(c) + '</button>'
+      '<button class="filter-pill' + (filterCat === c ? ' active' : '') + '" aria-pressed="' + (filterCat === c) + '" onclick="window.setCatFilter(\'' + jsq(c) + '\')">' + esc(c) +
+        '<span class="count">' + tasks.filter(t => t.category === c && _statusPass(filter, t)).length + '</span></button>'
     ).join('');
   }
   container.innerHTML = html;
@@ -252,10 +279,7 @@ export function renderTasks() { _renderTasks(); }
 
 function _renderTasks() {
   let tasks = _visibleTasks();
-  if (filter === 'mine') tasks = tasks.filter(t => isMine(t, _currentMember()));
-  else if (filter === 'pending') tasks = tasks.filter(t => !t.done);
-  else if (filter === 'overdue') tasks = tasks.filter(t => dueStatus(t) === 'overdue');
-  else if (filter === 'done') tasks = tasks.filter(t => t.done);
+  tasks = tasks.filter(t => _statusPass(filter, t));
   if (filterCat) tasks = tasks.filter(t => t.category === filterCat);
 
   // Done one-offs from earlier days go to a collapsed section (hidden on the TV view) (#142).
@@ -310,9 +334,13 @@ function _captureInProgress(list) {
   const active = document.activeElement;
   const typing = active && list.contains(active) && /^(INPUT|TEXTAREA|SELECT)$/.test(active.tagName) ? active : null;
   const nodes = [...list.querySelectorAll('.task-card')].filter(c => c.classList.contains('editing') || (typing && c.contains(typing)));
+  // The focused button (check, edit, ...) is remembered by task id + its first class, so the new node can be refocused.
+  const btn = active && active.tagName === 'BUTTON' && list.contains(active) ? active : null;
+  const card = btn && btn.closest('.task-card');
+  const focus = card && btn.classList[0] ? { id: card.dataset.id, cls: btn.classList[0], n: [...card.querySelectorAll('button.' + btn.classList[0])].indexOf(btn) } : null;
   const caret = typing && typeof typing.selectionStart === 'number' ? [typing.selectionStart, typing.selectionEnd] : null;
   return {
-    nodes, typing, caret,
+    nodes, typing, caret, focus,
     open: [...list.querySelectorAll('.task-card')].filter(c => c.querySelector('.subtask-list.open')).map(c => c.dataset.id),
     typed: [...list.querySelectorAll('.task-card')]
       .map(c => [c.dataset.id, c.querySelector('.subtask-add input')])
@@ -329,6 +357,10 @@ function _restoreInProgress(list, kept) {
     c?.querySelector('.subtask-list')?.classList.add('open');
   });
   kept.typed.forEach(([id, v]) => { const i = byId(id)?.querySelector('.subtask-add input'); if (i && !i.value) i.value = v; });
+  if (kept.focus && !kept.typing) {
+    const el = byId(kept.focus.id)?.querySelectorAll('button.' + kept.focus.cls)[Math.max(0, kept.focus.n)];
+    if (el && document.activeElement !== el) el.focus();
+  }
   if (kept.typing && list.contains(kept.typing)) {
     kept.typing.focus();
     if (kept.caret) { try { kept.typing.setSelectionRange(kept.caret[0], kept.caret[1]); } catch (e) { /* non-text input */ } }
@@ -342,6 +374,7 @@ export function cardHTML(t) {
   const pc  = t.person ? pColor(t.person) : null;
   const personTag = t.person
     ? (pc ? '<span class="tag" style="background:' + pc.bg + ';color:' + pc.text + ';">' + esc(t.person) + '</span>' : '')
+    : selectMode ? '<span class="tag tag-freq">Anyone</span>'
     : '<button class="btn-claim" onclick="window.claimTask(\'' + jsq(t.id) + '\')">Claim</button>';
   const skipped = isSkipped(t);
   const dueTag = skipped ? '<span class="tag tag-ok">' + (localDateStr(new Date(t.skippedAt)) === localDateStr(new Date()) ? 'Skipped today' : 'Skipped') + '</span>'
@@ -354,6 +387,8 @@ export function cardHTML(t) {
   const freqTag = t.freq === 'once'
     ? '<span class="tag tag-freq">📅 ' + esc(t.dueDate || 'One-off') + '</span>'
     : '<span class="tag tag-freq">' + esc(freqLabel(t)) + '</span>';
+  const n = taskPoints(t);
+  const ptsTag = t.done ? '' : '<span class="tag tag-freq tag-pts" aria-label="worth ' + n + ' point' + (n === 1 ? '' : 's') + '">+' + n + ' pts</span>';
   const timeTag = validTime(t.dueTime) ? '<span class="tag tag-freq">⏰ ' + esc(t.dueTime) + '</span>' : '';
   const catTag = t.category ? '<span class="tag tag-freq">' + esc(t.category) + '</span>' : '';
 
@@ -364,7 +399,7 @@ export function cardHTML(t) {
   const subs     = t.subtasks ? Object.values(t.subtasks) : [];
   const subsDone = subs.filter(st => st.done).length;
   const subsBadge = subs.length ? '<span class="subtask-badge">' + subsDone + '/' + subs.length + '</span>' : '';
-  const chevronBtn = '<button class="subtask-toggle" onclick="window.toggleSubtasks(\'' + jsq(t.id) + '\')" title="Subtasks">&#9654;</button>';
+  const chevronBtn = selectMode ? '' : '<button class="subtask-toggle" onclick="window.toggleSubtasks(\'' + jsq(t.id) + '\')" title="Subtasks">&#9654;</button>';
 
   let subRows = '';
   subs.forEach(st => {
@@ -402,8 +437,10 @@ export function cardHTML(t) {
         '<span class="task-name">' + esc(t.name) + subsBadge + '</span>' +
         notesLine +
       '</div>' +
-      '<div class="task-meta">' + dueTag + diffTag + freqTag + timeTag + rotationTag(t, getMembers()) + catTag + personTag + '</div>' +
+      '<div class="task-meta">' + dueTag + diffTag + ptsTag + freqTag + timeTag + rotationTag(t, getMembers()) + syncTagHTML(t.id) + catTag + personTag + '</div>' +
       chevronBtn +
+      // In select mode a card tap only toggles selection: no per-card action buttons (#167)
+      (selectMode ? '' :
       '<span class="move-btns">' +
         '<button class="move-btn" aria-label="Move ' + esc(t.name) + ' up" onclick="event.stopPropagation();window.moveTask(\'' + jsq(t.id) + '\',-1)">▲</button>' +
         '<button class="move-btn" aria-label="Move ' + esc(t.name) + ' down" onclick="event.stopPropagation();window.moveTask(\'' + jsq(t.id) + '\',1)">▼</button>' +
@@ -412,9 +449,10 @@ export function cardHTML(t) {
         ? '<button class="edit-btn skip-btn" aria-label="Skip ' + esc(t.name) + ' this time" title="Skip this time" onclick="event.stopPropagation();window.skipTask(\'' + jsq(t.id) + '\')">⏭</button>'
         : '') +
       '<button class="edit-btn" onclick="window.editTask(\'' + jsq(t.id) + '\')" title="Edit">✎</button>' +
-      '<button class="del" onclick="window.deleteTask(\'' + jsq(t.id) + '\')" title="Remove">×</button>' +
+      '<button class="del" onclick="window.deleteTask(\'' + jsq(t.id) + '\')" title="Remove">×</button>'
+      ) +
     '</div>' +
-    '<div class="subtask-section">' + subtaskSection + '</div>' +
+    (selectMode ? '' : '<div class="subtask-section">' + subtaskSection + '</div>') +
   '</div>';
 }
 

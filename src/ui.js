@@ -1,19 +1,21 @@
-import { state, getMembers } from './state.js';
+import { state, getMembers, memberColor } from './state.js';
 import { PCOLS, BADGES, CATEGORIES, READONLY } from './config.js';
 import { openModal, closeModal } from './modals.js';
 import { patchPaths } from './firebase.js';
 import { esc, jsq, avatarPrefix, sha256, initialLastDone, validInterval, validTime, dueStatus, localDateStr, currentStreak, currentWeekPoints, weekRecap, lastWeekChampion } from './utils.js';
+import { cycleTheme, initTheme } from './theme.js';
 import { isAdmin } from './auth.js';
 
 // ── pColor helper ─────────────────────────────────────────────────────────────
 
-export function pColor(name) {
-  const members = getMembers();
-  const i = members.indexOf(name);
-  return i >= 0 ? PCOLS[i % PCOLS.length] : null;
-}
+export function pColor(name) { return memberColor(name); }
 
 // ── Toast ─────────────────────────────────────────────────────────────────────
+
+// Status messages stay long enough to read (WCAG 2.2.1): >= 5 s, ~60 ms per character, max 10 s.
+export function toastDuration(msg) {
+  return Math.min(10000, Math.max(5000, String(msg || '').length * 60));
+}
 
 export function showToast(msg) {
   const t = document.getElementById('toast');
@@ -21,31 +23,15 @@ export function showToast(msg) {
   t.textContent = msg || 'Saved';
   t.classList.add('show');
   clearTimeout(t._tid);
-  t._tid = setTimeout(() => t.classList.remove('show'), 1800);
+  t._tid = setTimeout(() => t.classList.remove('show'), toastDuration(t.textContent));
 }
 
 // ── Theme ─────────────────────────────────────────────────────────────────────
 
-export function toggleTheme() {
-  const html = document.documentElement;
-  const isDark = html.getAttribute('data-theme') === 'dark';
-  if (isDark) {
-    html.removeAttribute('data-theme');
-    document.getElementById('theme-btn').textContent = '🌙';
-    try { localStorage.setItem('fc_theme', 'light'); } catch(e) {}
-  } else {
-    html.setAttribute('data-theme', 'dark');
-    document.getElementById('theme-btn').textContent = '☀️';
-    try { localStorage.setItem('fc_theme', 'dark'); } catch(e) {}
-  }
-}
+// Cycles Auto -> Light -> Dark (logic lives in theme.js).
+export function toggleTheme() { return cycleTheme(); }
 
-export function syncThemeButton() {
-  const btn = document.getElementById('theme-btn');
-  if (btn && document.documentElement.getAttribute('data-theme') === 'dark') {
-    btn.textContent = '☀️';
-  }
-}
+export function syncThemeButton() { initTheme(); }
 
 // ── Leaderboard ───────────────────────────────────────────────────────────────
 
@@ -60,6 +46,7 @@ export function setLbTab(tab, btn) {
   lbTab = tab;
   document.querySelectorAll('#leaderboard-modal .lb-tab').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
+  document.querySelectorAll('#leaderboard-modal .lb-tab').forEach(b => b.setAttribute('aria-pressed', String(b === btn)));
   renderLeaderboard();
 }
 
@@ -119,6 +106,7 @@ export function setStatsTab(tab, btn) {
   statsTab = tab;
   document.querySelectorAll('#stats-modal .lb-tab').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
+  document.querySelectorAll('#stats-modal .lb-tab').forEach(b => b.setAttribute('aria-pressed', String(b === btn)));
   renderStats();
 }
 
@@ -148,7 +136,7 @@ function renderStats() {
   const members = getMembers();
   if (!members.length) { el.innerHTML = '<div class="empty">No members yet.</div>'; return; }
   el.innerHTML = members.map((m, i) => {
-    const c = PCOLS[i % PCOLS.length];
+    const c = pColor(m) || PCOLS[0];
     const count = counts[m] || 0;
     const pct = Math.round(count / max * 100);
     return '<div class="stats-row">' +
@@ -200,8 +188,8 @@ export function openTemplates() {
   openModal('templates-modal');
 }
 
-const MAX_TEMPLATES = 20;
-const MAX_TEMPLATE_TASKS = 100;
+export const MAX_TEMPLATES = 20;
+export const MAX_TEMPLATE_TASKS = 100;
 // Firebase drops empty arrays, so a stored template may have no `tasks` key.
 const tplTasks = tpl => (tpl && Array.isArray(tpl.tasks) ? tpl.tasks : []);
 

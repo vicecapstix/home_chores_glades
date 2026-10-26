@@ -18,7 +18,7 @@ describe('a11y: modals', () => {
   });
   it('every close button has an aria-label', () => {
     const closes = [...doc.querySelectorAll('.lb-close')];
-    expect(closes.length).toBe(8);
+    expect(closes.length).toBe(11);
     closes.forEach(b => expect(b.getAttribute('aria-label')).toBe('Close'));
   });
   it('PIN pad delete keys are labelled', () => {
@@ -31,7 +31,7 @@ describe('a11y: modals', () => {
 describe('a11y: header, forms, landmarks', () => {
   it('icon-only header buttons have aria-label', () => {
     const btns = [...doc.querySelectorAll('header .theme-toggle')];
-    expect(btns.length).toBe(11); // 7 + reminders bell (#48) + activity (#49) + rewards (#51) + reorder (#55)
+    expect(btns.length).toBe(12); // 7 + reminders bell (#48) + activity (#49) + rewards (#51) + reorder (#55) + week (#143)
     btns.forEach(b => expect(b.getAttribute('aria-label')).toBeTruthy());
   });
   it.each(['new-member', 'new-task', 'new-freq', 'new-diff', 'new-cat', 'new-person', 'new-notes',
