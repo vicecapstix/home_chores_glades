@@ -1,4 +1,4 @@
-import { state, getMembers } from './state.js';
+import { state, getMembers, memberColor } from './state.js';
 import { PCOLS, READONLY } from './config.js';
 import { esc, jsq, sha256 } from './utils.js';
 
@@ -80,6 +80,21 @@ export function handleFirstLoad(onLoginComplete) {
   }
 }
 
+// On every live snapshot after the first: if this tab's member was renamed or removed on another
+// device, drop the ghost session and show the picker again (#164). Returns true when it did.
+export function checkSession(notify) {
+  if (READONLY) return false;
+  const saved = currentMember();
+  if (!saved || state.members[saved]) return false;
+  try { sessionStorage.removeItem('fc_member'); } catch(e) {}
+  const members = getMembers();
+  if (members.length === 0) return false; // setup mode: nothing to pick
+  document.getElementById('pin-screen').classList.remove('hidden');
+  showMemberSelector(window._fcLoginCallback);
+  if (notify) notify('Your name changed \u2014 pick it again');
+  return true;
+}
+
 function completeLogin(name, onLoginComplete) {
   try { if (name) sessionStorage.setItem('fc_member', name); } catch(e) {}
   document.getElementById('pin-screen').classList.add('hidden');
@@ -98,7 +113,7 @@ export function showMemberSelector(onLoginComplete) {
   document.getElementById('pin-member-name').textContent = '';
   document.getElementById('pin-member-pin').classList.add('hidden');
   document.getElementById('pin-member-chips').innerHTML = members.map((m, i) => {
-    const c = PCOLS[i % PCOLS.length];
+    const c = memberColor(m, members) || PCOLS[0];
     return '<button class="pin-member-chip" style="background:' + c.bg + ';color:' + c.text + ';" ' +
       'onclick="window.memberSelect(\'' + jsq(m) + '\')">' + esc(m) + '</button>';
   }).join('');

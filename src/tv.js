@@ -1,5 +1,5 @@
 // TV dashboard helpers for ?readonly=1 — display only, no Firebase access.
-import { state, getMembers } from './state.js';
+import { state, getMembers, memberColor } from './state.js';
 import { PCOLS, READONLY } from './config.js';
 import { esc, avatarPrefix, currentWeekPoints, currentStreak, lastWeekChampion, goalHTML } from './utils.js';
 
@@ -32,8 +32,7 @@ export function tvStripHTML(members = state.members, history = state.history, re
   const names = getMembers();
   const sorted = Object.values(members).slice().sort((a, b) => currentWeekPoints(b) - currentWeekPoints(a));
   return sorted.map(m => {
-    const i = names.indexOf(m.name);
-    const c = PCOLS[(i < 0 ? 0 : i) % PCOLS.length];
+    const c = memberColor(m.name, names) || PCOLS[0];
     return '<span class="tv-chip" style="background:' + c.bg + ';color:' + c.text + ';">' +
       esc(avatarPrefix(m)) + esc(m.name) + ' <b>' + currentWeekPoints(m) + '</b> pts' +
       (currentStreak(m) > 0 ? ' 🔥' + currentStreak(m) : '') + goalHTML(m, rewards) + '</span>';

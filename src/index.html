@@ -10,7 +10,14 @@
 <meta name="theme-color" content="#2D6A4F" />
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet" />
 <script>
-  try { if (localStorage.getItem('fc_theme') === 'dark') document.documentElement.setAttribute('data-theme','dark'); } catch(e) {}
+  // Theme before first paint: 'dark'/'light' are explicit; anything else is Auto (follow the device).
+  try {
+    var v = null; try { v = localStorage.getItem('fc_theme'); } catch(e) {}
+    var d = v === 'dark' || (v !== 'light' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    if (d) document.documentElement.setAttribute('data-theme','dark');
+    var m = document.querySelector('meta[name="theme-color"]');
+    if (m) m.setAttribute('content', d ? '#1A1A18' : '#2D6A4F');
+  } catch(e) {}
 </script>
 <script type="module" src="./main.js"></script>
 </head>
@@ -83,9 +90,9 @@
       <button class="lb-close" aria-label="Close" onclick="window.closeModal('stats-modal')">×</button>
     </div>
     <div class="lb-tabs">
-      <button class="lb-tab active" id="stats-tab-week" onclick="window.setStatsTab('week',this)">This week</button>
-      <button class="lb-tab" id="stats-tab-month" onclick="window.setStatsTab('month',this)">This month</button>
-      <button class="lb-tab" id="stats-tab-alltime" onclick="window.setStatsTab('alltime',this)">All time</button>
+      <button class="lb-tab active" aria-pressed="true" id="stats-tab-week" onclick="window.setStatsTab('week',this)">This week</button>
+      <button class="lb-tab" aria-pressed="false" id="stats-tab-month" onclick="window.setStatsTab('month',this)">This month</button>
+      <button class="lb-tab" aria-pressed="false" id="stats-tab-alltime" onclick="window.setStatsTab('alltime',this)">All time</button>
     </div>
     <div id="stats-chart" class="stats-chart"></div>
     <div class="stats-export">
@@ -107,6 +114,28 @@
     </div>
     <div class="lb-tabs" id="history-filters" onclick="window.historyFilterClick(event)"></div>
     <div id="history-list"></div>
+  </div>
+</div>
+
+<!-- PROGRESS MODAL -->
+<div id="progress-modal" class="hidden" role="dialog" aria-modal="true" aria-labelledby="progress-title" onclick="window.closeModal('progress-modal')">
+  <div class="lb-card prog-card" onclick="event.stopPropagation()">
+    <div class="lb-header">
+      <span class="lb-title" id="progress-title">📈 Progress</span>
+      <button class="lb-close" aria-label="Close" onclick="window.closeModal('progress-modal')">×</button>
+    </div>
+    <div id="progress-list"></div>
+  </div>
+</div>
+
+<!-- WEEK PLANNER MODAL -->
+<div id="week-modal" class="hidden" role="dialog" aria-modal="true" aria-labelledby="week-title" onclick="window.closeModal('week-modal')">
+  <div class="lb-card week-card" onclick="event.stopPropagation()">
+    <div class="lb-header">
+      <span class="lb-title" id="week-title">🗓 This week</span>
+      <button class="lb-close" aria-label="Close" onclick="window.closeModal('week-modal')">×</button>
+    </div>
+    <div id="week-list"></div>
   </div>
 </div>
 
@@ -142,9 +171,9 @@
       <button class="lb-close" aria-label="Close" onclick="window.closeModal('leaderboard-modal')">×</button>
     </div>
     <div class="lb-tabs">
-      <button class="lb-tab active" id="lb-tab-alltime" onclick="window.setLbTab('alltime',this)">All time</button>
-      <button class="lb-tab" id="lb-tab-week" onclick="window.setLbTab('week',this)">This week</button>
-      <button class="lb-tab" id="lb-tab-lastweek" onclick="window.setLbTab('lastweek',this)">Last week</button>
+      <button class="lb-tab active" aria-pressed="true" id="lb-tab-alltime" onclick="window.setLbTab('alltime',this)">All time</button>
+      <button class="lb-tab" aria-pressed="false" id="lb-tab-week" onclick="window.setLbTab('week',this)">This week</button>
+      <button class="lb-tab" aria-pressed="false" id="lb-tab-lastweek" onclick="window.setLbTab('lastweek',this)">Last week</button>
     </div>
     <div id="lb-list"></div>
   </div>
@@ -204,9 +233,10 @@
   <div id="tv-synced" aria-live="off"></div>
   <button class="theme-toggle hidden" id="btn-install" onclick="window.installApp()" title="Install FamilyFlow on this device" aria-label="Install FamilyFlow on this device">Install</button>
   <button class="theme-toggle hidden" id="btn-notify" onclick="window.enableNotifications()" title="Enable overdue reminders" aria-label="Enable overdue reminders">🔔</button>
-  <button class="theme-toggle" onclick="window.toggleTheme()" title="Toggle dark mode" aria-label="Toggle dark mode" id="theme-btn">🌙</button>
+  <button class="theme-toggle" onclick="window.toggleTheme()" title="Theme: Auto. Tap for Light" aria-label="Theme: Auto. Tap for Light" id="theme-btn">🌓</button>
   <button class="theme-toggle" onclick="window.openLeaderboard()" title="Leaderboard" aria-label="Leaderboard">🏆</button>
   <button class="theme-toggle" onclick="window.openHistory()" title="Activity" aria-label="Activity">🕘</button>
+  <button class="theme-toggle" onclick="window.openWeek()" title="Week" aria-label="Week planner">🗓</button>
   <button class="theme-toggle" onclick="window.openRewards()" title="Rewards" aria-label="Rewards" style="position:relative">🎁<span id="rewards-badge" class="rewards-badge hidden" aria-label="pending requests"></span></button>
   <button class="theme-toggle" onclick="window.openStats()" title="Stats" aria-label="Stats">📊</button>
   <button class="theme-toggle" onclick="window.openTemplates()" title="Templates" aria-label="Templates">📋</button>
@@ -223,6 +253,11 @@
   <div id="goal" class="goal hidden" role="progressbar" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0" aria-label="Today's chores">
     <div id="goal-text" class="goal-text"></div>
     <div class="goal-track"><div id="goal-fill" class="goal-fill"></div></div>
+    <span class="goal-confetti" aria-hidden="true">🎉 ✨ 🎊 ⭐ 🎉</span>
+  </div>
+  <div id="team-goal" class="goal team-goal hidden" role="progressbar" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0" aria-label="Family weekly goal">
+    <div id="team-goal-text" class="goal-text"></div>
+    <div class="goal-track"><div id="team-goal-fill" class="goal-fill"></div></div>
     <span class="goal-confetti" aria-hidden="true">🎉 ✨ 🎊 ⭐ 🎉</span>
   </div>
   <div id="tv-strip" aria-label="Weekly points"></div>
@@ -313,10 +348,29 @@
     </div>
     <div id="admin-member-list" style="margin:0.5rem 0;"></div>
     <button class="btn-lg" style="width:100%;margin-top:0.5rem;" onclick="window.downloadBackup()" title="Saves a JSON copy of chores, points and history. PINs are not included.">Download backup</button>
+    <button class="btn-lg" style="width:100%;margin-top:0.5rem;" onclick="window.pickRestoreFile()" title="Replace chores, points and history from a backup file. A safety backup is downloaded first.">Restore backup…</button>
+    <label for="restore-file" class="sr-only">Backup file (.json)</label>
+    <input type="file" id="restore-file" class="sr-only" tabindex="-1" accept=".json,application/json" onchange="window.onRestoreFile(this)" />
+    <button class="btn-lg" style="width:100%;margin-top:0.5rem;" onclick="window.printChart()" title="Opens a printable Mon–Sun chart of the week's chores">Print chart</button>
     <button id="admin-parent-in" class="btn-lg" style="width:100%;margin-top:0.5rem;" onclick="window.openParentSignIn()">Parent sign in</button>
     <button id="admin-parent-out" class="btn-lg hidden" style="width:100%;margin-top:0.5rem;" onclick="window.parentSignOut()">Parent sign out</button>
     <button class="btn-lg" style="width:100%;margin-top:0.5rem;" onclick="window.clearSavedData()" title="Removes the offline copy stored on this device only.">Clear saved data on this device</button>
     <button class="btn-lg" style="width:100%;margin-top:0.5rem;" onclick="window.adminPanelSwitchUser()">Switch User</button>
+  </div>
+</div>
+
+<!-- RESTORE BACKUP -->
+<div id="restore-modal" class="hidden" role="dialog" aria-modal="true" aria-labelledby="restore-title" onclick="window.cancelRestore()">
+  <div class="lb-card" onclick="event.stopPropagation()" style="max-width:360px;">
+    <div class="lb-header">
+      <span class="lb-title" id="restore-title">Restore backup</span>
+      <button class="lb-close" aria-label="Close" onclick="window.cancelRestore()">×</button>
+    </div>
+    <div id="restore-summary"></div>
+    <p>This replaces the current chores, points, rewards and history. PINs are kept. A safety backup of the current data downloads first.</p>
+    <label for="restore-confirm">Type RESTORE to confirm</label>
+    <input type="text" id="restore-confirm" autocomplete="off" oninput="window.onRestoreInput(this.value)" />
+    <button id="restore-go" class="btn-lg" style="width:100%;margin-top:0.5rem;" disabled onclick="window.confirmRestore()">Restore</button>
   </div>
 </div>
 
@@ -340,9 +394,11 @@
 
 <!-- TOASTS -->
 <div class="toast" id="toast" role="status" aria-live="polite">Saved</div>
-<div class="toast" id="undo-toast" style="right:auto;left:1.5rem;pointer-events:auto;">
-  <span id="undo-label">Deleted</span> — <span style="text-decoration:underline;cursor:pointer;color:#fff;" onclick="window.popUndo()">Undo</span>
+<div class="toast" id="undo-toast" role="status" aria-live="polite">
+  <span id="undo-label">Deleted</span> — <button type="button" id="undo-btn" class="undo-btn" aria-label="Undo" onclick="window.popUndo()">Undo</button>
 </div>
+
+<div id="print-chart" aria-hidden="true"></div>
 
 </body>
 </html>
