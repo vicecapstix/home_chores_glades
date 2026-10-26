@@ -19,11 +19,11 @@ describe('CI and deploy tooling', () => {
     expect(y).toMatch(/npm run build/);
     expect(y).not.toMatch(/secrets\./);
   });
-  it('drift check is blocking and covers every deployed file', () => {
-    const y = readFileSync(root('.github/workflows/ci.yml'), 'utf8');
+  it('deploy workflow rebuilds every deployed file and verifies it', () => {
+    const y = readFileSync(root('.github/workflows/deploy-root.yml'), 'utf8');
     expect(y).not.toMatch(/continue-on-error/);
     for (const f of ['index.html', 'sw.js', 'manifest.webmanifest', 'icon.svg', 'icon-192.png', 'icon-512.png']) {
-      expect(y).toContain('dist/' + f);
+      expect(y).toContain(f);
     }
   });
   it('build:pages also copies the PWA files to root', () => {
@@ -36,7 +36,7 @@ describe('CI and deploy tooling', () => {
   it('CLAUDE.md documents the root index.html deploy', () => {
     const c = readFileSync(root('CLAUDE.md'), 'utf8');
     expect(c).toMatch(/build:pages/);
-    expect(c).toMatch(/every PR that changes `src\/`/);
+    expect(c).toMatch(/deploy-root\.yml/);
     expect(c).not.toMatch(/the built `dist\/index\.html` must be committed/);
   });
 });

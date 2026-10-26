@@ -40,7 +40,7 @@ A real-time chore tracker for families — assign tasks, track progress, earn po
    ```js
    export const FB_URL = 'https://your-project-default-rtdb.region.firebasedatabase.app';
    ```
-   then run `npm run build:pages` (see [Development](#development)) and commit the regenerated root files.
+   then merge to `main`; `.github/workflows/deploy-root.yml` rebuilds the root files for you (or run `npm run build:pages`, see [Development](#development)).
 4. Set the database rules (**Realtime Database → Rules**). Start with the open rules below so the app works immediately:
    ```json
    {
@@ -122,7 +122,7 @@ npm run build:pages  # build and copy the deployed files to the repo root
 npm run preview      # serve the built dist/ locally
 ```
 
-Every change to `src/` must be followed by `npm run build:pages`, committing the updated root files; merging to `main` deploys them. CI fails if the root files differ from a fresh build. See `CLAUDE.md` for architecture and coding rules.
+You do not need to commit the root files in a PR: after each merge to `main`, `.github/workflows/deploy-root.yml` runs `npm run build:pages` and commits them, and merging deploys. See `CLAUDE.md` for architecture and coding rules.
 
 ## Testing the security rules (emulator)
 

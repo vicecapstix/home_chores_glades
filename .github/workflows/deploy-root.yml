@@ -1,0 +1,44 @@
+name: Deploy root files
+# GitHub Pages serves main / (root). After every merge, rebuild the root files
+# (index.html, sw.js, manifest, icons) from src/ and commit them back to main,
+# so pull requests never have to commit the bundle.
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+concurrency:
+  group: deploy-root
+  cancel-in-progress: false
+jobs:
+  rebuild:
+    # Skip the bot's own commits (also marked [skip ci]).
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run build:pages
+      - name: Commit rebuilt root files
+        run: |
+          FILES="index.html sw.js manifest.webmanifest icon.svg icon-192.png icon-512.png"
+          if git diff --quiet -- $FILES; then
+            echo "Root files already match src/ - nothing to commit."
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add $FILES
+            git commit -m "Rebuild root deploy files [skip ci]"
+            git push origin HEAD:main
+          fi
+      - name: Verify root files match a fresh build
+        run: |
+          for f in index.html sw.js manifest.webmanifest icon.svg icon-192.png icon-512.png; do
+            cmp "dist/$f" "$f"
+          done
