@@ -69,6 +69,7 @@ import { initTvMode } from './tv.js';
 import { startRollover } from './rollover.js';
 import { registerServiceWorker } from './pwa.js';
 import { downloadBackup } from './backup.js';
+import { printChart } from './printchart.js';
 import { saveSnapshot, loadSnapshot, clearSnapshot, setCacheBanner } from './cache.js';
 import { openHistory, setHistoryFilter, historyFilterClick } from './history.js';
 import { openWeek } from './week.js';
@@ -310,6 +311,7 @@ window.clearSavedData = function() {
   showToast('Saved data cleared on this device');
 };
 window.downloadBackup = function() { downloadBackup(_isAdmin); };
+window.printChart = function() { printChart(_isAdmin); };
 window.adminPanelSwitchUser = function() {
   window.closeAdminPanel();
   window.switchUser();

@@ -327,6 +327,7 @@
     </div>
     <div id="admin-member-list" style="margin:0.5rem 0;"></div>
     <button class="btn-lg" style="width:100%;margin-top:0.5rem;" onclick="window.downloadBackup()" title="Saves a JSON copy of chores, points and history. PINs are not included.">Download backup</button>
+    <button class="btn-lg" style="width:100%;margin-top:0.5rem;" onclick="window.printChart()" title="Opens a printable Mon–Sun chart of the week's chores">Print chart</button>
     <button id="admin-parent-in" class="btn-lg" style="width:100%;margin-top:0.5rem;" onclick="window.openParentSignIn()">Parent sign in</button>
     <button id="admin-parent-out" class="btn-lg hidden" style="width:100%;margin-top:0.5rem;" onclick="window.parentSignOut()">Parent sign out</button>
     <button class="btn-lg" style="width:100%;margin-top:0.5rem;" onclick="window.clearSavedData()" title="Removes the offline copy stored on this device only.">Clear saved data on this device</button>
@@ -357,6 +358,8 @@
 <div class="toast" id="undo-toast" style="right:auto;left:1.5rem;pointer-events:auto;">
   <span id="undo-label">Deleted</span> — <span style="text-decoration:underline;cursor:pointer;color:#fff;" onclick="window.popUndo()">Undo</span>
 </div>
+
+<div id="print-chart" aria-hidden="true"></div>
 
 </body>
 </html>
