@@ -128,12 +128,15 @@ export async function renameMember(oldName, newName, isAdminFn) {
   if (state.members[newName]) { showToast('That name is already taken'); return false; }
   const nameError = validateMemberName(newName);
   if (nameError) { showToast(nameError); return false; }
+  // Move this device's session first: the local snapshot can fire before the write resolves (#164).
+  let moved = false;
+  try { if (sessionStorage.getItem('fc_member') === oldName) { sessionStorage.setItem('fc_member', newName); moved = true; } } catch (e) {}
   try {
     await patchPaths(renamePaths(oldName, newName));
   } catch (err) {
+    try { if (moved) sessionStorage.setItem('fc_member', oldName); } catch (e) {}
     showToast('Rename failed: ' + (err.code || err.message));
     return false;
   }
-  try { if (sessionStorage.getItem('fc_member') === oldName) sessionStorage.setItem('fc_member', newName); } catch (e) {}
   return true;
 }
