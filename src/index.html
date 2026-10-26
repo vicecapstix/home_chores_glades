@@ -81,9 +81,9 @@
       <button class="lb-close" aria-label="Close" onclick="window.closeModal('stats-modal')">×</button>
     </div>
     <div class="lb-tabs">
-      <button class="lb-tab active" id="stats-tab-week" onclick="window.setStatsTab('week',this)">This week</button>
-      <button class="lb-tab" id="stats-tab-month" onclick="window.setStatsTab('month',this)">This month</button>
-      <button class="lb-tab" id="stats-tab-alltime" onclick="window.setStatsTab('alltime',this)">All time</button>
+      <button class="lb-tab active" aria-pressed="true" id="stats-tab-week" onclick="window.setStatsTab('week',this)">This week</button>
+      <button class="lb-tab" aria-pressed="false" id="stats-tab-month" onclick="window.setStatsTab('month',this)">This month</button>
+      <button class="lb-tab" aria-pressed="false" id="stats-tab-alltime" onclick="window.setStatsTab('alltime',this)">All time</button>
     </div>
     <div id="stats-chart" class="stats-chart"></div>
     <div class="stats-export">
@@ -105,6 +105,17 @@
     </div>
     <div class="lb-tabs" id="history-filters" onclick="window.historyFilterClick(event)"></div>
     <div id="history-list"></div>
+  </div>
+</div>
+
+<!-- WEEK PLANNER MODAL -->
+<div id="week-modal" class="hidden" role="dialog" aria-modal="true" aria-labelledby="week-title" onclick="window.closeModal('week-modal')">
+  <div class="lb-card week-card" onclick="event.stopPropagation()">
+    <div class="lb-header">
+      <span class="lb-title" id="week-title">🗓 This week</span>
+      <button class="lb-close" aria-label="Close" onclick="window.closeModal('week-modal')">×</button>
+    </div>
+    <div id="week-list"></div>
   </div>
 </div>
 
@@ -140,9 +151,9 @@
       <button class="lb-close" aria-label="Close" onclick="window.closeModal('leaderboard-modal')">×</button>
     </div>
     <div class="lb-tabs">
-      <button class="lb-tab active" id="lb-tab-alltime" onclick="window.setLbTab('alltime',this)">All time</button>
-      <button class="lb-tab" id="lb-tab-week" onclick="window.setLbTab('week',this)">This week</button>
-      <button class="lb-tab" id="lb-tab-lastweek" onclick="window.setLbTab('lastweek',this)">Last week</button>
+      <button class="lb-tab active" aria-pressed="true" id="lb-tab-alltime" onclick="window.setLbTab('alltime',this)">All time</button>
+      <button class="lb-tab" aria-pressed="false" id="lb-tab-week" onclick="window.setLbTab('week',this)">This week</button>
+      <button class="lb-tab" aria-pressed="false" id="lb-tab-lastweek" onclick="window.setLbTab('lastweek',this)">Last week</button>
     </div>
     <div id="lb-list"></div>
   </div>
@@ -204,6 +215,7 @@
   <button class="theme-toggle" onclick="window.toggleTheme()" title="Toggle dark mode" aria-label="Toggle dark mode" id="theme-btn">🌙</button>
   <button class="theme-toggle" onclick="window.openLeaderboard()" title="Leaderboard" aria-label="Leaderboard">🏆</button>
   <button class="theme-toggle" onclick="window.openHistory()" title="Activity" aria-label="Activity">🕘</button>
+  <button class="theme-toggle" onclick="window.openWeek()" title="Week" aria-label="Week planner">🗓</button>
   <button class="theme-toggle" onclick="window.openRewards()" title="Rewards" aria-label="Rewards" style="position:relative">🎁<span id="rewards-badge" class="rewards-badge hidden" aria-label="pending requests"></span></button>
   <button class="theme-toggle" onclick="window.openStats()" title="Stats" aria-label="Stats">📊</button>
   <button class="theme-toggle" onclick="window.openTemplates()" title="Templates" aria-label="Templates">📋</button>
@@ -220,6 +232,11 @@
   <div id="goal" class="goal hidden" role="progressbar" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0" aria-label="Today's chores">
     <div id="goal-text" class="goal-text"></div>
     <div class="goal-track"><div id="goal-fill" class="goal-fill"></div></div>
+    <span class="goal-confetti" aria-hidden="true">🎉 ✨ 🎊 ⭐ 🎉</span>
+  </div>
+  <div id="team-goal" class="goal team-goal hidden" role="progressbar" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0" aria-label="Family weekly goal">
+    <div id="team-goal-text" class="goal-text"></div>
+    <div class="goal-track"><div id="team-goal-fill" class="goal-fill"></div></div>
     <span class="goal-confetti" aria-hidden="true">🎉 ✨ 🎊 ⭐ 🎉</span>
   </div>
   <div id="tv-strip" aria-label="Weekly points"></div>
