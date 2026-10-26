@@ -1,5 +1,5 @@
-import { state, getMembers } from './state.js';
-import { READONLY } from './config.js';
+import { state, getMembers, nextColorIdx } from './state.js';
+import { READONLY, PCOLS } from './config.js';
 import { patchMember, patchPaths } from './firebase.js';
 import { showToast } from './ui.js';
 import { getWeekStart, AVATARS } from './utils.js';
@@ -28,12 +28,33 @@ export async function addMember(isAdminFn) {
     pinHash: '', points: 0, weekPoints: 0, weekStart: getWeekStart(),
     streak: 0, lastStreakDate: null,
     badges: [], completedCount: 0,
+    colorIdx: nextColorIdx(),
   };
   inp.value = '';
   try {
     await patchPaths({ ['members/' + name]: state.members[name] });
   } catch (err) {
     showToast('Save failed: ' + (err.code || err.message));
+  }
+}
+
+// Admin, once per page load: give members that lack a colorIdx the colour they show today,
+// in one multi-path update, so nobody's colour changes afterwards (#166).
+let _colorsBackfilled = false;
+export async function backfillColors(isAdminFn) {
+  if (READONLY || _colorsBackfilled || !isAdminFn()) return;
+  const names = Object.values(state.members).map(m => m.name);
+  const paths = {};
+  names.forEach((n, i) => {
+    if (!Number.isInteger(state.members[n].colorIdx)) paths['members/' + n + '/colorIdx'] = i % PCOLS.length;
+  });
+  _colorsBackfilled = true;
+  if (!Object.keys(paths).length) return;
+  try {
+    await patchPaths(paths);
+  } catch (err) {
+    _colorsBackfilled = false;
+    console.error('Colour backfill failed:', err);
   }
 }
 
@@ -143,12 +164,15 @@ export async function renameMember(oldName, newName, isAdminFn) {
   if (state.members[newName]) { showToast('That name is already taken'); return false; }
   const nameError = validateMemberName(newName);
   if (nameError) { showToast(nameError); return false; }
+  // Move this device's session first: the local snapshot can fire before the write resolves (#164).
+  let moved = false;
+  try { if (sessionStorage.getItem('fc_member') === oldName) { sessionStorage.setItem('fc_member', newName); moved = true; } } catch (e) {}
   try {
     await patchPaths(renamePaths(oldName, newName));
   } catch (err) {
+    try { if (moved) sessionStorage.setItem('fc_member', oldName); } catch (e) {}
     showToast('Rename failed: ' + (err.code || err.message));
     return false;
   }
-  try { if (sessionStorage.getItem('fc_member') === oldName) sessionStorage.setItem('fc_member', newName); } catch (e) {}
   return true;
 }
