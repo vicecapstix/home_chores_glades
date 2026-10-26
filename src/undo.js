@@ -32,6 +32,8 @@ function _showUndoToast(label, verb) {
   const labelEl = document.getElementById('undo-label');
   if (!el || !labelEl) return;
   labelEl.textContent = (verb || 'Deleted') + ' "' + label + '"';
+  const btn = document.getElementById('undo-btn');
+  if (btn) btn.setAttribute('aria-label', verb ? 'Undo ' + verb.toLowerCase() + ' ' + label : 'Undo delete of ' + label);
   el.classList.add('show');
   clearTimeout(_toastTimer);
   _toastTimer = setTimeout(() => {
