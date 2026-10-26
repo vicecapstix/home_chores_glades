@@ -1,4 +1,5 @@
 // Device-local snapshot cache (localStorage) so a slow/offline screen shows last-known data.
+// history is oldest-first, so keep the newest entries (slice(-N)).
 // Never stores pinHash, /private or session data. No extra Firebase reads.
 export const CACHE_KEY = 'familyflow-snapshot-v1';
 export const MAX_BYTES = 200 * 1024;
@@ -16,7 +17,7 @@ export function trimSnapshot(s) {
     tasks: s.tasks || {},
     rewards: s.rewards || {},
     pause: s.pause || null,
-    history: (s.history || []).slice(0, HISTORY_LIMIT),
+    history: (s.history || []).slice(-HISTORY_LIMIT),
     nextId: s.nextId || 1,
     savedAt: Date.now(),
   };

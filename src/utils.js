@@ -74,17 +74,22 @@ export function rotationList(rotation, memberNames) {
   const names = Array.isArray(rotation) ? rotation : Object.values(rotation || {});
   return names.filter((n, i) => typeof n === 'string' && memberNames.includes(n) && names.indexOf(n) === i);
 }
-export function nextRotationPerson(rotation, current, memberNames) {
+// `away` (#176): names to skip; null when everyone else in the rotation is away.
+export function nextRotationPerson(rotation, current, memberNames, away = []) {
   const list = rotationList(rotation, memberNames);
   if (list.length < 2) return null;
   const i = list.indexOf(current);
-  return list[(i + 1) % list.length]; // not in the list (or unassigned): start at the first
+  for (let k = 1; k <= list.length; k++) {
+    const n = list[(i + k) % list.length]; // not in the list (or unassigned): start at the first
+    if (n !== current && !away.includes(n)) return n;
+  }
+  return null;
 }
 
 // Small "🔁 next: Bo" tag for a rotating chore (display only; same logic as the reset).
 export function rotationTag(t, memberNames) {
   if (!t.rotation || t.freq === 'once') return '';
-  const next = nextRotationPerson(t.rotation, t.person, memberNames);
+  const next = nextRotationPerson(t.rotation, t.person, memberNames, awayNames());
   return next ? '<span class="tag tag-freq" title="Rotates on reset">🔁 next: ' + esc(next) + '</span>' : '';
 }
 
@@ -167,6 +172,29 @@ export function weekRecap(history, weekStart) {
     .sort((a, b) => b.points - a.points || a.name.localeCompare(b.name));
 }
 
+// A member's last `n` local weeks (Monday start), oldest first, from history (#149).
+// Bonus/deduction entries count in points only. partial = the capped history may not reach back
+// to the start of that week, so its totals can be incomplete.
+export function memberWeeks(history, member, now = Date.now(), n = 4, cap = 500) {
+  const [y, m, d] = getWeekStart(now).split('-').map(Number);
+  const list = history || [];
+  const oldest = list.reduce((mn, e) => Math.min(mn, e && e.completedAt ? e.completedAt : Infinity), Infinity);
+  const capped = list.length >= cap;
+  const weeks = [];
+  for (let i = n - 1; i >= 0; i--) {
+    const start = new Date(y, m - 1, d - 7 * i).getTime();
+    const end = new Date(y, m - 1, d - 7 * i + 7).getTime();
+    let points = 0, count = 0;
+    list.forEach(e => {
+      if (!e || e.person !== member || !(e.completedAt >= start && e.completedAt < end)) return;
+      points += e.points || 0;
+      if (e.type !== 'bonus') count++;
+    });
+    weeks.push({ weekStart: localDateStr(new Date(start)), points, count, partial: capped && oldest > start });
+  }
+  return weeks;
+}
+
 // Last week's winner(s); ties are shared. truncated = the capped history may
 // not reach back to the start of that week, so totals can be incomplete.
 export function lastWeekChampion(history, from, cap = 500) {
@@ -211,8 +239,23 @@ let _pausedUntil = '';
 export function setPauseUntil(d) { _pausedUntil = d || ''; }
 export function isPausedNow(now = Date.now()) { return !!_pausedUntil && localDateStr(new Date(now)) <= _pausedUntil; }
 
+// Away mode (#176): per-member awayUntil (YYYY-MM-DD, inclusive). Armed from applySnapshot.
+let _away = {};
+export function setAwayMembers(members) {
+  _away = {};
+  Object.values(members || {}).forEach(m => { if (m && m.name && /^\d{4}-\d{2}-\d{2}$/.test(m.awayUntil || '')) _away[m.name] = m.awayUntil; });
+}
+export function isAwayNow(name, now = Date.now()) { return !!name && !!_away[name] && localDateStr(new Date(now)) <= _away[name]; }
+export function awayText(m) {
+  if (!m || !/^\d{4}-\d{2}-\d{2}$/.test(m.awayUntil || '') || m.awayUntil < localDateStr()) return '';
+  const [y, mo, d] = m.awayUntil.split('-').map(Number);
+  return '🏕 away until ' + new Date(y, mo - 1, d).toLocaleDateString([], { weekday: 'short' });
+}
+export function awayNames(now = Date.now()) { return Object.keys(_away).filter(n => isAwayNow(n, now)); }
+
 export function dueStatus(t, now = Date.now()) {
   if (!t.done && isPausedNow(now)) return 'ok'; // holiday pause: nothing is due
+  if (!t.done && isAwayNow(t.person, now)) return 'ok'; // assignee is away
   const s = rawDueStatus(t, now);
   // A skipped occurrence counts as on track until it would be overdue again.
   return isSkipped(t) && s !== 'overdue' ? 'ok' : s;
@@ -295,7 +338,13 @@ export function todayProgress(tasks, now = Date.now()) {
     }
     if (isSkipped(t)) continue;
     const s = dueStatus(t, now);
-    const dueToday = t.freq === 'once' ? t.dueDate === today : t.freq === 'weekdays' && s === 'soon';
+    let dueToday = t.freq === 'once' ? t.dueDate === today : t.freq === 'weekdays' && s === 'soon';
+    // Recurring chore with a due time: 'soon' until the time passes, but still due today (#161).
+    if (!dueToday && s === 'soon' && t.freq !== 'once' && t.freq !== 'weekdays' && validTime(t.dueTime)) {
+      const d = new Date(t.lastDone || 0);
+      d.setDate(d.getDate() + cycleDays(t, t.lastDone));
+      dueToday = localDateStr(d) === today;
+    }
     if (s === 'overdue' || dueToday) total++;
   }
   return { done, total };
@@ -327,4 +376,50 @@ export function goalHTML(member, rewards) {
     (g.ready ? ' <b>Ready to request!</b>' : '') + '</span>' +
     '<span class="goal-bar" role="progressbar" aria-label="' + esc('Goal: ' + g.reward.name) + '" aria-valuemin="0" aria-valuemax="' + g.cost +
     '" aria-valuenow="' + shown + '"><span class="goal-fill" style="width:' + g.pct + '%"></span></span></span>';
+}
+
+// `?view=mine` (home-screen shortcut) opens on the Mine filter.
+export function viewFromSearch(search) {
+  return new URLSearchParams(search || '').get('view') === 'mine' ? 'mine' : '';
+}
+
+// Week planner (#143): Mon..Sun (local) of the week containing `now`, with the chores due each day.
+// Display only. weekdays/daily repeat; weekly, fortnightly, monthly and "every N days" appear once on
+// their next due date (overdue ones sit on today); one-offs on dueDate. Days under a holiday pause are empty.
+export function weekPlan(tasks, now = Date.now()) {
+  const todayStr = localDateStr(new Date(now));
+  const [y, m, d0] = getWeekStart(now).split('-').map(Number);
+  const days = [];
+  for (let i = 0; i < 7; i++) {
+    const dt = new Date(y, m - 1, d0 + i);
+    const date = localDateStr(dt);
+    days.push({ date, dow: dt.getDay(), isToday: date === todayStr, paused: !!_pausedUntil && date >= todayStr && date <= _pausedUntil, items: [] });
+  }
+  for (const t of Object.values(tasks || {})) {
+    if (!t || !t.name) continue;
+    const doneOn = t.done && t.lastDone ? localDateStr(new Date(t.lastDone)) : '';
+    const item = day => ({ id: t.id, name: t.name, person: t.person || '', dueTime: validTime(t.dueTime), done: !!t.done && doneOn === day.date });
+    if (t.freq === 'once') {
+      if (t.done || !/^\d{4}-\d{2}-\d{2}$/.test(String(t.dueDate || ''))) continue;
+      const day = days.find(x => x.date === (t.dueDate < todayStr ? todayStr : t.dueDate)); // overdue one-offs are due now
+      if (day) day.items.push(item(day));
+    } else if (t.freq === 'weekdays') {
+      const sel = (t.days || []).map(Number);
+      days.forEach(day => { if (sel.includes(day.dow)) day.items.push(item(day)); });
+    } else if (t.freq === 'daily') {
+      days.forEach(day => day.items.push(item(day)));
+    } else {
+      const due = new Date(t.lastDone || 0);
+      due.setDate(due.getDate() + cycleDays(t, t.lastDone));
+      let ds = localDateStr(due);
+      if (ds < todayStr) ds = todayStr; // overdue: due now
+      const day = days.find(x => x.date === ds);
+      if (day) day.items.push(item(day));
+    }
+  }
+  for (const day of days) {
+    if (day.paused) day.items = [];
+    day.items.sort((a, b) => (a.dueTime || '99:99').localeCompare(b.dueTime || '99:99') || String(a.name).localeCompare(String(b.name)));
+  }
+  return days;
 }

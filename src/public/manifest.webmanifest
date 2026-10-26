@@ -7,6 +7,10 @@
   "display": "standalone",
   "background_color": "#F7F5F0",
   "theme_color": "#2D6A4F",
+  "shortcuts": [
+    { "name": "My chores", "short_name": "My chores", "url": "./?view=mine", "icons": [{ "src": "icon-192.png", "sizes": "192x192", "type": "image/png" }] },
+    { "name": "TV view", "short_name": "TV view", "url": "./?readonly=1", "icons": [{ "src": "icon-192.png", "sizes": "192x192", "type": "image/png" }] }
+  ],
   "icons": [
     { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
     { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" },
