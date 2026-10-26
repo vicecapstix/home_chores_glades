@@ -41,7 +41,7 @@ import { addMember, removeMember, toggleRole, setAvatar, renameMember } from './
 
 import {
   initRender, render, cardHTML,
-  setFilter, setCatFilter,
+  setFilter, setCatFilter, syncViewToMember,
   toggleSelectMode, toggleSelect,
   bulkAssign, bulkDelete,
   initMemberChipClicks,
@@ -132,6 +132,7 @@ initDialogA11y();
       firstLoad = false;
       if (!READONLY) {
         handleFirstLoad(() => {
+          syncViewToMember();
           initNotifications(_currentMember);
           maybeShowDailySummary();
           render(); // re-render with correct role

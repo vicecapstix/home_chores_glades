@@ -32,6 +32,24 @@ function _applyMineDefault() {
   if (phone) filter = 'mine';
 }
 
+// Called after every login. When a different member takes over the device, drop the previous
+// member's filter / category / select mode so they start from their own default view (#169).
+let _viewMember;
+export function syncViewToMember() {
+  const me = _currentMember();
+  if (_viewMember !== undefined && me !== _viewMember) {
+    filter = 'all';
+    filterCat = '';
+    selectMode = false;
+    selectedIds = new Set();
+    _mineDefaulted = false;
+    const btn = document.getElementById('btn-select');
+    if (btn) btn.textContent = 'Select';
+    _updateBulkBar();
+  }
+  _viewMember = me;
+}
+
 export function setFilter(f) {
   filter    = f;
   filterCat = '';
