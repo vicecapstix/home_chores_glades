@@ -261,6 +261,7 @@ function _renderFilters() {
     '<button class="filter-pill' + (filter === d.k ? ' active' : '') + '" aria-pressed="' + (filter === d.k) + '" onclick="window.setFilter(\'' + d.k + '\')">' +
     d.label + '<span class="count">' + counts[d.k] + '</span></button>'
   ).join('');
+  if (me) html += '<button class="filter-pill" aria-label="My progress" onclick="window.openProgress()">📈 My progress</button>';
   const cats = [...new Set(tasks.map(t => t.category).filter(Boolean))].sort();
   if (cats.length) {
     html += '<span style="width:1px;background:var(--border);margin:0 4px;align-self:stretch;flex-shrink:0;display:inline-block;"></span>';

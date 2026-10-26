@@ -38,6 +38,7 @@ src/
   goal.js          — family daily goal bar + celebration (display only)
   history.js       — activity history modal
   pause.js         — holiday/pause mode
+  progress.js      — "My progress" modal: last 4 weeks of points/completions
   printchart.js    — admin printable Mon–Sun weekly chart (browser print)
   pwa.js           — service worker registration
   week.js          — "This week" planner modal (display only)

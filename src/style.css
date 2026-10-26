@@ -249,6 +249,7 @@ body[data-reorder] .move-btns { display: flex; }
 /* MODALS — shared overlay pattern */
 #leaderboard-modal,
 #history-modal,
+#progress-modal,
 #week-modal,
 #rewards-modal,
 #stats-modal,
@@ -258,6 +259,7 @@ body[data-reorder] .move-btns { display: flex; }
 #admin-panel-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; z-index: 998; }
 #leaderboard-modal.hidden,
 #history-modal.hidden,
+#progress-modal.hidden,
 #week-modal.hidden,
 #rewards-modal.hidden,
 #stats-modal.hidden,
@@ -298,6 +300,18 @@ body[data-reorder] .move-btns { display: flex; }
 }
 body[data-readonly] .wk-item { font-size: 1.1rem; }
 body[data-readonly] .wk-day h3 { font-size: 1.3rem; }
+
+/* MY PROGRESS — CSS bars */
+.prog-card { width: min(480px, 94vw); max-height: 80vh; overflow-y: auto; }
+.prog-list { list-style: none; margin: 0; padding: 0; }
+.prog-row { display: grid; grid-template-columns: 1fr; gap: 4px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.prog-row:last-child { border-bottom: none; }
+.prog-label { font-weight: 600; font-size: 0.9rem; }
+.prog-partial { color: var(--muted); font-weight: 400; }
+.prog-bar { display: block; height: 12px; background: var(--border); border-radius: 6px; overflow: hidden; }
+.prog-fill { display: block; height: 100%; background: var(--accent); }
+.prog-fill.neg { background: var(--muted); }
+.prog-val { font-size: 0.85rem; color: var(--muted); }
 
 /* REWARDS CATALOG */
 .rewards-card { width: min(480px, 94vw); }
