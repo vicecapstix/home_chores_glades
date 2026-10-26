@@ -23,7 +23,7 @@ import {
 } from './ui.js';
 
 import {
-  currentMember, isAdmin, handleFirstLoad, completeParentLogin,
+  currentMember, isAdmin, handleFirstLoad, checkSession, completeParentLogin,
   memberSelect, memberPinKey, memberPinDel, memberPinBack,
   switchUser,
 } from './auth.js';
@@ -142,6 +142,8 @@ initCardArrowNav();
           render(); // re-render with correct role
         });
       }
+    } else if (checkSession(showToast)) {
+      render();
     }
   }, err => {
     showToast(/permission/i.test(err.code || err.message || '') && !authRes.ok
