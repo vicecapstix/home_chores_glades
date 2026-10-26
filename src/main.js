@@ -10,7 +10,7 @@ import { state, getMembers, applySnapshot, migrateLegacyMembers } from './state.
 import { esc, jsq, avatarPrefix, AVATARS } from './utils.js';
 import { initFirebase, initAuth, describeAuthFailure, setWritesEnabled, setAuthChangeHandler, parentSignIn, parentSignOut } from './firebase.js';
 import { initModalBackButton, openModal, closeModal } from './modals.js';
-import { initDialogA11y } from './a11y.js';
+import { initDialogA11y, initCardArrowNav } from './a11y.js';
 import { popUndo } from './undo.js';
 
 import {
@@ -83,6 +83,7 @@ syncThemeButton();
 // ── Modal back-button support ─────────────────────────────────────────────────
 initModalBackButton();
 initDialogA11y();
+initCardArrowNav();
 
 // ── Bootstrap: auth → Firebase listener ──────────────────────────────────────
 (async () => {
