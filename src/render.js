@@ -2,6 +2,7 @@ import { state, getMembers } from './state.js';
 import { PCOLS, BADGES, READONLY } from './config.js';
 import { renderTvStrip } from './tv.js';
 import { renderGoal } from './goal.js';
+import { renderTeamGoal } from './teamgoal.js';
 import { esc, jsq, avatarPrefix, validTime, dueStatus, freqLabel, rotationTag, isMine, isSkipped, localDateStr, doneAgoLabel, currentStreak, goalHTML, isStaleDoneOnce } from './utils.js';
 import { pColor } from './ui.js';
 import { syncTagHTML } from './pending.js';
@@ -170,6 +171,7 @@ export function render() {
   _renderTasks();
   renderTvStrip();
   renderGoal(Object.values(state.tasks || {}));
+  renderTeamGoal();
   if (!READONLY) {
     document.body.setAttribute('data-role', _isAdmin() ? 'admin' : 'member');
   }
