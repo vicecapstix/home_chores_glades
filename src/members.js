@@ -104,19 +104,34 @@ export async function setAvatar(name, avatar, isAdminFn) {
   }
 }
 
-export async function toggleRole(name, isAdminFn) {
-  if (READONLY || !isAdminFn()) return;
+// Returns true when the role was written. Demoting yourself asks first (#168).
+export async function toggleRole(name, isAdminFn, currentMemberFn) {
+  if (READONLY || !isAdminFn()) return false;
   const m = state.members[name];
-  if (!m) return;
+  if (!m) return false;
   if (m.role === 'admin' && Object.values(state.members).filter(x => x.role === 'admin').length <= 1) {
     showToast('Cannot demote the last admin');
-    return;
+    return false;
   }
+  if (m.role === 'admin' && currentMemberFn && currentMemberFn() === name &&
+      !confirm("Demote yourself? You'll lose admin on this device.")) return false;
   try {
     await patchMember(name, { role: m.role === 'admin' ? 'member' : 'admin' });
+    return true;
   } catch (err) {
     showToast('Update failed: ' + (err.code || err.message));
+    return false;
   }
+}
+
+// Admin Panel "Toggle": wait for the write, then refresh the panel, or close it when the
+// signed-in member just lost admin (their controls would silently do nothing).
+export async function toggleRoleInPanel(name, isAdminFn, currentMemberFn, reopenPanel, closePanel) {
+  await toggleRole(name, isAdminFn, currentMemberFn);
+  if (READONLY) return;
+  if (isAdminFn()) { reopenPanel(); return; }
+  closePanel();
+  showToast('You are no longer an admin on this device');
 }
 
 // Build the single multi-path update that moves a member to a new name.
