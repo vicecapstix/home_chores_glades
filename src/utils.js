@@ -283,7 +283,13 @@ export function todayProgress(tasks, now = Date.now()) {
     }
     if (isSkipped(t)) continue;
     const s = dueStatus(t, now);
-    const dueToday = t.freq === 'once' ? t.dueDate === today : t.freq === 'weekdays' && s === 'soon';
+    let dueToday = t.freq === 'once' ? t.dueDate === today : t.freq === 'weekdays' && s === 'soon';
+    // Recurring chore with a due time: 'soon' until the time passes, but still due today (#161).
+    if (!dueToday && s === 'soon' && t.freq !== 'once' && t.freq !== 'weekdays' && validTime(t.dueTime)) {
+      const d = new Date(t.lastDone || 0);
+      d.setDate(d.getDate() + cycleDays(t, t.lastDone));
+      dueToday = localDateStr(d) === today;
+    }
     if (s === 'overdue' || dueToday) total++;
   }
   return { done, total };
@@ -315,4 +321,45 @@ export function goalHTML(member, rewards) {
     (g.ready ? ' <b>Ready to request!</b>' : '') + '</span>' +
     '<span class="goal-bar" role="progressbar" aria-label="' + esc('Goal: ' + g.reward.name) + '" aria-valuemin="0" aria-valuemax="' + g.cost +
     '" aria-valuenow="' + shown + '"><span class="goal-fill" style="width:' + g.pct + '%"></span></span></span>';
+}
+
+// Week planner (#143): Mon..Sun (local) of the week containing `now`, with the chores due each day.
+// Display only. weekdays/daily repeat; weekly, fortnightly, monthly and "every N days" appear once on
+// their next due date (overdue ones sit on today); one-offs on dueDate. Days under a holiday pause are empty.
+export function weekPlan(tasks, now = Date.now()) {
+  const todayStr = localDateStr(new Date(now));
+  const [y, m, d0] = getWeekStart(now).split('-').map(Number);
+  const days = [];
+  for (let i = 0; i < 7; i++) {
+    const dt = new Date(y, m - 1, d0 + i);
+    const date = localDateStr(dt);
+    days.push({ date, dow: dt.getDay(), isToday: date === todayStr, paused: !!_pausedUntil && date >= todayStr && date <= _pausedUntil, items: [] });
+  }
+  for (const t of Object.values(tasks || {})) {
+    if (!t || !t.name) continue;
+    const doneOn = t.done && t.lastDone ? localDateStr(new Date(t.lastDone)) : '';
+    const item = day => ({ id: t.id, name: t.name, person: t.person || '', dueTime: validTime(t.dueTime), done: !!t.done && doneOn === day.date });
+    if (t.freq === 'once') {
+      if (t.done || !/^\d{4}-\d{2}-\d{2}$/.test(String(t.dueDate || ''))) continue;
+      const day = days.find(x => x.date === (t.dueDate < todayStr ? todayStr : t.dueDate)); // overdue one-offs are due now
+      if (day) day.items.push(item(day));
+    } else if (t.freq === 'weekdays') {
+      const sel = (t.days || []).map(Number);
+      days.forEach(day => { if (sel.includes(day.dow)) day.items.push(item(day)); });
+    } else if (t.freq === 'daily') {
+      days.forEach(day => day.items.push(item(day)));
+    } else {
+      const due = new Date(t.lastDone || 0);
+      due.setDate(due.getDate() + cycleDays(t, t.lastDone));
+      let ds = localDateStr(due);
+      if (ds < todayStr) ds = todayStr; // overdue: due now
+      const day = days.find(x => x.date === ds);
+      if (day) day.items.push(item(day));
+    }
+  }
+  for (const day of days) {
+    if (day.paused) day.items = [];
+    day.items.sort((a, b) => (a.dueTime || '99:99').localeCompare(b.dueTime || '99:99') || String(a.name).localeCompare(String(b.name)));
+  }
+  return days;
 }

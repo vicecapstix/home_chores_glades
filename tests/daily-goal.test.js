@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { todayProgress, localDateStr } from '../src/utils.js';
+import { todayProgress, localDateStr, setPauseUntil } from '../src/utils.js';
 import { shouldCelebrate, markCelebrated, renderGoal, _resetGoal } from '../src/goal.js';
 
 const NOW = new Date(2026, 9, 14, 12, 0).getTime(); // Wednesday
@@ -37,6 +37,24 @@ describe('todayProgress', () => {
       { id: 'c', freq: 'daily', lastDone: old, skippedAt: old, done: false },
     ];
     expect(todayProgress(tasks, NOW)).toEqual({ done: 0, total: 1 });
+  });
+  it('counts a recurring chore due later today (dueTime) but not one due tomorrow (#161)', () => {
+    const yest = new Date(2026, 9, 13, 10, 0).getTime();
+    const tasks = [
+      { id: 'a', freq: 'daily', dueTime: '19:00', lastDone: yest, done: false },
+      { id: 'b', freq: 'daily', dueTime: '19:00', lastDone: yest, done: false },
+      { id: 'c', freq: 'daily', dueTime: '19:00', lastDone: yest, done: true, lastDoneBy: 'x' },
+      { id: 'd', freq: 'weekly', dueTime: '19:00', lastDone: new Date(2026, 9, 8, 10, 0).getTime(), done: false },
+    ];
+    tasks[2].lastDone = NOW - 1000;
+    expect(todayProgress(tasks, NOW)).toEqual({ done: 1, total: 3 });
+  });
+  it('dueTime chore: skipped and paused behaviour unchanged (#161)', () => {
+    const yest = new Date(2026, 9, 13, 10, 0).getTime();
+    expect(todayProgress([{ id: 'a', freq: 'daily', dueTime: '19:00', lastDone: yest, skippedAt: yest, done: false }], NOW)).toEqual({ done: 0, total: 0 });
+    setPauseUntil('2026-12-31');
+    expect(todayProgress([{ id: 'a', freq: 'daily', dueTime: '19:00', lastDone: yest, done: false }], NOW)).toEqual({ done: 0, total: 0 });
+    setPauseUntil('');
   });
   it('is zero when nothing is due', () => {
     expect(todayProgress([{ id: 'a', freq: 'weekly', lastDone: NOW, done: false }], NOW)).toEqual({ done: 0, total: 0 });
