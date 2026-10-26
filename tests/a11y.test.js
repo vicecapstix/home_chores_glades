@@ -18,7 +18,7 @@ describe('a11y: modals', () => {
   });
   it('every close button has an aria-label', () => {
     const closes = [...doc.querySelectorAll('.lb-close')];
-    expect(closes.length).toBe(10);
+    expect(closes.length).toBe(11);
     closes.forEach(b => expect(b.getAttribute('aria-label')).toBe('Close'));
   });
   it('PIN pad delete keys are labelled', () => {

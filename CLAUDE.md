@@ -45,6 +45,7 @@ src/
   redemptions.js   — reward requests: request, approve/deny, refund
   rewards.js       — rewards catalog UI
   rollover.js      — local timer so open screens roll over resets/due status
+  restore.js       — admin restore from JSON backup (validate, caps, keeps PINs)
   theme.js         — Auto/Light/Dark theme setting (follows prefers-color-scheme)
   teamgoal.js      — family weekly points goal (state/teamGoal), bar + admin form
   tv.js            — TV dashboard helpers for ?readonly=1
