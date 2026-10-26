@@ -3,7 +3,7 @@ import { READONLY, BADGES, CATEGORIES } from './config.js';
 import { patchPaths, adjustMemberPoints, appendHistory, removeHistoryEntry, patchTask, patchMember, patchRoot, removeTask, restoreTask, patchSubtask } from './firebase.js';
 import { showToast } from './ui.js';
 import { pushUndo } from './undo.js';
-import { esc, jsq, validTime, validInterval, INTERVAL_MIN, INTERVAL_MAX, freqDays, cycleDays, daysSince, dueStatus, taskPoints, getWeekStart, localDateStr, prevScheduledStart, isStaleDoneOnce, initialLastDone, nextRotationPerson, DAY_NAMES } from './utils.js';
+import { esc, jsq, validTime, validInterval, INTERVAL_MIN, INTERVAL_MAX, freqDays, cycleDays, daysSince, dueStatus, taskPoints, getWeekStart, localDateStr, prevScheduledStart, isStaleDoneOnce, initialLastDone, nextRotationPerson, awayNames, DAY_NAMES } from './utils.js';
 
 // Re-export for other modules
 export { dueStatus, taskPoints, freqDays };
@@ -26,7 +26,7 @@ export function checkTaskResets() {
       patch['tasks/' + t.id + '/done'] = false;
       patch['tasks/' + t.id + '/lastDoneBy'] = null;
       patch['tasks/' + t.id + '/lastDonePoints'] = null;
-      const next = t.rotation ? nextRotationPerson(t.rotation, t.person, getMembers()) : null;
+      const next = t.rotation ? nextRotationPerson(t.rotation, t.person, getMembers(), awayNames(now)) : null;
       Object.entries(t.subtasks || {}).forEach(([sid, st]) => {
         if (!st.done) return;
         st.done = false;

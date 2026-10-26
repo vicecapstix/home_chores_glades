@@ -1,6 +1,7 @@
 import { state } from './state.js';
 import { dueStatus } from './utils.js';
 import { checkTaskResets } from './tasks.js';
+import { runDueTimeCheck } from './notifications.js';
 
 // Local rollover: screens left open keep recomputing resets and due status
 // without waiting for a Firebase snapshot (#88). No reads, no listeners.
@@ -17,6 +18,7 @@ export function startRollover(render, intervalMs = 60000) {
   let last = signature();
   const tick = () => {
     checkTaskResets(); // writes via patchRoot unless READONLY
+    runDueTimeCheck(); // local due-time reminder (#150); no-op on the TV
     const sig = signature();
     if (sig !== last) { last = sig; render(); }
   };

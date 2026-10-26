@@ -47,3 +47,27 @@ export function initDialogA11y() {
     }
   });
 }
+
+// ── Arrow-key movement between chore cards (TV remote D-pad) ──────────────────
+// Pure helper: the check button to focus after pressing Up (-1) / Down (+1).
+export function adjacentCheck(checks, current, dir) {
+  const i = checks.indexOf(current);
+  if (i < 0) return null;
+  return checks[i + dir] || null;
+}
+
+let arrowsInstalled = false;
+export function initCardArrowNav() {
+  if (arrowsInstalled) return;
+  arrowsInstalled = true;
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+    const cur = e.target;
+    if (!cur || !cur.matches || !cur.matches('#task-list .task-card .check, #task-list .task-card .sel-box')) return;
+    if (visibleDialogs().length) return;
+    const checks = [...document.querySelectorAll('#task-list .task-card .check, #task-list .task-card .sel-box')]
+      .filter(el => !el.closest('details.done-once:not([open])'));
+    const next = adjacentCheck(checks, cur, e.key === 'ArrowDown' ? 1 : -1);
+    if (next) { e.preventDefault(); next.focus(); next.scrollIntoView?.({ block: 'nearest' }); }
+  });
+}
