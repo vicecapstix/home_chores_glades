@@ -1,4 +1,4 @@
-import { setPauseUntil } from './utils.js';
+import { setPauseUntil, setAwayMembers } from './utils.js';
 import { PCOLS } from './config.js';
 
 // Central mutable state — all modules import this object directly.
@@ -53,6 +53,7 @@ export function applySnapshot(val) {
   state.rewards   = val.rewards   || {};
   state.redemptions = val.redemptions || {};
   state.pause = val.pause && val.pause.until ? val.pause : null;
+  setAwayMembers(state.members);
   state.teamGoal = val.teamGoal && val.teamGoal.points ? val.teamGoal : null;
   setPauseUntil(state.pause ? state.pause.until : '');
 }

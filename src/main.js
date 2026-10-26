@@ -36,6 +36,7 @@ import {
   claimTask, moveTask, skipTask, clearDoneOnes,
 } from './tasks.js';
 
+import { setAway, clearAway, checkAwayExpiry, awayAdminHTML } from './away.js';
 import { setTeamGoal, clearTeamGoal, teamGoalAdminHTML } from './teamgoal.js';
 import { checkPauseExpiry, renderPauseBanner, setPause, clearPause, pauseAdminHTML } from './pause.js';
 import { addMember, backfillColors, removeMember, toggleRole, toggleRoleInPanel, setAvatar, renameMember } from './members.js';
@@ -131,6 +132,7 @@ initCardArrowNav();
     setCacheBanner(false);
     saveSnapshot(state);
     checkPauseExpiry();
+    checkAwayExpiry();
     checkTaskResets();
     render();
     renderPauseBanner();
@@ -272,12 +274,14 @@ window.openAdminPanel = function() {
       '<button class="btn-sm" aria-label="Progress for ' + esc(m) + '" onclick="window.closeAdminPanel();window.openProgress(\'' + jsq(m) + '\')">Progress</button>' +
       '<button class="btn-sm" aria-label="Adjust points for ' + esc(m) + '" onclick="window.adjustBonus(\'' + jsq(m) + '\')">± Points</button>' +
       '</div>';
-  }).join('') + pauseAdminHTML() + teamGoalAdminHTML();
+  }).join('') + pauseAdminHTML() + awayAdminHTML() + teamGoalAdminHTML();
   document.getElementById('admin-parent-in').classList.toggle('hidden', !!state.parentEmail);
   document.getElementById('admin-parent-out').classList.toggle('hidden', !state.parentEmail);
   openModal('admin-panel-modal');
 };
 window.setPause = () => { const el = document.getElementById('pause-until'); return setPause(el && el.value, _isAdmin, _currentMember).then(() => window.openAdminPanel()); };
+window.setAway = () => setAway(document.getElementById('away-member')?.value, document.getElementById('away-until')?.value, _isAdmin).then(ok => ok && window.openAdminPanel());
+window.clearAway = name => clearAway(name, _isAdmin).then(ok => ok && window.openAdminPanel());
 window.setTeamGoal = () => setTeamGoal(document.getElementById('tg-points')?.value, document.getElementById('tg-reward')?.value, _isAdmin).then(ok => ok && window.openAdminPanel());
 window.clearTeamGoal = () => clearTeamGoal(_isAdmin).then(ok => ok && window.openAdminPanel());
 window.clearPause = () => clearPause(_isAdmin).then(() => window.openAdminPanel());

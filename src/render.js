@@ -3,7 +3,7 @@ import { PCOLS, BADGES, READONLY } from './config.js';
 import { renderTvStrip } from './tv.js';
 import { renderGoal } from './goal.js';
 import { renderTeamGoal } from './teamgoal.js';
-import { esc, jsq, taskPoints, avatarPrefix, validTime, dueStatus, freqLabel, rotationTag, isMine, isSkipped, localDateStr, doneAgoLabel, currentStreak, goalHTML, isStaleDoneOnce, viewFromSearch } from './utils.js';
+import { awayText, esc, jsq, taskPoints, avatarPrefix, validTime, dueStatus, freqLabel, rotationTag, isMine, isSkipped, localDateStr, doneAgoLabel, currentStreak, goalHTML, isStaleDoneOnce, viewFromSearch } from './utils.js';
 import { pColor } from './ui.js';
 import { syncTagHTML } from './pending.js';
 
@@ -206,6 +206,7 @@ function _renderMembers() {
       esc(avatarPrefix(mem)) + esc(m) +
       ' <span style="opacity:0.55;font-size:0.75em">' + (mem.points || 0) + '</span>' +
       (streak >= 2 ? ' 🔥' + streak : '') +
+      (awayText(mem) ? ' <span class="chip-away">' + esc(awayText(mem)) + '</span>' : '') +
       (badgeIcons ? ' ' + badgeIcons : '') +
       goalHTML(mem, state.rewards) +
       ' <span class="chip-del">×</span></span>';
