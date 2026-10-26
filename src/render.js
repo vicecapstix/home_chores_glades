@@ -53,14 +53,12 @@ export function syncViewToMember() {
 
 export function setFilter(f) {
   filter    = f;
-  filterCat = '';
   _renderFilters();
   _renderTasks();
 }
 
 export function setCatFilter(c) {
   filterCat = filterCat === c ? '' : c;
-  filter    = 'all';
   _renderFilters();
   _renderTasks();
 }
@@ -234,17 +232,23 @@ function _renderMemberSelect() {
 
 // ── Filters ───────────────────────────────────────────────────────────────────
 
+// Does task t pass the status filter k? (status and category filters combine with AND, #172)
+function _statusPass(k, t) {
+  if (k === 'mine') return isMine(t, _currentMember());
+  if (k === 'pending') return !t.done;
+  if (k === 'overdue') return dueStatus(t) === 'overdue';
+  if (k === 'done') return !!t.done;
+  return true;
+}
+
 function _renderFilters() {
   const container = document.getElementById('filters');
   if (!container) return;
   const tasks = _visibleTasks();
-  const counts = {
-    all:     tasks.length,
-    pending: tasks.filter(t => !t.done).length,
-    overdue: tasks.filter(t => dueStatus(t) === 'overdue').length,
-    done:    tasks.filter(t => t.done).length,
-    mine:    tasks.filter(t => isMine(t, _currentMember())).length,
-  };
+  // Status pill counts respect the active category; category counts respect the active status.
+  const inCat = filterCat ? tasks.filter(t => t.category === filterCat) : tasks;
+  const counts = {};
+  for (const k of ['all', 'pending', 'overdue', 'done', 'mine']) counts[k] = inCat.filter(t => _statusPass(k, t)).length;
   const me = !READONLY && _currentMember();
   const defs = [
     ...(me ? [{ k: 'mine', label: 'Mine' }] : []),
@@ -261,7 +265,8 @@ function _renderFilters() {
   if (cats.length) {
     html += '<span style="width:1px;background:var(--border);margin:0 4px;align-self:stretch;flex-shrink:0;display:inline-block;"></span>';
     html += cats.map(c =>
-      '<button class="filter-pill' + (filterCat === c ? ' active' : '') + '" aria-pressed="' + (filterCat === c) + '" onclick="window.setCatFilter(\'' + jsq(c) + '\')">' + esc(c) + '</button>'
+      '<button class="filter-pill' + (filterCat === c ? ' active' : '') + '" aria-pressed="' + (filterCat === c) + '" onclick="window.setCatFilter(\'' + jsq(c) + '\')">' + esc(c) +
+        '<span class="count">' + tasks.filter(t => t.category === c && _statusPass(filter, t)).length + '</span></button>'
     ).join('');
   }
   container.innerHTML = html;
@@ -273,10 +278,7 @@ export function renderTasks() { _renderTasks(); }
 
 function _renderTasks() {
   let tasks = _visibleTasks();
-  if (filter === 'mine') tasks = tasks.filter(t => isMine(t, _currentMember()));
-  else if (filter === 'pending') tasks = tasks.filter(t => !t.done);
-  else if (filter === 'overdue') tasks = tasks.filter(t => dueStatus(t) === 'overdue');
-  else if (filter === 'done') tasks = tasks.filter(t => t.done);
+  tasks = tasks.filter(t => _statusPass(filter, t));
   if (filterCat) tasks = tasks.filter(t => t.category === filterCat);
 
   // Done one-offs from earlier days go to a collapsed section (hidden on the TV view) (#142).
