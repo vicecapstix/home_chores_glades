@@ -10,6 +10,7 @@
   --warn-light: #FDF0EA;
   --soon: #6B4800;
   --soon-light: #FEF6E4;
+  --accent-fg: #2D6A4F;
   --done: #3A3A38;
   --radius: 12px;
   --radius-sm: 8px;
@@ -164,9 +165,11 @@ body[data-readonly] #tv-synced { display: block; }
 .task-meta { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
 .tag { font-size: 0.72rem; font-weight: 500; padding: 3px 10px; border-radius: 20px; white-space: nowrap; }
 .tag-freq { background: var(--bg); color: var(--muted); border: 1px solid var(--border); }
+.tag-sync { background: var(--warn-light); color: var(--warn); }
+button.tag-sync-fail { border: 1px solid var(--warn); cursor: pointer; font-family: inherit; }
 .tag-overdue { background: var(--warn-light); color: var(--warn); }
 .tag-soon { background: var(--soon-light); color: var(--soon); }
-.tag-ok { background: var(--accent-light); color: var(--accent); }
+.tag-ok { background: var(--accent-light); color: var(--accent-fg); }
 .del { width: 28px; height: 28px; min-width: 40px; min-height: 40px; border: none; background: none; cursor: pointer; color: var(--muted); font-size: 1.1rem; border-radius: 6px; display: flex; align-items: center; justify-content: center; opacity: 0; flex-shrink: 0; }
 .task-card:hover .del { opacity: 0.5; }
 .del:hover { opacity: 1 !important; background: var(--bg); }
@@ -192,7 +195,7 @@ body[data-readonly] #tv-synced { display: block; }
 .edit-notes:focus { outline: none; border-color: var(--accent); }
 
 /* DIFFICULTY TAGS */
-.tag-easy { background: var(--accent-light); color: var(--accent); }
+.tag-easy { background: var(--accent-light); color: var(--accent-fg); }
 .tag-medium { background: var(--soon-light); color: var(--soon); }
 .tag-hard { background: var(--warn-light); color: var(--warn); }
 
@@ -344,6 +347,7 @@ body[data-role="admin"] #btn-admin { display: flex; }
   --soon: #F4BE50;
   --warn-light: #3D1A08;
   --soon-light: #3D2A00;
+  --accent-fg: #7BD3A0; /* readable green on --accent-light in dark mode */
 }
 
 /* THEME TOGGLE BUTTON */
@@ -440,7 +444,8 @@ body[data-role="admin"] #btn-admin { display: flex; }
   .member-add { flex-wrap: wrap; width: 100%; margin-left: 0; }
   .add-bar { gap: 6px; }
   .pin-card { padding: 2rem 1.25rem; }
-  .header-stats { gap: 0.75rem; }
+  /* tap targets >= 44x44 (#36) */
+  .subtask-del, .move-btn, .theme-toggle { min-width: 44px; min-height: 44px; }  .header-stats { gap: 0.75rem; }
   .hstat-val { font-size: 1.25rem; }
 }
 
@@ -465,11 +470,15 @@ body[data-role="admin"] #btn-admin { display: flex; }
 .goal-track { height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; }
 .goal-fill { height: 100%; width: 0; background: var(--accent); transition: width 0.4s ease; }
 .goal.complete .goal-text::after { content: ' 🎉'; }
+.team-goal .goal-fill { background: var(--warn, var(--accent)); }
+.team-goal.complete .goal-fill { background: var(--accent); }
 .goal-confetti { display: none; position: absolute; right: 0; top: -6px; font-size: 1.4rem; pointer-events: none; }
 .goal.celebrate .goal-confetti { display: block; animation: goal-pop 2.2s ease-out forwards; }
 @keyframes goal-pop { 0% { transform: translateY(8px) scale(0.6); opacity: 0; } 20% { opacity: 1; } 100% { transform: translateY(-18px) scale(1.2); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .goal.celebrate .goal-confetti { animation: none; display: none; } .goal-fill { transition: none; } }
 @media (min-width: 1200px) {
+  body[data-readonly] .team-goal .goal-text { font-size: 2.2rem; }
+  body[data-readonly] .team-goal .goal-track { height: 30px; border-radius: 15px; }
   body[data-readonly] .goal-text { font-size: 1.8rem; font-family: 'DM Serif Display', serif; }
   body[data-readonly] .goal-track { height: 22px; border-radius: 11px; }
   body[data-readonly] .goal-confetti { font-size: 3rem; top: -20px; }
