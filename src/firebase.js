@@ -93,6 +93,7 @@ export async function writeState() {
       templates: Object.keys(state.templates || {}).length ? state.templates : null,
       rewards:   Object.keys(state.rewards   || {}).length ? state.rewards   : null,
       redemptions: Object.keys(state.redemptions || {}).length ? state.redemptions : null,
+      claims:    Object.keys(state.claims || {}).length ? state.claims : null,
       pause:     state.pause || null,
     });
   } catch (err) {

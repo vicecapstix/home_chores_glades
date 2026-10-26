@@ -11,6 +11,7 @@ export const state = {
   templates: {},
   rewards:   {},
   redemptions: {},
+  claims:    {}, // pending extra-job claims (#224)
   pause:     null,
   teamGoal:  null, // { points, reward } weekly family goal (#174)
   admins:    null, // /admins {uid: memberName}; null until it exists (role fallback)
@@ -52,6 +53,7 @@ export function applySnapshot(val) {
   state.templates = val.templates || {};
   state.rewards   = val.rewards   || {};
   state.redemptions = val.redemptions || {};
+  state.claims = val.claims || {};
   state.pause = val.pause && val.pause.until ? val.pause : null;
   setAwayMembers(state.members);
   state.teamGoal = val.teamGoal && val.teamGoal.points ? val.teamGoal : null;

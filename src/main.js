@@ -79,6 +79,7 @@ import { openHistory, setHistoryFilter, historyFilterClick } from './history.js'
 import { openProgress } from './progress.js';
 import { openWeek } from './week.js';
 import { requestReward, decideRequest, markGiven } from './redemptions.js';
+import { submitClaim, decideClaim } from './claims.js';
 import { rewardsHTML, openRewards, saveReward, editReward, deleteReward, cancelRewardEdit, refreshRewards, setGoalFor, pickGoalTarget } from './rewards.js';
 registerServiceWorker();
 initInstall();
@@ -128,6 +129,7 @@ initCardArrowNav();
       templates: val.templates || {},
       rewards:   val.rewards   || {},
       redemptions: val.redemptions || {},
+      claims: val.claims || {},
       pause: val.pause || null,
       teamGoal: val.teamGoal || null,
     });
@@ -384,6 +386,12 @@ window.requestReward     = id     => requestReward(id, _currentMember);
 window.approveRedemption = id     => decideRequest(id, 'approved', _isAdmin, _currentMember);
 window.denyRedemption    = id     => decideRequest(id, 'denied', _isAdmin, _currentMember);
 window.markRewardGiven   = id     => markGiven(id, _isAdmin, _currentMember);
+window.submitClaim       = async  () => {
+  const n = document.getElementById('claim-name'), p = document.getElementById('claim-points');
+  if (await submitClaim(n.value, p.value, _currentMember)) { n.value = ''; p.value = ''; refreshRewards(_isAdmin); }
+};
+window.approveClaim      = async id => { await decideClaim(id, 'approved', document.getElementById('claim-pts-' + id)?.value, _isAdmin, _currentMember); refreshRewards(_isAdmin); };
+window.denyClaim         = async id => { await decideClaim(id, 'denied', undefined, _isAdmin, _currentMember); refreshRewards(_isAdmin); };
 window.saveReward        = ()     => saveReward(_isAdmin);
 window.editReward        = id     => editReward(id, _isAdmin);
 window.deleteReward      = id     => deleteReward(id, _isAdmin);

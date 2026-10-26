@@ -5,6 +5,7 @@ import { showToast } from './ui.js';
 import { openModal } from './modals.js';
 import { esc, jsq, goalHTML } from './utils.js';
 import { setGoal } from './savings.js';
+import { pendingClaims, renderClaims } from './claims.js';
 import { pendingFor, decidedFor, toGive, usedThisWeek } from './redemptions.js';
 
 export const MAX_REWARDS = 50;
@@ -94,6 +95,7 @@ export function renderRewards() {
           '<button class="btn-sm" aria-label="Deny ' + esc(r.rewardName) + ' for ' + esc(r.member) + '" onclick="window.denyRedemption(\'' + jsq(r.id) + '\')">Deny</button></div>').join('') : '') +
       (canEdit ? toGiveHTML(toGive()) : '');
   }
+  renderClaims(adminFn, me);
   document.getElementById('rewards-admin')?.classList.toggle('hidden', !canEdit);
   updateRewardsBadge();
 }
@@ -115,7 +117,7 @@ export function toGiveHTML(list) {
 export function updateRewardsBadge() {
   const b = document.getElementById('rewards-badge');
   if (!b) return;
-  const n = !READONLY && adminFn() ? pendingFor('').length + toGive().length : 0;
+  const n = !READONLY && adminFn() ? pendingFor('').length + toGive().length + pendingClaims('').length : 0;
   b.textContent = String(n);
   b.classList.toggle('hidden', !n);
 }
