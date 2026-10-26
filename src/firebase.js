@@ -3,6 +3,7 @@ import { getDatabase, ref, set, remove, update, onValue, runTransaction } from '
 import { getAuth, signInAnonymously, onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import { FB_URL, READONLY, HISTORY_CAP } from './config.js';
 import { state } from './state.js';
+import { trackWrite } from './pending.js';
 
 let _db = null;
 let _app = null;
@@ -101,7 +102,7 @@ export async function writeState() {
 
 export async function patchTask(id, fields) {
   if (READONLY || !_db || !_live) return;
-  await update(ref(_db, 'state/tasks/' + id), fields);
+  await trackWrite(id, () => update(ref(_db, 'state/tasks/' + id), fields));
 }
 
 export async function patchMember(name, fields) {
@@ -132,7 +133,7 @@ export async function restoreTask(id, data) {
 
 export async function patchSubtask(taskId, subId, fields) {
   if (READONLY || !_db || !_live) return;
-  await update(ref(_db, 'state/tasks/' + taskId + '/subtasks/' + subId), fields);
+  await trackWrite(taskId, () => update(ref(_db, 'state/tasks/' + taskId + '/subtasks/' + subId), fields));
 }
 
 // Atomic points spend: aborts (returns false) if the balance is below cost.
