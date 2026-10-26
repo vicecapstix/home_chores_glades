@@ -5,6 +5,7 @@ import { renderGoal } from './goal.js';
 import { renderTeamGoal } from './teamgoal.js';
 import { esc, jsq, avatarPrefix, validTime, dueStatus, freqLabel, rotationTag, isMine, isSkipped, localDateStr, doneAgoLabel, currentStreak, goalHTML, isStaleDoneOnce } from './utils.js';
 import { pColor } from './ui.js';
+import { syncTagHTML } from './pending.js';
 
 // ── Session function references (set once via initRender) ─────────────────────
 let _isAdmin       = () => false;
@@ -30,6 +31,24 @@ function _applyMineDefault() {
   _mineDefaulted = true;
   const phone = typeof window.matchMedia === 'function' && window.matchMedia('(max-width: 700px)').matches;
   if (phone) filter = 'mine';
+}
+
+// Called after every login. When a different member takes over the device, drop the previous
+// member's filter / category / select mode so they start from their own default view (#169).
+let _viewMember;
+export function syncViewToMember() {
+  const me = _currentMember();
+  if (_viewMember !== undefined && me !== _viewMember) {
+    filter = 'all';
+    filterCat = '';
+    selectMode = false;
+    selectedIds = new Set();
+    _mineDefaulted = false;
+    const btn = document.getElementById('btn-select');
+    if (btn) btn.textContent = 'Select';
+    _updateBulkBar();
+  }
+  _viewMember = me;
 }
 
 export function setFilter(f) {
@@ -404,7 +423,7 @@ export function cardHTML(t) {
         '<span class="task-name">' + esc(t.name) + subsBadge + '</span>' +
         notesLine +
       '</div>' +
-      '<div class="task-meta">' + dueTag + diffTag + freqTag + timeTag + rotationTag(t, getMembers()) + catTag + personTag + '</div>' +
+      '<div class="task-meta">' + dueTag + diffTag + freqTag + timeTag + rotationTag(t, getMembers()) + syncTagHTML(t.id) + catTag + personTag + '</div>' +
       chevronBtn +
       '<span class="move-btns">' +
         '<button class="move-btn" aria-label="Move ' + esc(t.name) + ' up" onclick="event.stopPropagation();window.moveTask(\'' + jsq(t.id) + '\',-1)">▲</button>' +

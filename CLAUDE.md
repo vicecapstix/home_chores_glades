@@ -27,6 +27,7 @@ src/
   render.js        — DOM rendering: render(), cardHTML(), filters, select/bulk mode
   modals.js        — modal stack manager + browser back-button support
   notifications.js — overdue browser notifications (30-min interval check)
+  pending.js       — in-memory tracker of unsynced task writes (not-synced tag, retry)
   undo.js          — command-pattern undo stack (max 20, 5s toast window)
   a11y.js          — dialog accessibility: Esc to close, focus restore, Tab trap
   savings.js       — member saving goal: pin a reward, progress bar on chip and TV

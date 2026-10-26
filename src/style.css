@@ -164,6 +164,8 @@ body[data-readonly] #tv-synced { display: block; }
 .task-meta { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
 .tag { font-size: 0.72rem; font-weight: 500; padding: 3px 10px; border-radius: 20px; white-space: nowrap; }
 .tag-freq { background: var(--bg); color: var(--muted); border: 1px solid var(--border); }
+.tag-sync { background: var(--warn-light); color: var(--warn); }
+button.tag-sync-fail { border: 1px solid var(--warn); cursor: pointer; font-family: inherit; }
 .tag-overdue { background: var(--warn-light); color: var(--warn); }
 .tag-soon { background: var(--soon-light); color: var(--soon); }
 .tag-ok { background: var(--accent-light); color: var(--accent); }
