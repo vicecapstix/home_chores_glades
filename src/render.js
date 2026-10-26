@@ -373,6 +373,7 @@ export function cardHTML(t) {
   const pc  = t.person ? pColor(t.person) : null;
   const personTag = t.person
     ? (pc ? '<span class="tag" style="background:' + pc.bg + ';color:' + pc.text + ';">' + esc(t.person) + '</span>' : '')
+    : selectMode ? '<span class="tag tag-freq">Anyone</span>'
     : '<button class="btn-claim" onclick="window.claimTask(\'' + jsq(t.id) + '\')">Claim</button>';
   const skipped = isSkipped(t);
   const dueTag = skipped ? '<span class="tag tag-ok">' + (localDateStr(new Date(t.skippedAt)) === localDateStr(new Date()) ? 'Skipped today' : 'Skipped') + '</span>'
@@ -397,7 +398,7 @@ export function cardHTML(t) {
   const subs     = t.subtasks ? Object.values(t.subtasks) : [];
   const subsDone = subs.filter(st => st.done).length;
   const subsBadge = subs.length ? '<span class="subtask-badge">' + subsDone + '/' + subs.length + '</span>' : '';
-  const chevronBtn = '<button class="subtask-toggle" onclick="window.toggleSubtasks(\'' + jsq(t.id) + '\')" title="Subtasks">&#9654;</button>';
+  const chevronBtn = selectMode ? '' : '<button class="subtask-toggle" onclick="window.toggleSubtasks(\'' + jsq(t.id) + '\')" title="Subtasks">&#9654;</button>';
 
   let subRows = '';
   subs.forEach(st => {
@@ -437,6 +438,8 @@ export function cardHTML(t) {
       '</div>' +
       '<div class="task-meta">' + dueTag + diffTag + ptsTag + freqTag + timeTag + rotationTag(t, getMembers()) + syncTagHTML(t.id) + catTag + personTag + '</div>' +
       chevronBtn +
+      // In select mode a card tap only toggles selection: no per-card action buttons (#167)
+      (selectMode ? '' :
       '<span class="move-btns">' +
         '<button class="move-btn" aria-label="Move ' + esc(t.name) + ' up" onclick="event.stopPropagation();window.moveTask(\'' + jsq(t.id) + '\',-1)">▲</button>' +
         '<button class="move-btn" aria-label="Move ' + esc(t.name) + ' down" onclick="event.stopPropagation();window.moveTask(\'' + jsq(t.id) + '\',1)">▼</button>' +
@@ -445,9 +448,10 @@ export function cardHTML(t) {
         ? '<button class="edit-btn skip-btn" aria-label="Skip ' + esc(t.name) + ' this time" title="Skip this time" onclick="event.stopPropagation();window.skipTask(\'' + jsq(t.id) + '\')">⏭</button>'
         : '') +
       '<button class="edit-btn" onclick="window.editTask(\'' + jsq(t.id) + '\')" title="Edit">✎</button>' +
-      '<button class="del" onclick="window.deleteTask(\'' + jsq(t.id) + '\')" title="Remove">×</button>' +
+      '<button class="del" onclick="window.deleteTask(\'' + jsq(t.id) + '\')" title="Remove">×</button>'
+      ) +
     '</div>' +
-    '<div class="subtask-section">' + subtaskSection + '</div>' +
+    (selectMode ? '' : '<div class="subtask-section">' + subtaskSection + '</div>') +
   '</div>';
 }
 
