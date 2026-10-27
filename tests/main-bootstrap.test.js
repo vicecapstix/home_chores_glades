@@ -7,7 +7,7 @@ import { resolve } from 'node:path';
 const html = readFileSync(resolve(__dirname, '../src/index.html'), 'utf8');
 const body = html.slice(html.indexOf('<body'), html.lastIndexOf('</body>')).replace(/^<body[^>]*>/, '').replace(/<script[\s\S]*?<\/script>/g, '');
 
-const h = vi.hoisted(() => ({ calls: [], listeners: {}, cached: null }));
+const h = vi.hoisted(() => ({ calls: [], listeners: {}, cached: null, authGate: null }));
 
 vi.mock('firebase/database', async orig => ({
   ...(await orig()),
@@ -17,7 +17,7 @@ vi.mock('firebase/database', async orig => ({
 vi.mock('../src/firebase.js', async orig => ({
   ...(await orig()),
   initFirebase: () => ({ app: {}, db: {} }),
-  initAuth: async () => { h.calls.push('initAuth'); return { ok: true }; },
+  initAuth: async () => { h.calls.push('initAuth'); return h.authGate ? h.authGate : { ok: true }; },
   setWritesEnabled: on => h.calls.push('writes:' + on),
 }));
 vi.mock('../src/state.js', async orig => {
@@ -47,7 +47,7 @@ async function boot(search = '') {
   await flush();
 }
 
-beforeEach(() => { h.calls.length = 0; h.listeners = {}; h.cached = null; try { localStorage.clear(); } catch (e) {} });
+beforeEach(() => { h.calls.length = 0; h.listeners = {}; h.cached = null; h.authGate = null; try { localStorage.clear(); } catch (e) {} });
 afterEach(() => { window.history.replaceState(null, '', '/'); });
 
 describe('main.js bootstrap (#40)', () => {
@@ -63,6 +63,17 @@ describe('main.js bootstrap (#40)', () => {
     expect([...idx].sort((a, b) => a - b)).toEqual(idx);
     const { state } = await import('../src/state.js');
     expect(Object.keys(state.tasks)).toEqual(['t1']);
+  });
+
+  it('does not attach the /state listener until initAuth has resolved', async () => {
+    let release;
+    h.authGate = new Promise(r => { release = r; });
+    await boot();
+    expect(h.calls).toContain('initAuth');
+    expect(h.listeners.state).toBeUndefined();
+    release({ ok: true });
+    await flush();
+    expect(h.listeners.state).toBeTruthy();
   });
 
   it('handleFirstLoad runs only on the first snapshot', async () => {
