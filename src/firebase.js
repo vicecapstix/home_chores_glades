@@ -154,6 +154,14 @@ export async function decideRedemption(id, status, by) {
   return !!res.committed;
 }
 
+// Atomically remove a pending extra-job claim (#224). Returns true only for the
+// one caller whose transaction removed it, so two parents can't both award it.
+export async function takeClaim(id) {
+  if (READONLY || !_db || !_live) return false;
+  const res = await runTransaction(ref(_db, 'state/claims/' + id), cur => (cur ? null : undefined));
+  return !!res.committed;
+}
+
 // Atomic award/reversal of task points on the member's LIVE server value (never
 // an absolute from the local cache). opts: { pts (signed), count (signed),
 // weekStart, countWeek (touch weekPoints?), allowNegative }. Without

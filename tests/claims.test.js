@@ -5,13 +5,14 @@ import { state } from '../src/state.js';
 
 vi.mock('../src/firebase.js', () => ({
   patchRoot: vi.fn().mockResolvedValue(undefined),
+  takeClaim: vi.fn().mockResolvedValue(true),
   adjustMemberPoints: vi.fn().mockResolvedValue({ ok: true, reason: '' }),
   appendHistory: vi.fn().mockResolvedValue({ ok: true }),
   removeHistoryEntry: vi.fn(),
 }));
 vi.mock('../src/ui.js', () => ({ showToast: vi.fn() }));
 vi.mock('../src/undo.js', () => ({ pushUndo: vi.fn() }));
-import { patchRoot, adjustMemberPoints, appendHistory } from '../src/firebase.js';
+import { patchRoot, takeClaim, adjustMemberPoints, appendHistory } from '../src/firebase.js';
 import { showToast } from '../src/ui.js';
 import {
   validateClaim, pendingClaims, submitClaim, decideClaim, claimsAdminHTML, MAX_PENDING_PER_MEMBER,
@@ -81,7 +82,7 @@ describe('decideClaim', () => {
     expect(adjustMemberPoints.mock.calls[0][1].pts).toBe(8);
     expect(appendHistory).toHaveBeenCalledTimes(1);
     expect(appendHistory.mock.calls[0][0]).toMatchObject({ type: 'bonus', person: 'Amy', points: 8, by: 'Dad' });
-    expect(patchRoot).toHaveBeenCalledWith({ 'claims/c1': null });
+    expect(takeClaim).toHaveBeenCalledWith('c1');
     expect(state.claims.c1).toBeUndefined();
   });
   it('approve uses the suggested points when none given', async () => {
@@ -92,12 +93,14 @@ describe('decideClaim', () => {
     expect(await decideClaim('c1', 'denied', 5, admin, asDad)).toBe(true);
     expect(adjustMemberPoints).not.toHaveBeenCalled();
     expect(appendHistory).not.toHaveBeenCalled();
-    expect(patchRoot).toHaveBeenCalledWith({ 'claims/c1': null });
+    expect(takeClaim).toHaveBeenCalledWith('c1');
+    expect(patchRoot).not.toHaveBeenCalled();
   });
   it('is admin-only', async () => {
     expect(await decideClaim('c1', 'approved', 5, notAdmin, asAmy)).toBe(false);
     expect(adjustMemberPoints).not.toHaveBeenCalled();
     expect(patchRoot).not.toHaveBeenCalled();
+    expect(takeClaim).not.toHaveBeenCalled();
     expect(state.claims.c1).toBeTruthy();
   });
   it('ignores unknown/already-decided claims and bad statuses', async () => {
@@ -110,6 +113,13 @@ describe('decideClaim', () => {
     const b = decideClaim('c1', 'approved', 5, admin, asDad);
     await Promise.all([a, b]);
     expect(adjustMemberPoints).toHaveBeenCalledTimes(1);
+  });
+  it('a claim another parent already took (transaction not committed) is not awarded again', async () => {
+    takeClaim.mockResolvedValueOnce(false);
+    expect(await decideClaim('c1', 'approved', 5, admin, asDad)).toBe(false);
+    expect(adjustMemberPoints).not.toHaveBeenCalled();
+    expect(appendHistory).not.toHaveBeenCalled();
+    expect(patchRoot).not.toHaveBeenCalled();
   });
   it('puts the claim back if the points update fails', async () => {
     adjustMemberPoints.mockResolvedValueOnce({ ok: false, reason: 'missing' });
@@ -148,6 +158,7 @@ describe('claims in readonly (TV) mode', () => {
     expect(await mod.submitClaim('x', 5, asAmy)).toBe(false);
     expect(await mod.decideClaim('c1', 'approved', 5, admin, asDad)).toBe(false);
     expect(patchRoot).not.toHaveBeenCalled();
+    expect(takeClaim).not.toHaveBeenCalled();
     vi.doUnmock('../src/config.js');
   });
 });

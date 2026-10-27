@@ -1,6 +1,6 @@
 import { state } from './state.js';
 import { READONLY } from './config.js';
-import { patchRoot } from './firebase.js';
+import { patchRoot, takeClaim } from './firebase.js';
 import { showToast } from './ui.js';
 import { adjustBonus } from './bonus.js';
 import { esc, jsq } from './utils.js';
@@ -62,9 +62,11 @@ export async function decideClaim(id, status, points, isAdminFn, currentMemberFn
   }
   deciding.add(id);
   try {
-    // Remove first so two parents (or a double tap) can never award the same claim twice.
-    try { await patchRoot({ ['claims/' + id]: null }); }
+    // Remove first, atomically, so two parents (or a double tap) can never award the same claim twice.
+    let taken;
+    try { taken = await takeClaim(id); }
     catch (err) { showToast('Update failed: ' + (err.code || err.message)); return false; }
+    if (!taken) { showToast('Not updated: already decided, or offline'); return false; }
     delete state.claims[id];
     if (status === 'denied') { showToast('Denied ' + c.name); return true; }
     if (!state.members[c.member]) { showToast(c.member + ' is no longer a member — claim removed'); return false; }
