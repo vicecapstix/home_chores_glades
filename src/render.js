@@ -3,6 +3,7 @@ import { PCOLS, BADGES, READONLY } from './config.js';
 import { renderTvStrip } from './tv.js';
 import { renderGoal } from './goal.js';
 import { renderTeamGoal } from './teamgoal.js';
+import { renderDoublePointsBanner, activeMultiplier } from './doublepoints.js';
 import { awayText, esc, jsq, taskPoints, avatarPrefix, validTime, dueStatus, freqLabel, rotationTag, isMine, isSkipped, localDateStr, doneAgoLabel, currentStreak, goalHTML, isStaleDoneOnce, viewFromSearch } from './utils.js';
 import { pColor } from './ui.js';
 import { syncTagHTML } from './pending.js';
@@ -170,6 +171,7 @@ export function render() {
   renderTvStrip();
   renderGoal(Object.values(state.tasks || {}));
   renderTeamGoal();
+  renderDoublePointsBanner();
   if (!READONLY) {
     document.body.setAttribute('data-role', _isAdmin() ? 'admin' : 'member');
   }
@@ -392,7 +394,7 @@ export function cardHTML(t) {
   const freqTag = t.freq === 'once'
     ? '<span class="tag tag-freq">📅 ' + esc(t.dueDate || 'One-off') + '</span>'
     : '<span class="tag tag-freq">' + esc(freqLabel(t)) + '</span>';
-  const n = taskPoints(t);
+  const n = taskPoints(t) * activeMultiplier();
   const ptsTag = t.done ? '' : '<span class="tag tag-freq tag-pts" aria-label="worth ' + n + ' point' + (n === 1 ? '' : 's') + '">+' + n + ' pts</span>';
   const timeTag = validTime(t.dueTime) ? '<span class="tag tag-freq">⏰ ' + esc(t.dueTime) + '</span>' : '';
   const catTag = t.category ? '<span class="tag tag-freq">' + esc(t.category) + '</span>' : '';

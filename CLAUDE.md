@@ -50,6 +50,7 @@ src/
   restore.js       — admin restore from JSON backup (validate, caps, keeps PINs)
   theme.js         — Auto/Light/Dark theme setting (follows prefers-color-scheme)
   teamgoal.js      — family weekly points goal (state/teamGoal), bar + admin form
+  doublepoints.js  — double-points day (state/doublePoints {date, mult}), banner + admin form
   tv.js            — TV dashboard helpers for ?readonly=1
   starter.js       — built-in starter chore list + "Add from list" modal (static code, survives a wipe)
   public/          — sw.js, manifest.webmanifest, icons (copied to dist/ by Vite)
@@ -101,6 +102,7 @@ Database path: `/state`
   teamGoal:  { points, reward }  ← weekly family goal; progress computed from history
   redemptions: { "<id>": { id, rewardId, rewardName, cost, member, requestedAt, status, …, givenAt?, givenBy? } }
   pause:     { until, by, since }  ← house pause (holiday mode); absent when not paused
+  doublePoints: { date, mult }  ← double-points day (x2/x3 on one local date); absent when off
 ```
 
 Required rules (Firebase Console → Realtime Database → Rules):

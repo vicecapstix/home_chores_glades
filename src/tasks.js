@@ -3,6 +3,7 @@ import { READONLY, BADGES, CATEGORIES } from './config.js';
 import { patchPaths, adjustMemberPoints, appendHistory, removeHistoryEntry, patchTask, patchMember, patchRoot, removeTask, restoreTask, patchSubtask } from './firebase.js';
 import { showToast } from './ui.js';
 import { pushUndo } from './undo.js';
+import { activeMultiplier } from './doublepoints.js';
 import { esc, jsq, validTime, validInterval, INTERVAL_MIN, INTERVAL_MAX, freqDays, cycleDays, daysSince, dueStatus, taskPoints, getWeekStart, localDateStr, prevScheduledStart, isStaleDoneOnce, initialLastDone, nextRotationPerson, awayNames, DAY_NAMES } from './utils.js';
 
 // Re-export for other modules
@@ -222,6 +223,7 @@ export async function toggleTask(id, currentMemberFn, isAdminFn) {
   const blocked = ownershipBlock(t, me, isAdminFn);
   if (blocked) { showToast(blocked); return; }
   const done = !t.done;
+  const earned = taskPoints(t) * activeMultiplier(); // double-points day (#225); stored so uncheck reverses exactly
   // 'Anyone' tasks credit the logged-in member who ticks them (if they exist).
   const awardee = t.person || (me && state.members[me] ? me : '');
   const nowTs = Date.now(); // shared by lastDone and the history entry so uncheck can match them
@@ -233,7 +235,7 @@ export async function toggleTask(id, currentMemberFn, isAdminFn) {
     const am = state.members[awardee];
     if (am) { taskUpdate.prevStreak = am.streak || 0; taskUpdate.prevStreakDate = am.lastStreakDate || ''; }
     taskUpdate.lastDoneBy     = awardee;
-    taskUpdate.lastDonePoints = taskPoints(t);
+    taskUpdate.lastDonePoints = earned;
     taskUpdate.lastDoneWeek   = getWeekStart();
   } else if (!done) {
     taskUpdate.lastDoneBy     = null;
@@ -269,7 +271,7 @@ export async function toggleTask(id, currentMemberFn, isAdminFn) {
   if (done && awardee) {
     const m = state.members[awardee];
     if (!m) return;
-    const pts       = taskPoints(t);
+    const pts       = earned;
     const today     = localDateStr();
     const yd        = new Date(); yd.setDate(yd.getDate() - 1);
     const yesterday = localDateStr(yd);
@@ -295,7 +297,7 @@ export async function toggleTask(id, currentMemberFn, isAdminFn) {
       });
     } catch (err) { showToast('Member update failed: ' + (err.code || err.message)); }
     // History
-    const histEntry  = { taskId: id, taskName: t.name, person: awardee, completedAt: nowTs, points: taskPoints(t) };
+    const histEntry  = { taskId: id, taskName: t.name, person: awardee, completedAt: nowTs, points: earned };
     try {
       await appendHistory(histEntry);
     } catch (err) { showToast('History update failed: ' + (err.code || err.message)); }

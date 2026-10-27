@@ -528,6 +528,10 @@ body.tv-panel-on #main-content { display: none; }
   body.tv .section[data-k="available"] { grid-row: 2; }
   body.tv .section[data-k="ok"] { grid-row: 3; }
 }
+/* DOUBLE-POINTS DAY (#225) */
+.double-banner { flex: 1 1 100%; order: 8; padding: 6px 10px; border-radius: var(--radius-sm); background: var(--warn, var(--accent)); color: #fff; font-weight: 700; font-size: 0.9rem; text-align: center; }
+.double-banner.hidden { display: none; }
+body.tv .double-banner { font-size: 2rem; padding: 10px 16px; }
 /* FAMILY DAILY GOAL */
 .goal { position: relative; flex: 1 1 100%; order: 9; }
 .goal.hidden { display: none; }
