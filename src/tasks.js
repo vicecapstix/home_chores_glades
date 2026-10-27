@@ -214,8 +214,16 @@ async function undoCompletionRecords(id, t, c) {
   catch (err) { showToast('Member update failed: ' + (err.code || err.message)); }
 }
 
+// Ids being toggled right now: a quick second tap must not run the uncheck path mid-check (#218).
+const toggling = new Set();
+
 export async function toggleTask(id, currentMemberFn, isAdminFn) {
-  if (READONLY) return;
+  if (READONLY || toggling.has(id)) return;
+  toggling.add(id);
+  try { await runToggle(id, currentMemberFn, isAdminFn); } finally { toggling.delete(id); }
+}
+
+async function runToggle(id, currentMemberFn, isAdminFn) {
   const t = state.tasks[id];
   if (!t) return;
   const me = currentMemberFn();
