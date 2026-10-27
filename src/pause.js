@@ -3,6 +3,7 @@ import { state } from './state.js';
 import { READONLY } from './config.js';
 import { patchRoot } from './firebase.js';
 import { showToast } from './ui.js';
+import { writeBlocked, isLive } from './writegate.js';
 import { esc, localDateStr } from './utils.js';
 
 const DAY = 86400000;
@@ -48,6 +49,7 @@ export function computeResumePatch(pause, tasks, members, endMs, today = localDa
 
 export async function setPause(until, isAdminFn, currentMemberFn) {
   if (READONLY || !isAdminFn()) return;
+  if (writeBlocked(showToast)) return;
   if (!DATE_RE.test(until || '') || until < localDateStr()) { showToast('Pick an end date from today on'); return; }
   const pause = { until, by: currentMemberFn() || '', since: Date.now() };
   try {
@@ -68,6 +70,7 @@ async function resume(endMs) {
 
 export async function clearPause(isAdminFn) {
   if (READONLY || !isAdminFn() || !state.pause) return;
+  if (writeBlocked(showToast)) return;
   await resume(Date.now());
   showToast('Resumed');
 }
@@ -75,7 +78,7 @@ export async function clearPause(isAdminFn) {
 // Any editing client finishes an expired pause (start of the day after `until`).
 export function checkPauseExpiry(now = Date.now()) {
   const p = state.pause;
-  if (READONLY || !p || !DATE_RE.test(p.until || '') || localDateStr(new Date(now)) <= p.until) return;
+  if (READONLY || !isLive() || !p || !DATE_RE.test(p.until || '') || localDateStr(new Date(now)) <= p.until) return;
   const end = parseLocal(p.until); end.setDate(end.getDate() + 1);
   resume(Math.min(end.getTime(), now));
 }

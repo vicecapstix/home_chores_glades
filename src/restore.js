@@ -3,6 +3,7 @@
 import { state } from './state.js';
 import { READONLY, HISTORY_CAP } from './config.js';
 import { patchRoot } from './firebase.js';
+import { writeBlocked } from './writegate.js';
 import { showToast, MAX_TEMPLATES, MAX_TEMPLATE_TASKS } from './ui.js';
 import { openModal, closeModal } from './modals.js';
 import { validateMemberName } from './members.js';
@@ -130,6 +131,7 @@ export function cancelRestore() { _pending = null; closeModal('restore-modal'); 
 export async function confirmRestore(typed, isAdminFn) {
   if (READONLY || !isAdminFn() || !_pending) return false;
   if (String(typed).trim() !== CONFIRM_WORD) { showToast('Type ' + CONFIRM_WORD + ' to confirm'); return false; }
+  if (writeBlocked(showToast)) return false;
   if (!downloadBackup(isAdminFn)) { showToast('Safety backup failed: restore cancelled'); return false; }
   try {
     await patchRoot(restorePayload(_pending.clean, state.nextId));

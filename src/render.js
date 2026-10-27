@@ -6,6 +6,7 @@ import { renderTeamGoal } from './teamgoal.js';
 import { awayText, esc, jsq, taskPoints, avatarPrefix, validTime, dueStatus, freqLabel, rotationTag, isMine, isSkipped, localDateStr, doneAgoLabel, currentStreak, goalHTML, isStaleDoneOnce, viewFromSearch } from './utils.js';
 import { pColor } from './ui.js';
 import { syncTagHTML } from './pending.js';
+import { writeBlocked } from './writegate.js';
 
 // ── Session function references (set once via initRender) ─────────────────────
 let _isAdmin       = () => false;
@@ -112,6 +113,7 @@ export async function bulkAssign() {
   const person = document.getElementById('bulk-person').value;
   const { patchPaths } = await import('./firebase.js');
   const { showToast }  = await import('./ui.js');
+  if (writeBlocked(showToast)) return;
   // Only the changed leaves, in one multi-path update. A rotation that doesn't
   // include the new assignee (or "Anyone") would override the choice at the next reset, so drop it.
   const paths = {};
@@ -144,6 +146,7 @@ export async function bulkDelete() {
   const { removeTask, restoreTask } = await import('./firebase.js');
   const { showToast }               = await import('./ui.js');
   const { pushUndo }                = await import('./undo.js');
+  if (writeBlocked(showToast)) return;
   const saved = [...selectedIds].map(id => ({ id, data: { ...state.tasks[id] } }));
   try {
     await Promise.all([...selectedIds].map(id => removeTask(id)));

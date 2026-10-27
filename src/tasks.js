@@ -310,6 +310,7 @@ export async function toggleTask(id, currentMemberFn, isAdminFn) {
 
 export async function deleteTask(id, isAdminFn) {
   if (READONLY || !isAdminFn()) return;
+  if (writeBlocked(showToast)) return;
   const t = state.tasks[id];
   if (!t) return;
   const savedData = { ...t };
