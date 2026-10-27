@@ -444,6 +444,8 @@ body.tv-panel-on #main-content { display: none; }
 .starter-meta { font-size: 0.8rem; color: var(--muted); text-align: right; }
 .starter-add { width: 100%; margin-top: var(--space-md); }
 .empty-link { background: none; border: none; color: var(--accent); font: inherit; text-decoration: underline; cursor: pointer; padding: 0; }
+.new-check, .edit-check { display: inline-flex; align-items: center; gap: 6px; font-size: 0.85rem; color: var(--muted); min-height: 44px; }
+.check-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-sm); padding: 6px 0 2px; font-size: 0.85rem; color: var(--muted); }
 .tpl-item { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
 .tpl-item:last-child { border-bottom: none; }
 .tpl-item-info { flex: 1; }

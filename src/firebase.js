@@ -144,6 +144,19 @@ export async function spendPoints(name, cost) {
   return !!res.committed;
 }
 
+// Parent check (#238): atomically take (and clear) a task's pending check request. Returns the
+// request, or null if there was none, so only one parent's tap can complete it.
+export async function takeCheckPending(id) {
+  if (READONLY || !_db) return null;
+  if (!_live) throw Object.assign(new Error('Still connecting — try again in a moment'), { code: 'offline' });
+  let taken = null;
+  const res = await runTransaction(ref(_db, 'state/tasks/' + id + '/checkPending'), cur => {
+    if (!cur) return undefined;
+    taken = cur; return null;
+  });
+  return res.committed ? taken : null;
+}
+
 // Atomically move a pending redemption to approved/denied. Returns false if it
 // no longer exists or was already decided (so a request is decided only once).
 export async function decideRedemption(id, status, by) {
