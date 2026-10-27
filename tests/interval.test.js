@@ -156,3 +156,24 @@ describe('add / edit form validation', () => {
     expect(state.tasks.a.intervalDays).toBeUndefined();
   });
 });
+
+describe('saveTask persists intervalDays (#215)', () => {
+  const card = (freq, n) => {
+    document.body.innerHTML = '<div id="tc-a" class="task-card editing"><input class="edit-name" value="Plants"><select class="edit-freq"><option value="' + freq + '" selected></option></select>' +
+      '<input class="edit-interval" value="' + n + '"><div class="edit-days"></div><input class="edit-duedate"><input class="edit-duetime"><select class="edit-diff"><option>easy</option></select>' +
+      '<select class="edit-cat"><option value=""></option></select><select class="edit-person"><option value="Ann">Ann</option></select><textarea class="edit-notes"></textarea></div><div id="toast"></div>';
+  };
+  it('writes the new N to tasks/<id>/intervalDays', async () => {
+    state.tasks = { a: mk({ done: false }) };
+    card('interval', '12'); await saveTask('a', admin);
+    expect(patchPaths).toHaveBeenCalledTimes(1);
+    expect(patchPaths.mock.calls[0][0]['tasks/a/intervalDays']).toBe(12);
+  });
+  it('writes null when switching to a non-interval frequency', async () => {
+    state.tasks = { a: mk({ done: false }) };
+    card('weekly', '12'); await saveTask('a', admin);
+    const paths = patchPaths.mock.calls[0][0];
+    expect('tasks/a/intervalDays' in paths).toBe(true);
+    expect(paths['tasks/a/intervalDays']).toBeNull();
+  });
+});

@@ -12,6 +12,7 @@ import { initFirebase, initAuth, describeAuthFailure, setWritesEnabled, setAuthC
 import { initModalBackButton, openModal, closeModal } from './modals.js';
 import { initDialogA11y, initCardArrowNav } from './a11y.js';
 import { popUndo } from './undo.js';
+import { openStarter, closeStarter, toggleStarterCat, addSelectedStarter } from './starter.js';
 
 import {
   showToast, toggleTheme, syncThemeButton,
@@ -341,6 +342,12 @@ window.adminPanelSwitchUser = function() {
   window.closeAdminPanel();
   window.switchUser();
 };
+
+// Starter chore list (#233)
+window.openStarter        = () => openStarter(_isAdmin);
+window.closeStarter       = () => closeStarter();
+window.toggleStarterCat   = cat => toggleStarterCat(cat);
+window.addSelectedStarter = () => addSelectedStarter(_isAdmin);
 
 // Modals
 window.closeModal    = id         => closeModal(id);

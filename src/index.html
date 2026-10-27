@@ -189,6 +189,18 @@
   </div>
 </div>
 
+<!-- STARTER CHORES MODAL -->
+<div id="starter-modal" class="hidden" role="dialog" aria-modal="true" aria-labelledby="starter-title" onclick="window.closeStarter()">
+  <div class="tpl-card" onclick="event.stopPropagation()">
+    <div class="lb-header">
+      <span class="lb-title" id="starter-title">Add from list</span>
+      <button class="lb-close" aria-label="Close" onclick="window.closeStarter()">×</button>
+    </div>
+    <div id="starter-list"></div>
+    <button class="btn-lg btn-accent starter-add" onclick="window.addSelectedStarter()">Add selected</button>
+  </div>
+</div>
+
 <!-- TEMPLATES MODAL -->
 <div id="templates-modal" class="hidden" role="dialog" aria-modal="true" aria-labelledby="templates-title" onclick="window.closeModal('templates-modal')">
   <div class="tpl-card" onclick="event.stopPropagation()">
@@ -330,6 +342,7 @@
     <label for="new-person" class="sr-only">Assign to</label>
     <select id="new-person"></select>
     <button class="btn-lg btn-accent" onclick="window.addTask()">+ Add chore</button>
+    <button class="btn-lg" onclick="window.openStarter()">Add from list</button>
     <a class="note-toggle" onclick="window.toggleNewNote()">+ note</a>
     <label for="new-notes" class="sr-only">Note</label>
     <textarea id="new-notes" class="note-input" placeholder="Add a note..." maxlength="300" style="display:none"></textarea>
