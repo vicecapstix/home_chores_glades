@@ -183,7 +183,7 @@ export async function saveTask(id, isAdminFn) {
     [p + 'dueDate']: t.dueDate, [p + 'dueTime']: t.dueTime || null,
     [p + 'difficulty']: t.difficulty, [p + 'category']: t.category,
     [p + 'person']: t.person, [p + 'notes']: t.notes, [p + 'rotation']: t.rotation || null,
-    [p + 'lastDone']: t.lastDone,
+    [p + 'lastDone']: t.lastDone, [p + 'intervalDays']: t.intervalDays || null,
   };
   try { await patchPaths(paths); } catch (err) { showToast('Save failed: ' + (err.code || err.message)); }
 }
