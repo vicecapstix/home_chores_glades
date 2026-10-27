@@ -20,7 +20,8 @@ export function validateBonus(amount, reason) {
 }
 
 // Admin gives (+) or takes (-) points outside chores. Atomic on the live
-// server value; a positive award also counts toward this week.
+// server value; awards and deductions both count toward this week (#221),
+// which the transaction keeps at 0 or above.
 export async function adjustBonus(name, amount, reason, isAdminFn, currentMemberFn, confirmFn = confirm) {
   if (READONLY || !isAdminFn()) return false;
   if (!state.members[name]) return false;
@@ -28,7 +29,7 @@ export async function adjustBonus(name, amount, reason, isAdminFn, currentMember
   reason = String(reason || '').trim();
   const bad = validateBonus(amount, reason);
   if (bad) { showToast(bad); return false; }
-  const opts = { pts: amount, count: 0, weekStart: getWeekStart(), countWeek: amount > 0 };
+  const opts = { pts: amount, count: 0, weekStart: getWeekStart(), countWeek: true };
   try {
     let r = await adjustMemberPoints(name, opts);
     if (!r.ok && r.reason === 'insufficient') {
