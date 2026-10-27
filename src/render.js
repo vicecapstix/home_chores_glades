@@ -314,7 +314,11 @@ function _renderTasks() {
     html += '</div>';
   }
   const showStale = !READONLY && stale.length;
-  if (!html && !showStale) html = '<div class="empty">Nothing here — all clear!</div>';
+  if (!html && !showStale) {
+    const noChores = !READONLY && _isAdmin() && !Object.keys(state.tasks || {}).length;
+    html = noChores ? '<div class="empty">No chores yet — <button class="empty-link" onclick="window.openStarter()">Add from list</button></div>'
+      : '<div class="empty">Nothing here — all clear!</div>';
+  }
   const taskList = document.getElementById('task-list');
   const kept = _captureInProgress(taskList);
   const staleOpen = !!taskList.querySelector('details.done-once[open]');
