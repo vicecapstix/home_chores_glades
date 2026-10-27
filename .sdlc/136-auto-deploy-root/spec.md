@@ -4,8 +4,8 @@ JT chose option A on 26 Oct.
 
 ## Behaviour
 - New workflow `.github/workflows/deploy-root.yml`, trigger `push` to `main` only (never `pull_request`, so it cannot run for fork PRs).
-- Steps: checkout latest `main`, `npm ci`, `npm run build:pages`, and if any root deployed file changed, commit as `github-actions[bot]` with `[skip ci]` and push to `main`. Finally verify root files equal `dist/`.
-- No loop: job `if: github.actor != 'github-actions[bot]'`, `[skip ci]` in the message, and pushes made with `GITHUB_TOKEN` do not trigger workflows anyway. A no-change build commits nothing.
+- Steps: checkout latest `main`, `npm ci`, `npm run build:pages`, and if any root deployed file changed, commit as `github-actions[bot]` (no CI-skip tag, so the Pages build isn't suppressed) and push to `main`. Finally verify root files equal `dist/`.
+- No loop: job `if: github.actor != 'github-actions[bot]'`, and pushes made with `GITHUB_TOKEN` do not trigger workflows anyway. A no-change build commits nothing.
 - Serialised with `concurrency` (`cancel-in-progress: false`) and checkout of `main`'s tip, so two quick merges do not race.
 - `ci.yml` keeps tests + build on PRs and main, but drops the "root files are stale" failure. PRs no longer need to commit `index.html`, `sw.js`, etc. (a PR that still does is harmless).
 

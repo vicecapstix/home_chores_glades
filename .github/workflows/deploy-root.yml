@@ -12,7 +12,8 @@ concurrency:
   cancel-in-progress: false
 jobs:
   rebuild:
-    # Skip the bot's own commits (also marked [skip ci]).
+    # Skip the bot's own commits. No CI-skip tag in the commit message: it could
+    # also suppress the GitHub Pages build of the rebuilt files.
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
@@ -34,7 +35,7 @@ jobs:
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add $FILES
-            git commit -m "Rebuild root deploy files [skip ci]"
+            git commit -m "Rebuild root deploy files"
             git push origin HEAD:main
           fi
       - name: Verify root files match a fresh build

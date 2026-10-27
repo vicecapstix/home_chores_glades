@@ -76,7 +76,7 @@ npm run build:pages  # build, then copy dist/index.html → ./index.html (the de
 npm run preview      # serve the built dist/ locally
 ```
 
-GitHub Pages is configured to serve from `main` / `/ (root)`. The deployed files are the **root** `index.html`, `sw.js`, `manifest.webmanifest` and the icons; `dist/` is git-ignored. Rule: PRs change `src/` only and do **not** need to commit the root files. After each merge to `main`, `.github/workflows/deploy-root.yml` runs `npm run build:pages` and commits the updated root files as `github-actions[bot]` (`[skip ci]`), which is what GitHub Pages serves. CI (`.github/workflows/ci.yml`) runs tests + build on every PR. Run `git pull` before pushing, because `main` receives those bot commits.
+GitHub Pages is configured to serve from `main` / `/ (root)`. The deployed files are the **root** `index.html`, `sw.js`, `manifest.webmanifest` and the icons; `dist/` is git-ignored. Rule: PRs change `src/` only and do **not** need to commit the root files. After each merge to `main`, `.github/workflows/deploy-root.yml` runs `npm run build:pages` and commits the updated root files as `github-actions[bot]` (no CI-skip tag, so GitHub Pages publishes it), which is what GitHub Pages serves. CI (`.github/workflows/ci.yml`) runs tests + build on every PR. Run `git pull` before pushing, because `main` receives those bot commits.
 
 ## Key constants / configuration
 

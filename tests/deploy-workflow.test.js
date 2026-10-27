@@ -23,8 +23,9 @@ describe('auto-deploy of root files after a merge (#136)', () => {
   });
   it('cannot loop on its own commits and queues instead of racing', () => {
     const y = read('.github/workflows/deploy-root.yml');
-    expect(y).toMatch(/github\.actor\s*!=\s*'github-actions\[bot\]'/);
-    expect(y).toMatch(/\[skip ci\]/);
+    expect(y).toMatch(/^\s*if:\s*github\.actor\s*!=\s*'github-actions\[bot\]'/m);
+    // The bot commit must not carry a CI-skip tag, or Pages may not publish it.
+    expect(y).not.toMatch(/\[(skip ci|ci skip|no ci|skip actions|actions skip)\]/i);
     expect(y).toMatch(/concurrency:/);
     expect(y).toMatch(/cancel-in-progress:\s*false/);
   });
