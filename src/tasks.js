@@ -230,6 +230,8 @@ export async function toggleTask(id, currentMemberFn, isAdminFn) {
   // 'Anyone' tasks credit the logged-in member who ticks them (if they exist).
   const awardee = t.person || (me && state.members[me] ? me : '');
   if (t.needsCheck && !t.done && !isAdminFn()) return submitForCheck(id, t, me, awardee);
+  // A parent ticking a waiting card means "Looks good" for the child (taken atomically, awarded once).
+  if (!t.done && t.checkPending && isAdminFn()) return approveCheck(id, isAdminFn, currentMemberFn);
   return applyToggle(id, t, awardee, Date.now(), isAdminFn);
 }
 
@@ -256,7 +258,8 @@ export async function approveCheck(id, isAdminFn, currentMemberFn) {
     try { p = await takeCheckPending(id); } catch (err) { showToast('Update failed: ' + (err.code || err.message)); return; }
     if (!p) { showToast('Already checked'); return; }
     if (!state.members[p.by]) { showToast(p.by + ' is no longer a member'); await patchTask(id, { checkPending: p }).catch(() => {}); return; }
-    await applyToggle(id, t, p.by, p.at, isAdminFn, currentMemberFn() || 'admin');
+    const ok = await applyToggle(id, t, p.by, p.at, isAdminFn, currentMemberFn() || 'admin');
+    if (ok === false) await patchTask(id, { checkPending: p }).catch(() => {}); // completion not saved: keep the child's request
   } finally { checking.delete(id); }
 }
 
@@ -316,7 +319,7 @@ async function applyToggle(id, t, awardee, nowTs, isAdminFn, checkedBy) {
     showToast('Update failed: ' + (err.code || err.message));
     // Task still checked: put the reversed points back.
     if (reversal) adjustMemberPoints(t.lastDoneBy, { ...reversal, pts: -reversal.pts, count: 1, allowNegative: true }).catch(() => {});
-    return;
+    return false;
   }
   if (!done) await undoCompletionRecords(id, t, completion);
   // Award points when checking

@@ -13,7 +13,7 @@ vi.mock('../src/firebase.js', () => ({
 vi.mock('../src/undo.js', () => ({ pushUndo: vi.fn() }));
 import { patchTask, patchPaths, takeCheckPending, adjustMemberPoints, appendHistory, patchMember } from '../src/firebase.js';
 import { toggleTask, approveCheck, sendBackCheck, addTask, saveTask } from '../src/tasks.js';
-import { cardHTML as renderCard } from '../src/render.js';
+import { cardHTML as renderCard, initRender } from '../src/render.js';
 import { dueStatus, taskPoints } from '../src/utils.js';
 
 const NOW = new Date(2026, 9, 27, 12).getTime();
@@ -107,6 +107,52 @@ describe('admin tick and unflagged chores', () => {
     await toggleTask('a', () => 'Bo', () => false);
     expect(adjustMemberPoints).toHaveBeenCalledTimes(1);
     expect(appendHistory.mock.calls[0][0].checkedBy).toBeUndefined();
+  });
+});
+
+describe('review fixes: admin tick, failed completion, buttons', () => {
+  beforeEach(() => { state.tasks.a = mkTask({ person: '', checkPending: { by: 'Bo', at: TICK } }); });
+  it('admin ticking a waiting card approves for the child, not for the admin', async () => {
+    await toggleTask('a', () => 'Ann', () => true);
+    expect(takeCheckPending).toHaveBeenCalledTimes(1);
+    expect(adjustMemberPoints).toHaveBeenCalledTimes(1);
+    expect(adjustMemberPoints.mock.calls[0][0]).toBe('Bo');
+    expect(patchTask.mock.calls.find(c => c[1].done)[1]).toMatchObject({ lastDoneBy: 'Bo', lastDone: TICK });
+    expect(appendHistory.mock.calls[0][0]).toMatchObject({ person: 'Bo', checkedBy: 'Ann' });
+  });
+  it('a second parent ticking after the request was taken cannot award twice', async () => {
+    await Promise.all([toggleTask('a', () => 'Ann', () => true), approveCheck('a', () => true, () => 'Cy')]);
+    expect(adjustMemberPoints).toHaveBeenCalledTimes(1);
+    expect(appendHistory).toHaveBeenCalledTimes(1);
+  });
+  it('puts the request back when saving the completion fails', async () => {
+    patchTask.mockRejectedValueOnce(Object.assign(new Error('x'), { code: 'PERMISSION_DENIED' }));
+    await approveCheck('a', () => true, () => 'Ann');
+    expect(adjustMemberPoints).not.toHaveBeenCalled();
+    const restore = patchTask.mock.calls.find(c => c[1].checkPending);
+    expect(restore[1].checkPending).toEqual({ by: 'Bo', at: TICK });
+  });
+  it('approve and send back do nothing in READONLY (TV) mode', async () => {
+    vi.resetModules();
+    vi.doMock('../src/config.js', async () => ({ ...(await vi.importActual('../src/config.js')), READONLY: true }));
+    const mod = await import('../src/tasks.js');
+    const { state: st } = await import('../src/state.js');
+    const fb = await import('../src/firebase.js');
+    st.members = { Bo: { name: 'Bo', role: 'member' } }; st.tasks = { a: mkTask({ checkPending: { by: 'Bo', at: TICK } }) };
+    await mod.approveCheck('a', () => true, () => 'Ann');
+    await mod.sendBackCheck('a', 'x', () => true);
+    expect(fb.takeCheckPending).not.toHaveBeenCalled();
+    expect(fb.patchTask).not.toHaveBeenCalled();
+    vi.doUnmock('../src/config.js');
+  });
+  it('shows the escaped buttons to admins only, never to members', () => {
+    const w = mkTask({ checkPending: { by: '<b>Bo</b>', at: TICK } });
+    initRender(() => true, () => 'Ann');
+    const admin = renderCard(w);
+    expect(admin).toContain('window.approveCheck'); expect(admin).toContain('window.sendBackCheck');
+    expect(admin).toContain('&lt;b&gt;Bo&lt;/b&gt; is waiting'); expect(admin).not.toContain('<b>Bo</b>');
+    initRender(() => false, () => 'Bo');
+    expect(renderCard(w)).not.toContain('window.approveCheck');
   });
 });
 
