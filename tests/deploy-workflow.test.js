@@ -21,6 +21,16 @@ describe('auto-deploy of root files after a merge (#136)', () => {
     expect(y).toMatch(/git push/);
     expect(y).toContain('github-actions[bot]');
   });
+  it('checks out main and commits and pushes all six root files to main', () => {
+    const y = read('.github/workflows/deploy-root.yml');
+    expect(y).toMatch(/uses:\s*actions\/checkout@\S+\s*\n\s*with:\s*\n\s*ref:\s*main/);
+    const files = y.match(/^\s*FILES="([^"]+)"/m);
+    expect(files).not.toBeNull();
+    expect(files[1].split(/\s+/).sort()).toEqual(['icon-192.png', 'icon-512.png', 'icon.svg', 'index.html', 'manifest.webmanifest', 'sw.js']);
+    expect(y).toMatch(/^\s*git add \$FILES\s*$/m);
+    expect(y).toMatch(/^\s*git commit -m "[^"]+"\s*$/m);
+    expect(y).toMatch(/^\s*git push origin HEAD:main\s*$/m);
+  });
   it('cannot loop on its own commits and queues instead of racing', () => {
     const y = read('.github/workflows/deploy-root.yml');
     expect(y).toMatch(/^\s*if:\s*github\.actor\s*!=\s*'github-actions\[bot\]'/m);
