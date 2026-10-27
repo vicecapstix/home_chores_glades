@@ -22,7 +22,7 @@ src/
   auth.js          — login/session flow, member PIN, isAdmin, currentMember
   utils.js         — pure helpers: esc, sha256, dueStatus, taskPoints, freqDays, …
   ui.js            — showToast, toggleTheme, leaderboard, stats, templates, modals
-  tasks.js         — task CRUD, toggle (check/uncheck), subtasks, claim, drag-drop
+  tasks.js         — task CRUD, toggle (check/uncheck), subtasks, claim, skip, move up/down reorder
   members.js       — member add/remove/toggleRole
   render.js        — DOM rendering: render(), cardHTML(), filters, select/bulk mode
   modals.js        — modal stack manager + browser back-button support
@@ -101,6 +101,7 @@ Database path: `/state`
   rewards:   { "<id>": { id, name, cost, icon } }
   teamGoal:  { points, reward }  ← weekly family goal; progress computed from history
   redemptions: { "<id>": { id, rewardId, rewardName, cost, member, requestedAt, status, …, givenAt?, givenBy? } }
+  pause:     { until, by, since }  ← house pause (holiday mode); absent when not paused
 ```
 
 Required rules (Firebase Console → Realtime Database → Rules):
@@ -205,7 +206,8 @@ Every piece of user-supplied data injected into `innerHTML` or an `onclick` stri
 {
   id,            // 't' + Date.now() — alphanumeric, safe in HTML id attrs
   name,
-  freq,          // 'daily'|'weekdays'|'weekly'|'fortnightly'|'monthly'|'once'
+  freq,          // 'daily'|'weekdays'|'weekly'|'fortnightly'|'monthly'|'once'|'interval'
+  intervalDays,  // whole days between resets, only used when freq === 'interval' ("Every N days")
   days,          // number[] 0-6 (Sun=0), only used when freq === 'weekdays'
   dueDate,       // YYYY-MM-DD string, only used when freq === 'once'
   dueTime,       // 'HH:MM' optional due time (omitted when unset)
@@ -218,7 +220,13 @@ Every piece of user-supplied data injected into `innerHTML` or an `onclick` stri
   difficulty,    // 'easy'|'medium'|'hard'
   category,      // one of CATEGORIES or ''
   subtasks,      // { 's<timestamp>': { id, name, done } }
-  order,         // number used for drag-and-drop ordering
+  order,         // number used for move up/down ordering
+  rotation,      // string[] of 2+ member names; person advances on each reset (omitted when off)
+  skippedAt,     // timestamp ms of the last "Skip this time" (equals lastDone while skipped)
+  prevLastDone,  // lastDone before the current check, restored on uncheck (null when unchecked)
+  lastDoneWeek,  // YYYY-MM-DD week start the points were counted in, so uncheck reverses the right week
+  prevStreak,    // completer's streak before this check, restored on uncheck
+  prevStreakDate,// completer's lastStreakDate before this check, restored on uncheck
 }
 ```
 
@@ -234,7 +242,13 @@ Every piece of user-supplied data injected into `innerHTML` or an `onclick` stri
   streak,         // consecutive days with at least one completion
   lastStreakDate, // YYYY-MM-DD of last completion (for streak tracking)
   completedCount, // all-time task completions
-  badges,         // string[] — badge ids: 'first', 'century', 'on_fire', 'dedicated'
+  badges,         // string[] — badge ids from BADGES: 'first', 'getting_started', 'tenacious', 'half_century',
+                  //   'century', 'consistent', 'on_fire', 'dedicated'
+  colorIdx,       // index into PCOLS, assigned once so colours stay stable
+  avatar,         // optional emoji avatar (one of AVATARS)
+  awayUntil,      // YYYY-MM-DD inclusive, only while away (away mode)
+  awaySince,      // timestamp ms the away period started
+  goalRewardId,   // reward id the member is saving towards (saving goal)
 }
 ```
 

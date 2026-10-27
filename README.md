@@ -13,16 +13,27 @@ A real-time chore tracker for families — assign tasks, track progress, earn po
 - **Rewards** — admins define a rewards catalog; members spend points on requests, admins approve or deny them
 - **Activity history** — recent completions, filterable by member
 - **My chores** — filter to the chores assigned to you; reorder with the move up/down buttons
-- **Dark mode** — toggle with the moon/sun button in the header
-- **Chore frequencies** — daily, specific weekdays, weekly, fortnightly, monthly, or a one-off task with a due date; optional due time
+- **Theme** — Auto (follows the device), Light or Dark, from the header button
+- **Chore frequencies** — daily, specific weekdays, weekly, fortnightly, monthly, **Every N days**, or a one-off task with a due date; optional due time
+- **Rotate assignee** — a chore can rotate between two or more members each time it resets
+- **Skip this time** — admins can skip one occurrence of a recurring chore (no points, no streak change)
+- **Pause** — admins can pause the whole house until a date (holidays): nothing goes overdue and streaks survive
+- **Away mode** — admins can mark one member away until a date: their chores aren't due, rotations skip them, their streak survives
+- **Add from list** — pick chores from a built-in starter list
 - **Difficulty levels** — easy, medium, hard (affects points earned)
 - **Subtasks** — break a chore into smaller steps
 - **Notes** — attach a note to any task or chore
-- **Status tracking** — Overdue / Due soon / On track / Done today sections
+- **Status tracking** — Available (unassigned) / Overdue / Due soon / Upcoming / Done sections; earlier finished one-offs fold into a collapsed Done list
 - **Inline editing** — edit a task's name, frequency, assignee, or difficulty without deleting it
-- **Points & leaderboard** — members earn points for completing chores; see all-time and weekly rankings
+- **Points & leaderboard** — members earn points for completing chores; see all-time, weekly and last-week rankings
+- **± Points** — admins can give a bonus or a deduction with a reason (recorded in history, undoable)
+- **Saving goal** — a member pins a reward to save towards; a progress bar shows on their chip and the TV
+- **Family goal** — a shared weekly points target with a reward, shown as a progress bar
+- **This week / My progress** — a Mon–Sun planner of what's due, and each member's last 4 weeks of points
+- **Avatars & rename** — admins can give members an emoji avatar or rename them (points and PIN are kept)
 - **Badges** — First Chore (1), Getting Started (10), Tenacious (25), Fifty Strong (50), Century (100 completions); Consistent (3-day streak), On Fire (7), Dedicated (30)
 - **Templates** — save the current task list as a reusable template
+- **Backup, restore & print** — admins can download a JSON backup (no PINs), restore from one (PINs kept), or print a Mon–Sun chart
 - **Stats** — completion charts by week, month, or all time; export to CSV
 - **Browser notifications** — get an alert when a chore goes overdue (requires permission)
 - **Bulk actions** — select multiple tasks to bulk-assign or bulk-delete
@@ -95,12 +106,12 @@ Each member can have an optional 4-digit PIN. An admin sets or changes it in the
 | Mark done | Click the checkbox on the left |
 | Uncheck a task | Click the checkbox again — points are reversed automatically |
 | Delete a chore | Tap/hover the card → click **×** (admin only) |
-| Filter tasks | Use the pill buttons (All / Pending / Overdue / Done today) |
+| Filter tasks | Use the pill buttons (Mine / All / Pending / Overdue / Done; Mine only when signed in) and the category pills — they combine |
 | Bulk actions | Click **Select** in the header, pick tasks, then assign or delete |
 | Leaderboard | Click **🏆** in the header |
 | Stats & export | Click **📊** in the header |
 | Templates | Click **📋** in the header |
-| Dark mode | Click **🌙 / ☀️** in the header |
+| Theme | Click the theme button in the header (Auto → Light → Dark) |
 | Readonly view | Add `?readonly=1` to the URL |
 | Close any modal | Tap ×, tap outside, or press the browser back button |
 
