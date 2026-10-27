@@ -34,6 +34,8 @@ Replace `1234` with the PIN you want and copy the printed hex string.
 
 This deletes all members, tasks and history. There is no in-app reset button.
 
+If you only need to go back to an earlier state, an admin can use **Admin Panel → Restore backup** with a file from **Download backup** instead (it keeps PINs and downloads a safety backup first).
+
 1. Firebase Console → **Realtime Database** → select the `/state` node → three-dot menu → **Delete**.
 2. Reload the site. With zero members the app is in setup mode: anyone can add the first member, who becomes the **admin**. Add yourself, then set a PIN from **Admin Panel → Set PIN**.
 

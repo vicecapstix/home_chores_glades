@@ -22,3 +22,41 @@ describe('docs stay in step with the code (#39)', () => {
     expect(claude).toMatch(/dist\/.*git-ignored/);
   });
 });
+
+describe('README and CLAUDE.md match the current code (#223)', () => {
+  const readme = read('README.md');
+  const claude = read('CLAUDE.md');
+  const src = f => read('src/' + f);
+
+  it('README filter row lists the real status pills', () => {
+    const labels = [...src('render.js').matchAll(/\{ k: '\w+',\s*label: '([^']+)' \}/g)].map(m => m[1]);
+    expect(labels).toEqual(['Mine', 'All', 'Pending', 'Overdue', 'Done']);
+    const row = readme.split('\n').find(l => l.startsWith('| Filter tasks'));
+    expect(row).toBeTruthy();
+    for (const l of labels) expect(row).toContain(l);
+    expect(row).not.toContain('Done today');
+  });
+
+  it('README feature list covers Every N days, skip, pause, away, ± Points and saving goal', () => {
+    for (const s of ['Every N days', 'Skip', 'Pause', 'Away', '± Points', 'Saving goal']) expect(readme).toContain(s);
+  });
+
+  it('CLAUDE.md task data shape lists every task field written by src/', () => {
+    const shape = claude.split('### Task data shape')[1].split('### Member data shape')[0];
+    const tasks = src('tasks.js');
+    const fields = new Set([
+      ...[...tasks.matchAll(/taskUpdate\.(\w+)\s*=/g)].map(m => m[1]),
+      ...[...tasks.matchAll(/\[p \+ '(\w+)'\]/g)].map(m => m[1]),
+      'skippedAt', 'intervalDays', 'rotation',
+    ]);
+    for (const f of fields) expect(shape, f).toMatch(new RegExp('^\\s*' + f + '\\b', 'm'));
+    expect(shape).toContain("'interval'");
+  });
+
+  it('CLAUDE.md member shape lists the extra member fields and /state lists pause', () => {
+    const shape = claude.split('### Member data shape')[1].split('###')[0];
+    for (const f of ['colorIdx', 'avatar', 'awayUntil', 'awaySince', 'goalRewardId']) expect(shape, f).toMatch(new RegExp('^\\s*' + f + '\\b', 'm'));
+    for (const b of ['getting_started', 'tenacious', 'half_century', 'consistent']) expect(shape).toContain(b);
+    expect(claude).toMatch(/^\s*pause:/m);
+  });
+});
