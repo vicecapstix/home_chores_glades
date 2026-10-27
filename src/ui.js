@@ -1,6 +1,7 @@
 import { state, getMembers, memberColor } from './state.js';
 import { PCOLS, BADGES, CATEGORIES, READONLY } from './config.js';
 import { openModal, closeModal } from './modals.js';
+import { writeBlocked } from './writegate.js';
 import { patchPaths } from './firebase.js';
 import { esc, jsq, avatarPrefix, sha256, initialLastDone, validInterval, validTime, dueStatus, localDateStr, currentStreak, currentWeekPoints, weekRecap, lastWeekChampion } from './utils.js';
 import { cycleTheme, initTheme } from './theme.js';
@@ -235,6 +236,7 @@ export function templateTask(t) {
 
 export function saveTemplate() {
   if (READONLY || !isAdmin()) return;
+  if (writeBlocked(showToast)) return;
   const input = document.getElementById('tpl-name-input');
   const name = input.value.trim();
   if (!name) { showToast('Enter a template name'); return; }
@@ -257,6 +259,7 @@ export function saveTemplate() {
 
 export function applyTemplate(id) {
   if (READONLY || !isAdmin()) return;
+  if (writeBlocked(showToast)) return;
   const tpl = (state.templates || {})[id];
   if (!tpl) return;
   let added = 0;

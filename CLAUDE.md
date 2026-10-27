@@ -51,6 +51,7 @@ src/
   theme.js         — Auto/Light/Dark theme setting (follows prefers-color-scheme)
   teamgoal.js      — family weekly points goal (state/teamGoal), bar + admin form
   tv.js            — TV dashboard helpers for ?readonly=1
+  writegate.js     — shared "writes enabled" flag + "Still connecting" guard (cached start)
   starter.js       — built-in starter chore list + "Add from list" modal (static code, survives a wipe)
   public/          — sw.js, manifest.webmanifest, icons (copied to dist/ by Vite)
 tests/             — Vitest unit tests (Firebase mocked; never touch a live DB)

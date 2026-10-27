@@ -2,6 +2,7 @@ import { state, getMembers } from './state.js';
 import { READONLY, BADGES, CATEGORIES } from './config.js';
 import { patchPaths, adjustMemberPoints, appendHistory, removeHistoryEntry, patchTask, patchMember, patchRoot, removeTask, restoreTask, patchSubtask } from './firebase.js';
 import { showToast } from './ui.js';
+import { writeBlocked } from './writegate.js';
 import { pushUndo } from './undo.js';
 import { esc, jsq, validTime, validInterval, INTERVAL_MIN, INTERVAL_MAX, freqDays, cycleDays, daysSince, dueStatus, taskPoints, getWeekStart, localDateStr, prevScheduledStart, isStaleDoneOnce, initialLastDone, nextRotationPerson, awayNames, DAY_NAMES } from './utils.js';
 
@@ -70,6 +71,7 @@ export function rotationChipsHTML(t, members) {
 
 export async function addTask(isAdminFn) {
   if (READONLY || !isAdminFn()) return;
+  if (writeBlocked(showToast)) return;
   const name = document.getElementById('new-task').value.trim();
   if (!name) return;
   const freq    = document.getElementById('new-freq').value;
@@ -152,6 +154,7 @@ export function editTask(id, isAdminFn) {
 
 export async function saveTask(id, isAdminFn) {
   if (READONLY || !isAdminFn()) return;
+  if (writeBlocked(showToast)) return;
   const card = document.getElementById('tc-' + id);
   if (!card) return;
   const name = card.querySelector('.edit-name').value.trim();
@@ -216,6 +219,7 @@ async function undoCompletionRecords(id, t, c) {
 
 export async function toggleTask(id, currentMemberFn, isAdminFn) {
   if (READONLY) return;
+  if (writeBlocked(showToast)) return;
   const t = state.tasks[id];
   if (!t) return;
   const me = currentMemberFn();

@@ -2,6 +2,7 @@ import { state } from './state.js';
 import { READONLY } from './config.js';
 import { patchRoot, spendPoints, refundPoints, decideRedemption } from './firebase.js';
 import { showToast } from './ui.js';
+import { writeBlocked } from './writegate.js';
 import { pushUndo } from './undo.js';
 import { getWeekStart } from './utils.js';
 
@@ -52,6 +53,7 @@ export function usedThisWeek(redemptions, rewardId, member, now = Date.now()) {
 
 export async function requestReward(rewardId, currentMemberFn) {
   if (READONLY || busy) return;
+  if (writeBlocked(showToast)) return;
   const me = currentMemberFn();
   const m = me && state.members[me];
   const reward = state.rewards?.[rewardId];
@@ -100,6 +102,7 @@ export async function requestReward(rewardId, currentMemberFn) {
 // Admin approves or denies a pending request. Deny refunds the points.
 export async function decideRequest(id, status, isAdminFn, currentMemberFn) {
   if (READONLY || !isAdminFn()) return;
+  if (writeBlocked(showToast)) return;
   if (status !== 'approved' && status !== 'denied') return;
   const r = state.redemptions?.[id];
   if (!r || r.status !== 'pending' || deciding) return;
