@@ -22,8 +22,14 @@ describe('CI and deploy tooling', () => {
   it('deploy workflow rebuilds every deployed file and verifies it', () => {
     const y = readFileSync(root('.github/workflows/deploy-root.yml'), 'utf8');
     expect(y).not.toMatch(/continue-on-error/);
+    // The verify step must compare every deployed root file with the fresh dist/ build.
+    const at = y.indexOf('Verify root files match a fresh build');
+    expect(at).toBeGreaterThan(-1);
+    const verify = y.slice(at);
+    expect(verify).toMatch(/cmp\s+"dist\/\$f"\s+"\$f"/);
     for (const f of ['index.html', 'sw.js', 'manifest.webmanifest', 'icon.svg', 'icon-192.png', 'icon-512.png']) {
       expect(y).toContain(f);
+      expect(verify).toContain(f);
     }
   });
   it('build:pages also copies the PWA files to root', () => {
