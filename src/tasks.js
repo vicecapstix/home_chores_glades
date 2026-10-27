@@ -193,8 +193,8 @@ export async function saveTask(id, isAdminFn) {
 // Non-admins act only on their own chores; a done 'Anyone' chore belongs to whoever completed it.
 function ownershipBlock(t, me, isAdminFn) {
   if (isAdminFn()) return '';
+  if (t.done && t.lastDoneBy) return t.lastDoneBy === me ? '' : 'Only ' + t.lastDoneBy + ' or a parent can undo this';
   if (t.person && t.person !== me) return 'Only your own tasks can be checked';
-  if (!t.person && t.done && t.lastDoneBy && t.lastDoneBy !== me) return 'Only ' + t.lastDoneBy + ' or a parent can undo this';
   return '';
 }
 
@@ -370,6 +370,7 @@ export async function claimTask(id, currentMemberFn) {
   const t = state.tasks[id];
   if (!t) return;
   if (t.person) { showToast('Already assigned to ' + t.person); return; }
+  if (t.done) { showToast('Already done'); return; }
   state.tasks[id].person = member;
   try { await patchTask(id, { person: member }); } catch (err) { showToast('Save failed: ' + (err.code || err.message)); }
 }
