@@ -60,3 +60,14 @@ describe('README and CLAUDE.md match the current code (#223)', () => {
     expect(claude).toMatch(/^\s*pause:/m);
   });
 });
+
+describe('README lists features merged 25–27 Oct (#254)', () => {
+  const readme = read('README.md');
+  const features = readme.split('## Features')[1].split('\n## ')[0];
+  it('mentions TV auto-cycle, reward limits, due-time reminders, To give, card points, tied ranks and reward history', () => {
+    for (const s of ['cycle=1', 'per week', 'Due-time reminders', 'To give', 'Given ✓', 'on each chore card', 'share a rank']) expect(features, s).toContain(s);
+    const hist = features.split('\n').find(l => l.includes('**Activity history**'));
+    expect(hist).toMatch(/reward requests/);
+    expect(hist).toMatch(/refunds/);
+  });
+});
