@@ -199,6 +199,7 @@ function ownershipBlock(t, me, isAdminFn) {
 }
 
 // Uncheck (#32): drop this completion's history entry and give back the streak it added.
+// Returns the restored streak, or undefined when the streak is left as is.
 async function undoCompletionRecords(id, t, c) {
   let r;
   try { r = await removeHistoryEntry({ taskId: id, completedAt: c.at, person: c.by || undefined }); }
@@ -210,7 +211,7 @@ async function undoCompletionRecords(id, t, c) {
   const day = localDateStr(new Date(c.at));
   const otherSameDay = rest.some(h => h.person === c.by && localDateStr(new Date(h.completedAt)) === day);
   if (m.lastStreakDate !== day || otherSameDay || c.prevStreakDate === day) return;
-  try { await patchMember(c.by, { streak: c.prevStreak || 0, lastStreakDate: c.prevStreakDate || null }); }
+  try { await patchMember(c.by, { streak: c.prevStreak || 0, lastStreakDate: c.prevStreakDate || null }); return c.prevStreak || 0; }
   catch (err) { showToast('Member update failed: ' + (err.code || err.message)); }
 }
 
@@ -229,11 +230,13 @@ function completionAward(m, pts) {
   return { today, newStreak, currentBadges, newBadgeIds };
 }
 
-// Uncheck (#220): take back only the badges this completion awarded (task.lastDoneBadges),
-// filtered from the member's live badges so ones added elsewhere meanwhile survive.
-async function revokeBadges(name, ids) {
+// Uncheck (#220): take back the badges this completion awarded (task.lastDoneBadges) whose check
+// now fails on `after` (the member once this completion is undone), filtered from the member's
+// live badges so ones added elsewhere meanwhile survive.
+async function revokeBadges(name, awarded, after) {
   const have = asList(state.members[name]?.badges);
-  if (!ids.length || !ids.some(id => have.includes(id))) return;
+  const ids = awarded.filter(id => have.includes(id) && !BADGES.find(b => b.id === id)?.check(after));
+  if (!ids.length) return;
   try { await patchMember(name, { badges: have.filter(id => !ids.includes(id)) }); }
   catch (err) { showToast('Member update failed: ' + (err.code || err.message)); }
 }
@@ -284,6 +287,7 @@ async function runToggle(id, currentMemberFn, isAdminFn) {
   // Uncheck: reverse points FIRST, atomically on the live value. A member may
   // not claw back points they already spent; an admin can (balance may go < 0).
   let reversal = null;
+  const beforeUncheck = !done && state.members[t.lastDoneBy] ? { ...state.members[t.lastDoneBy] } : null;
   if (!done && t.lastDoneBy && t.lastDonePoints && state.members[t.lastDoneBy]) {
     const countedWeek = t.lastDoneWeek || (t.lastDone ? getWeekStart(new Date(t.lastDone)) : '');
     reversal = { pts: -t.lastDonePoints, count: -1, weekStart, countWeek: countedWeek === weekStart, allowNegative: isAdminFn() };
@@ -302,8 +306,9 @@ async function runToggle(id, currentMemberFn, isAdminFn) {
     return;
   }
   if (!done) {
-    await undoCompletionRecords(id, t, completion);
-    if (reversal) await revokeBadges(completion.by, completion.badges);
+    const streak = await undoCompletionRecords(id, t, completion);
+    const b = beforeUncheck;
+    if (reversal && b) await revokeBadges(completion.by, completion.badges, { ...b, completedCount: Math.max(0, (b.completedCount || 0) - 1), streak: streak ?? b.streak });
   }
   // Award points when checking
   if (done && awardee) {

@@ -5,8 +5,10 @@ On check, `toggleTask` records the badge ids that completion awards on the task 
 in the same `patchTask` write as `lastDonePoints`. Every check overwrites it, so a value left from an earlier cycle is
 never reused.
 
-On uncheck (only when the points were actually reversed), the completer loses exactly those badge ids. The list is
-filtered from the member's live `badges` just before the write, so badges added elsewhere meanwhile survive.
+On uncheck (only when the points were actually reversed), the completer loses those badge ids whose `check` fails on
+the member once this completion is undone (completedCount − 1, streak as restored), as JT chose (option B, 28 Oct). A
+recorded badge still earned another way (e.g. a later chore keeps the count at 10) stays. The list is filtered from the
+member's live `badges` just before the write, so badges added elsewhere meanwhile survive.
 `lastDoneBadges` is cleared with the other `lastDone*` fields.
 
 Badges earned earlier for other reasons are always kept, including an old threshold badge that the unticked chore
