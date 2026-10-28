@@ -104,3 +104,13 @@ describe('uncheck only takes back badges that tick awarded (#220 review)', () =>
     expect(state.members.Alice.badges).toEqual(['first']);
   });
 });
+
+describe('a stale lastDoneBadges from an earlier cycle is not reused (#220 review)', () => {
+  it('a tick that earns nothing overwrites it, so the untick keeps the old badge', async () => {
+    state.members = { Alice: member({ completedCount: 15, badges: ['first', 'getting_started'] }) };
+    state.tasks.t1.lastDoneBadges = ['getting_started']; // left from a check before the chore reset
+    await toggleTask('t1', () => 'Alice', admin);
+    await toggleTask('t1', () => 'Alice', admin);
+    expect(state.members.Alice.badges).toEqual(['first', 'getting_started']);
+  });
+});
