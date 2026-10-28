@@ -69,3 +69,38 @@ describe('uncheck takes back badges the check earned (#220)', () => {
     expect(state.members.Alice.badges).toEqual(earned);
   });
 });
+
+describe('uncheck only takes back badges that tick awarded (#220 review)', () => {
+  it('keeps a badge held from earlier when a tick re-reaches its threshold and is unticked', async () => {
+    state.members = { Alice: member({ completedCount: 40, streak: 2, badges: ['first', 'getting_started', 'tenacious', 'consistent'] }) };
+    await toggleTask('t1', () => 'Alice', admin);
+    expect(state.members.Alice.streak).toBe(3);
+    expect(state.tasks.t1.lastDoneBadges ?? null).toBeNull();
+    await toggleTask('t1', () => 'Alice', admin);
+    expect(state.members.Alice.streak).toBe(2);
+    expect(state.members.Alice.badges).toContain('consistent');
+  });
+
+  it('records the awarded badges on the task and clears them on uncheck', async () => {
+    state.members = { Alice: member() };
+    await toggleTask('t1', () => 'Alice', admin);
+    expect(state.tasks.t1.lastDoneBadges).toEqual(['getting_started']);
+    await toggleTask('t1', () => 'Alice', admin);
+    expect(state.tasks.t1.lastDoneBadges ?? null).toBeNull();
+  });
+
+  it('keeps a badge another device added between the check and the uncheck', async () => {
+    state.members = { Alice: member() };
+    await toggleTask('t1', () => 'Alice', admin);
+    state.members.Alice.badges = [...state.members.Alice.badges, 'consistent'];
+    await toggleTask('t1', () => 'Alice', admin);
+    expect(state.members.Alice.badges).toEqual(['first', 'consistent']);
+  });
+
+  it('a member unticking their own chore loses the badge too', async () => {
+    state.members = { Alice: member() };
+    await toggleTask('t1', () => 'Alice', admin);
+    await toggleTask('t1', () => 'Alice', () => false);
+    expect(state.members.Alice.badges).toEqual(['first']);
+  });
+});
