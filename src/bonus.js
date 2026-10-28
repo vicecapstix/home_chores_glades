@@ -21,7 +21,8 @@ export function validateBonus(amount, reason) {
 
 // Admin gives (+) or takes (-) points outside chores. Atomic on the live
 // server value; awards and deductions both count toward this week (#221),
-// which the transaction keeps at 0 or above.
+// which the transaction keeps at 0 or above. Undo gives the week back only
+// what it actually moved (a deduction floored at 0 moved less than `amount`).
 export async function adjustBonus(name, amount, reason, isAdminFn, currentMemberFn, confirmFn = confirm) {
   if (READONLY || !isAdminFn()) return false;
   if (!state.members[name]) return false;
@@ -37,13 +38,14 @@ export async function adjustBonus(name, amount, reason, isAdminFn, currentMember
       r = await adjustMemberPoints(name, { ...opts, allowNegative: true });
     }
     if (!r.ok) { showToast('Points update failed'); return false; }
+    const weekMoved = r.weekDelta ?? amount;
     const entry = { type: 'bonus', taskName: 'Bonus: ' + reason, person: name, points: amount, reason, by: currentMemberFn() || '', completedAt: Date.now() };
     await appendHistory(entry);
     pushUndo({
       label: (amount > 0 ? '+' : '') + amount + ' ' + name,
       verb: amount > 0 ? 'Awarded' : 'Deducted',
       undo: async () => {
-        await adjustMemberPoints(name, { ...opts, pts: -amount, allowNegative: true });
+        await adjustMemberPoints(name, { ...opts, pts: -amount, weekPts: -weekMoved, allowNegative: true });
         await removeHistoryEntry({ type: 'bonus', person: name, completedAt: entry.completedAt });
       },
     });
