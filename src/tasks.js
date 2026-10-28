@@ -199,7 +199,6 @@ function ownershipBlock(t, me, isAdminFn) {
 }
 
 // Uncheck (#32): drop this completion's history entry and give back the streak it added.
-// Returns the restored streak, or undefined when the streak is left as is.
 async function undoCompletionRecords(id, t, c) {
   let r;
   try { r = await removeHistoryEntry({ taskId: id, completedAt: c.at, person: c.by || undefined }); }
@@ -211,16 +210,31 @@ async function undoCompletionRecords(id, t, c) {
   const day = localDateStr(new Date(c.at));
   const otherSameDay = rest.some(h => h.person === c.by && localDateStr(new Date(h.completedAt)) === day);
   if (m.lastStreakDate !== day || otherSameDay || c.prevStreakDate === day) return;
-  try { await patchMember(c.by, { streak: c.prevStreak || 0, lastStreakDate: c.prevStreakDate || null }); return c.prevStreak || 0; }
+  try { await patchMember(c.by, { streak: c.prevStreak || 0, lastStreakDate: c.prevStreakDate || null }); }
   catch (err) { showToast('Member update failed: ' + (err.code || err.message)); }
 }
 
-// Uncheck (#220): drop badges this completion pushed the member over (check passed before, fails after).
-async function revokeBadges(name, before, after) {
-  const have = before.badges || [];
-  const lost = BADGES.filter(b => have.includes(b.id) && b.check(before) && !b.check(after)).map(b => b.id);
-  if (!lost.length) return;
-  try { await patchMember(name, { badges: have.filter(id => !lost.includes(id)) }); }
+const asList = v => (Array.isArray(v) ? v : (v ? Object.values(v) : []));
+
+// What checking a chore does to a member's streak and badges (shared by toggleTask's task and member writes).
+function completionAward(m, pts) {
+  const today     = localDateStr();
+  const yd        = new Date(); yd.setDate(yd.getDate() - 1);
+  const yesterday = localDateStr(yd);
+  const newStreak = m.lastStreakDate === today     ? (m.streak || 0) :
+                    m.lastStreakDate === yesterday ? (m.streak || 0) + 1 : 1;
+  const currentBadges = asList(m.badges);
+  const virtualMember = { ...m, points: (m.points || 0) + pts, completedCount: (m.completedCount || 0) + 1, streak: newStreak };
+  const newBadgeIds = BADGES.filter(b => !currentBadges.includes(b.id) && b.check(virtualMember)).map(b => b.id);
+  return { today, newStreak, currentBadges, newBadgeIds };
+}
+
+// Uncheck (#220): take back only the badges this completion awarded (task.lastDoneBadges),
+// filtered from the member's live badges so ones added elsewhere meanwhile survive.
+async function revokeBadges(name, ids) {
+  const have = asList(state.members[name]?.badges);
+  if (!ids.length || !ids.some(id => have.includes(id))) return;
+  try { await patchMember(name, { badges: have.filter(id => !ids.includes(id)) }); }
   catch (err) { showToast('Member update failed: ' + (err.code || err.message)); }
 }
 
@@ -241,7 +255,11 @@ export async function toggleTask(id, currentMemberFn, isAdminFn) {
   else taskUpdate.prevLastDone = null;
   if (done && awardee) {
     const am = state.members[awardee];
-    if (am) { taskUpdate.prevStreak = am.streak || 0; taskUpdate.prevStreakDate = am.lastStreakDate || ''; }
+    if (am) {
+      taskUpdate.prevStreak = am.streak || 0; taskUpdate.prevStreakDate = am.lastStreakDate || '';
+      const ids = completionAward(am, taskPoints(t)).newBadgeIds;
+      taskUpdate.lastDoneBadges = ids.length ? ids : null; // uncheck takes back only these (#220)
+    }
     taskUpdate.lastDoneBy     = awardee;
     taskUpdate.lastDonePoints = taskPoints(t);
     taskUpdate.lastDoneWeek   = getWeekStart();
@@ -251,13 +269,13 @@ export async function toggleTask(id, currentMemberFn, isAdminFn) {
     taskUpdate.lastDoneWeek   = null;
     taskUpdate.prevStreak     = null;
     taskUpdate.prevStreakDate = null;
+    taskUpdate.lastDoneBadges = null;
   }
   const weekStart = getWeekStart();
-  const completion = { by: t.lastDoneBy, at: t.lastDone, prevStreak: t.prevStreak, prevStreakDate: t.prevStreakDate };
+  const completion = { by: t.lastDoneBy, at: t.lastDone, prevStreak: t.prevStreak, prevStreakDate: t.prevStreakDate, badges: asList(t.lastDoneBadges) };
   // Uncheck: reverse points FIRST, atomically on the live value. A member may
   // not claw back points they already spent; an admin can (balance may go < 0).
   let reversal = null;
-  const beforeUncheck = !done && t.lastDoneBy && state.members[t.lastDoneBy] ? { ...state.members[t.lastDoneBy] } : null;
   if (!done && t.lastDoneBy && t.lastDonePoints && state.members[t.lastDoneBy]) {
     const countedWeek = t.lastDoneWeek || (t.lastDone ? getWeekStart(new Date(t.lastDone)) : '');
     reversal = { pts: -t.lastDonePoints, count: -1, weekStart, countWeek: countedWeek === weekStart, allowNegative: isAdminFn() };
@@ -276,27 +294,15 @@ export async function toggleTask(id, currentMemberFn, isAdminFn) {
     return;
   }
   if (!done) {
-    const streak = await undoCompletionRecords(id, t, completion);
-    const b = beforeUncheck;
-    if (b && reversal) await revokeBadges(completion.by, b, { ...b, completedCount: Math.max(0, (b.completedCount || 0) - 1), streak: streak ?? b.streak });
+    await undoCompletionRecords(id, t, completion);
+    if (reversal) await revokeBadges(completion.by, completion.badges);
   }
   // Award points when checking
   if (done && awardee) {
     const m = state.members[awardee];
     if (!m) return;
-    const pts       = taskPoints(t);
-    const today     = localDateStr();
-    const yd        = new Date(); yd.setDate(yd.getDate() - 1);
-    const yesterday = localDateStr(yd);
-    const newPoints = (m.points || 0) + pts;
-    const newCount  = (m.completedCount || 0) + 1;
-    const newStreak = m.lastStreakDate === today     ? (m.streak || 0) :
-                      m.lastStreakDate === yesterday ? (m.streak || 0) + 1 : 1;
-    const currentBadges = m.badges || [];
-    const virtualMember = { ...m, points: newPoints, completedCount: newCount, streak: newStreak };
-    const newBadgeIds = BADGES
-      .filter(b => !currentBadges.includes(b.id) && b.check(virtualMember))
-      .map(b => b.id);
+    const pts = taskPoints(t);
+    const { today, newStreak, currentBadges, newBadgeIds } = completionAward(m, pts);
     const memberUpdate = { streak: newStreak, lastStreakDate: today };
     if (newBadgeIds.length) memberUpdate.badges = [...currentBadges, ...newBadgeIds];
     try {

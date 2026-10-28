@@ -215,6 +215,7 @@ Every piece of user-supplied data injected into `innerHTML` or an `onclick` stri
   lastDone,      // timestamp ms
   lastDoneBy,    // member name — set on check, cleared on uncheck (prevents point farming)
   lastDonePoints,// points awarded — set on check, cleared on uncheck
+  lastDoneBadges,// badge ids that check awarded (null when none) — uncheck takes back only these, then clears it
   notes,         // string, max 300 chars
   difficulty,    // 'easy'|'medium'|'hard'
   category,      // one of CATEGORIES or ''

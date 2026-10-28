@@ -114,3 +114,17 @@ describe('a stale lastDoneBadges from an earlier cycle is not reused (#220 revie
     expect(state.members.Alice.badges).toEqual(['first', 'getting_started']);
   });
 });
+
+describe('badge take-back failure is reported (#220 review)', () => {
+  it('shows a toast when the badge write fails', async () => {
+    const fb = await import('../src/firebase.js');
+    const { showToast } = await import('../src/ui.js');
+    state.members = { Alice: member() };
+    await toggleTask('t1', () => 'Alice', admin);
+    const real = fb.patchMember.getMockImplementation();
+    fb.patchMember.mockImplementation(async (n, f) => { if ('badges' in f) throw new Error('offline'); return real(n, f); });
+    await toggleTask('t1', () => 'Alice', admin);
+    expect(showToast).toHaveBeenCalledWith('Member update failed: offline');
+    fb.patchMember.mockImplementation(real);
+  });
+});

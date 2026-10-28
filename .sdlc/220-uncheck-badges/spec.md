@@ -1,24 +1,30 @@
 # Spec (#220)
 
 ## Behaviour
-On uncheck, after points/count are reversed and the streak is (maybe) restored, the completer loses any badge that the
-completion being undone pushed them over: a badge is removed when its `check` passed on the member *before* the uncheck
-and fails on the member *after* it (completedCount − 1, streak as restored). Badges whose check already failed before the
-uncheck (e.g. a streak badge from an old streak) are kept, so badges earned earlier for other reasons survive.
+On check, `toggleTask` records the badge ids that completion awards on the task as `lastDoneBadges` (null when none),
+in the same `patchTask` write as `lastDonePoints`. Every check overwrites it, so a value left from an earlier cycle is
+never reused.
 
-Known edge: a member who held a streak badge from an earlier streak, lost the streak, and rebuilt it to exactly that
-threshold with the chore being unticked would lose the badge too. Rare, and re-earned on the next tick; not worth a new
-stored field.
+On uncheck (only when the points were actually reversed), the completer loses exactly those badge ids. The list is
+filtered from the member's live `badges` just before the write, so badges added elsewhere meanwhile survive.
+`lastDoneBadges` is cleared with the other `lastDone*` fields.
+
+Badges earned earlier for other reasons are always kept, including an old threshold badge that the unticked chore
+happened to re-reach (review finding on 28 Oct: an earlier "removed when check passed before and fails after" rule
+dropped those).
 
 ## UI states
-Admin/member: badge disappears from the chip and leaderboard after the uncheck. Readonly TV: display only, no writes
-(toggleTask already returns on READONLY).
+Admin/member: the badge disappears from the chip and leaderboard after the uncheck. Readonly TV: display only, no
+writes (toggleTask already returns on READONLY).
 
 ## Data shape
-No new fields. Writes `members/<name>/badges` (existing field) via `patchMember` only when a badge is removed.
+New optional task field `lastDoneBadges: string[] | null` (documented in CLAUDE.md task data shape). Additive only:
+no existing /state data is deleted, renamed or migrated. Tasks checked before this change have no `lastDoneBadges`,
+so unticking them takes back no badges (same as today).
+Writes `members/<name>/badges` (existing field) via `patchMember` only when a recorded badge is held.
 
 ## Security / RBAC
-No new write path: runs inside `toggleTask`, after the existing READONLY and ownership checks.
+No new write path: runs inside `toggleTask`, after the existing READONLY and ownership checks. No HTML output.
 
 ## Cost guardrails
-One extra small patch on uncheck at most. No new services or dependencies.
+No extra writes on check (same task patch); at most one small member patch on uncheck. No new services or dependencies.
