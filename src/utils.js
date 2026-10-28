@@ -307,7 +307,7 @@ function baseStatus(t, now = Date.now()) {
   if (t.done) return 'done';
   if (t.freq === 'once') {
     if (!t.dueDate) return 'ok';
-    const d = new Date();
+    const d = new Date(now);
     const today = localDateStr(d);
     d.setDate(d.getDate() + 1);
     const soon = localDateStr(d);
@@ -316,9 +316,9 @@ function baseStatus(t, now = Date.now()) {
     return 'ok';
   }
   if (t.freq === 'weekdays') {
-    const p = prevScheduledStart(t.days);
+    const p = prevScheduledStart(t.days, now);
     if (p === null || (t.lastDone || 0) >= p) return 'ok';
-    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const today = new Date(now); today.setHours(0, 0, 0, 0);
     return p === today.getTime() ? 'soon' : 'overdue';
   }
   const d = cycleDays(t, t.lastDone), s = daysSince(t.lastDone || 0, now);
