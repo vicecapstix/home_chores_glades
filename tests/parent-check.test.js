@@ -181,3 +181,24 @@ describe('flag on add / edit and rendering', () => {
     expect(html).not.toContain('Overdue');
   });
 });
+
+describe('another parent got there first (atomic take returns null)', () => {
+  beforeEach(() => {
+    // This device still shows the request; another device's transaction already took it.
+    state.tasks.a = mkTask({ checkPending: { by: 'Bo', at: TICK } });
+    takeCheckPending.mockResolvedValueOnce(null);
+  });
+  it('Looks good awards nothing and says it was already checked', async () => {
+    const { me, adm } = as('Ann', true);
+    await approveCheck('a', adm, me);
+    expect(adjustMemberPoints).not.toHaveBeenCalled();
+    expect(appendHistory).not.toHaveBeenCalled();
+    expect(patchTask).not.toHaveBeenCalled();
+    expect(document.getElementById('toast').textContent).toContain('Already checked');
+  });
+  it('Not yet writes nothing and says it was already checked', async () => {
+    await sendBackCheck('a', 'redo', () => true);
+    expect(patchTask).not.toHaveBeenCalled();
+    expect(document.getElementById('toast').textContent).toContain('Already checked');
+  });
+});
