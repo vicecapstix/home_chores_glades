@@ -107,11 +107,14 @@ describe('uncheck only takes back badges that tick awarded (#220 review)', () =>
 
 describe('a stale lastDoneBadges from an earlier cycle is not reused (#220 review)', () => {
   it('a tick that earns nothing overwrites it, so the untick keeps the old badge', async () => {
-    state.members = { Alice: member({ completedCount: 15, badges: ['first', 'getting_started'] }) };
-    state.tasks.t1.lastDoneBadges = ['getting_started']; // left from a check before the chore reset
+    // Holds Consistent from earlier; streak 2 → tick (3, nothing new) → untick (back to 2).
+    state.members = { Alice: member({ completedCount: 15, streak: 2, badges: ['first', 'getting_started', 'consistent'] }) };
+    state.tasks.t1.lastDoneBadges = ['consistent']; // left from a check before the chore reset
     await toggleTask('t1', () => 'Alice', admin);
+    expect(state.tasks.t1.lastDoneBadges).toBeNull();
     await toggleTask('t1', () => 'Alice', admin);
-    expect(state.members.Alice.badges).toEqual(['first', 'getting_started']);
+    expect(state.members.Alice.streak).toBe(2);
+    expect(state.members.Alice.badges).toEqual(['first', 'getting_started', 'consistent']);
   });
 });
 
@@ -123,9 +126,10 @@ describe('badge take-back failure is reported (#220 review)', () => {
     await toggleTask('t1', () => 'Alice', admin);
     const real = fb.patchMember.getMockImplementation();
     fb.patchMember.mockImplementation(async (n, f) => { if ('badges' in f) throw new Error('offline'); return real(n, f); });
-    await toggleTask('t1', () => 'Alice', admin);
-    expect(showToast).toHaveBeenCalledWith('Member update failed: offline');
-    fb.patchMember.mockImplementation(real);
+    try {
+      await toggleTask('t1', () => 'Alice', admin);
+      expect(showToast).toHaveBeenCalledWith('Member update failed: offline');
+    } finally { fb.patchMember.mockImplementation(real); }
   });
 });
 
