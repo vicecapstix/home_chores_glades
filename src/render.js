@@ -381,7 +381,7 @@ export function cardHTML(t) {
   const pc  = t.person ? pColor(t.person) : null;
   const personTag = t.person
     ? (pc ? '<span class="tag" style="background:' + pc.bg + ';color:' + pc.text + ';">' + esc(t.person) + '</span>' : '')
-    : selectMode ? '<span class="tag tag-freq">Anyone</span>'
+    : selectMode || t.done ? '<span class="tag tag-freq">Anyone</span>'
     : '<button class="btn-claim" onclick="window.claimTask(\'' + jsq(t.id) + '\')">Claim</button>';
   const skipped = isSkipped(t);
   const dueTag = skipped ? '<span class="tag tag-ok">' + (localDateStr(new Date(t.skippedAt)) === localDateStr(new Date()) ? 'Skipped today' : 'Skipped') + '</span>'
