@@ -128,3 +128,16 @@ describe('badge take-back failure is reported (#220 review)', () => {
     fb.patchMember.mockImplementation(real);
   });
 });
+
+describe('a recorded badge still earned after the untick is kept (#220, JT option B)', () => {
+  it('keeps the 10-completion badge when a later chore still holds the count at 10', async () => {
+    state.members = { Alice: member() };
+    state.tasks.t2 = { id: 't2', name: 'Dishes', freq: 'daily', difficulty: 'easy', done: false,
+      lastDone: NOW - 3 * DAY, person: 'Alice', subtasks: {}, order: 2 };
+    await toggleTask('t1', () => 'Alice', admin); // 10th → getting_started
+    await toggleTask('t2', () => 'Alice', admin); // 11th
+    await toggleTask('t1', () => 'Alice', admin); // back to 10
+    expect(state.members.Alice.completedCount).toBe(10);
+    expect(state.members.Alice.badges).toContain('getting_started');
+  });
+});
