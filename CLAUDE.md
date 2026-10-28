@@ -39,6 +39,7 @@ src/
   install.js       — "Install app" button + iOS Add-to-Home-Screen hint
   history.js       — activity history modal
   pause.js         — holiday/pause mode
+  fairness.js      — admin fairness report: points/completions per member, last 28 days (display only)
   progress.js      — "My progress" modal: last 4 weeks of points/completions
   printchart.js    — admin printable Mon–Sun weekly chart (browser print)
   pwa.js           — service worker registration
