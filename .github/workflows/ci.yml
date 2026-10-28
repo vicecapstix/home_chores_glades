@@ -17,18 +17,8 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run build
-      # Drift check: a fresh build must match the committed root files (what GitHub Pages serves).
-      # Fix: run `npm run build:pages` and commit index.html, sw.js, manifest.webmanifest and icons.
-      - name: Check deployed root files are up to date
-        run: |
-          stale=0
-          cmp dist/index.html index.html || stale=1
-          cmp dist/sw.js sw.js || stale=1
-          cmp dist/manifest.webmanifest manifest.webmanifest || stale=1
-          cmp dist/icon.svg icon.svg || stale=1
-          cmp dist/icon-192.png icon-192.png || stale=1
-          cmp dist/icon-512.png icon-512.png || stale=1
-          if [ "$stale" = 1 ]; then echo "::error::Root deployed files are stale - run npm run build:pages and commit"; exit 1; fi
+      # Root deployed files (index.html, sw.js, ...) are rebuilt and committed after merge by
+      # .github/workflows/deploy-root.yml - PRs do not need to commit them.
 
   # Security-rules tests against the local Firebase RTDB emulator (demo project, no network to production).
   rules-tests:
