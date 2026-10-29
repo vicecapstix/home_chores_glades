@@ -218,6 +218,9 @@ Every piece of user-supplied data injected into `innerHTML` or an `onclick` stri
   lastDonePoints,// points awarded — set on check, cleared on uncheck
   lastDoneBadges,// badge ids that check awarded (null when none) — uncheck takes back those whose check now fails, then clears it
   notes,         // string, max 300 chars
+  needsCheck,    // true when a parent must check the job before points are given (omitted otherwise)
+  checkPending,  // { by, at } while a member's tick waits for a parent check (no points yet)
+  checkNote,     // optional reason (<=100 chars) from "Not yet"; cleared on the next tick
   difficulty,    // 'easy'|'medium'|'hard'
   category,      // one of CATEGORIES or ''
   subtasks,      // { 's<timestamp>': { id, name, done } }
