@@ -384,7 +384,9 @@ export function cardHTML(t) {
     : selectMode || t.done ? '<span class="tag tag-freq">Anyone</span>'
     : '<button class="btn-claim" onclick="window.claimTask(\'' + jsq(t.id) + '\')">Claim</button>';
   const skipped = isSkipped(t);
-  const dueTag = skipped ? '<span class="tag tag-ok">' + (localDateStr(new Date(t.skippedAt)) === localDateStr(new Date()) ? 'Skipped today' : 'Skipped') + '</span>'
+  const waiting = !t.done && t.checkPending;
+  const dueTag = waiting ? '<span class="tag tag-soon">⏳ Waiting for parent check</span>'
+               : skipped ? '<span class="tag tag-ok">' + (localDateStr(new Date(t.skippedAt)) === localDateStr(new Date()) ? 'Skipped today' : 'Skipped') + '</span>'
                : s === 'overdue' ? '<span class="tag tag-overdue">Overdue</span>'
                : s === 'soon'    ? '<span class="tag tag-soon">Due soon</span>'
                : s === 'ok'      ? '<span class="tag tag-ok">On track</span>'
@@ -397,6 +399,11 @@ export function cardHTML(t) {
   const n = taskPoints(t) * activeMultiplier();
   const ptsTag = t.done ? '' : '<span class="tag tag-freq tag-pts" aria-label="worth ' + n + ' point' + (n === 1 ? '' : 's') + '">+' + n + ' pts</span>';
   const timeTag = validTime(t.dueTime) ? '<span class="tag tag-freq">⏰ ' + esc(t.dueTime) + '</span>' : '';
+  const checkTag = t.needsCheck ? '<span class="tag tag-freq">✓ Parent check</span>' : '';
+  const approveBtns = waiting && !READONLY && !selectMode && _isAdmin()
+    ? '<div class="check-actions"><span>' + esc(t.checkPending.by) + ' is waiting</span>' +
+      '<button class="btn-sm btn-accent" onclick="window.approveCheck(\'' + jsq(t.id) + '\')">Looks good</button>' +
+      '<button class="btn-sm" onclick="window.sendBackCheck(\'' + jsq(t.id) + '\')">Not yet</button></div>' : '';
   const catTag = t.category ? '<span class="tag tag-freq">' + esc(t.category) + '</span>' : '';
 
   const notesLine = t.notes
@@ -444,7 +451,7 @@ export function cardHTML(t) {
         '<span class="task-name">' + esc(t.name) + subsBadge + '</span>' +
         notesLine +
       '</div>' +
-      '<div class="task-meta">' + dueTag + diffTag + ptsTag + freqTag + timeTag + rotationTag(t, getMembers()) + syncTagHTML(t.id) + catTag + personTag + '</div>' +
+      '<div class="task-meta">' + dueTag + diffTag + ptsTag + freqTag + timeTag + rotationTag(t, getMembers()) + syncTagHTML(t.id) + checkTag + catTag + personTag + '</div>' +
       chevronBtn +
       // In select mode a card tap only toggles selection: no per-card action buttons (#167)
       (selectMode ? '' :
@@ -459,6 +466,7 @@ export function cardHTML(t) {
       '<button class="del" onclick="window.deleteTask(\'' + jsq(t.id) + '\')" title="Remove">×</button>'
       ) +
     '</div>' +
+    approveBtns +
     (selectMode ? '' : '<div class="subtask-section">' + subtaskSection + '</div>') +
   '</div>';
 }
