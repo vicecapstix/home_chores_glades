@@ -155,25 +155,30 @@ export async function decideRedemption(id, status, by) {
 
 // Atomic award/reversal of task points on the member's LIVE server value (never
 // an absolute from the local cache). opts: { pts (signed), count (signed),
-// weekStart, countWeek (touch weekPoints?), allowNegative }. Without
-// allowNegative a reversal that the balance cannot cover aborts untouched.
-// Returns { ok, reason: 'insufficient'|'missing'|'readonly', member }.
+// weekStart, countWeek (touch weekPoints?), weekPts (week change if not pts),
+// allowNegative }. Without allowNegative a reversal that the balance cannot
+// cover aborts untouched. weekPoints never goes below 0.
+// Returns { ok, reason: 'insufficient'|'missing'|'readonly', member, weekDelta }
+// (weekDelta = how much weekPoints actually moved, after the 0 floor).
 export async function adjustMemberPoints(name, opts) {
   if (READONLY || !_db || !_live) return { ok: false, reason: 'readonly' };
   const { pts = 0, count = 0, weekStart, countWeek = true, allowNegative = false } = opts;
-  let reason = '';
+  const weekPts = opts.weekPts ?? pts;
+  let reason = '', weekDelta = 0;
   const res = await runTransaction(ref(_db, 'state/members/' + name), cur => {
     if (!cur) { reason = 'missing'; return undefined; }
     const balance = cur.points || 0;
     if (pts < 0 && !allowNegative && balance < -pts) { reason = 'insufficient'; return undefined; }
     const next = { ...cur, points: balance + pts, completedCount: Math.max(0, (cur.completedCount || 0) + count) };
     if (countWeek) {
-      next.weekPoints = Math.max(0, (cur.weekStart === weekStart ? (cur.weekPoints || 0) : 0) + pts);
+      const prevWeek = cur.weekStart === weekStart ? (cur.weekPoints || 0) : 0;
+      next.weekPoints = Math.max(0, prevWeek + weekPts);
       next.weekStart = weekStart;
+      weekDelta = next.weekPoints - prevWeek;
     }
     return next;
   });
-  return { ok: !!res.committed, reason: res.committed ? '' : reason, member: res.snapshot?.val?.() ?? null };
+  return { ok: !!res.committed, reason: res.committed ? '' : reason, member: res.snapshot?.val?.() ?? null, weekDelta };
 }
 
 const toList = cur => (Array.isArray(cur) ? cur : (cur ? Object.values(cur) : []));

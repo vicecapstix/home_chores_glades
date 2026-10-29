@@ -254,6 +254,7 @@ body[data-reorder] .move-btns { display: flex; }
 #leaderboard-modal,
 #history-modal,
 #progress-modal,
+#fairness-modal,
 #week-modal,
 #rewards-modal,
 #stats-modal,
@@ -265,6 +266,7 @@ body[data-reorder] .move-btns { display: flex; }
 #leaderboard-modal.hidden,
 #history-modal.hidden,
 #progress-modal.hidden,
+#fairness-modal.hidden,
 #week-modal.hidden,
 #rewards-modal.hidden,
 #stats-modal.hidden,
@@ -531,6 +533,7 @@ body.tv-panel-on #main-content { display: none; }
 /* DOUBLE-POINTS DAY (#225) */
 .double-banner { flex: 1 1 100%; order: 8; padding: 6px 10px; border-radius: var(--radius-sm); background: var(--warn, var(--accent)); color: #fff; font-weight: 700; font-size: 0.9rem; text-align: center; }
 .double-banner.hidden { display: none; }
+[data-theme="dark"] .double-banner { color: var(--bg); } /* white on the dark --warn was ~2.5:1 */
 body.tv .double-banner { font-size: 2rem; padding: 10px 16px; }
 /* FAMILY DAILY GOAL */
 .goal { position: relative; flex: 1 1 100%; order: 9; }
