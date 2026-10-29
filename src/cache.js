@@ -17,6 +17,7 @@ export function trimSnapshot(s) {
     tasks: s.tasks || {},
     rewards: s.rewards || {},
     pause: s.pause || null,
+    doublePoints: s.doublePoints || null,
     history: (s.history || []).slice(-HISTORY_LIMIT),
     nextId: s.nextId || 1,
     savedAt: Date.now(),

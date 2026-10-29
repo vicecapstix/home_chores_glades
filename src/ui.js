@@ -262,7 +262,8 @@ export function applyTemplate(id) {
   let added = 0;
   const paths = {};
   tplTasks(tpl).forEach(t => {
-    const taskId = 't' + Date.now() + Math.random().toString(36).slice(2);
+    const now = Date.now();
+    const taskId = 't' + now + Math.random().toString(36).slice(2);
     state.tasks[taskId] = {
       id: taskId, name: t.name, freq: t.freq, difficulty: t.difficulty || 'easy',
       ...(t.freq === 'weekdays' ? { days: t.days || [] } : {}),
@@ -273,7 +274,7 @@ export function applyTemplate(id) {
       category: CATEGORIES.includes(t.category) ? t.category : '', notes: String(t.notes || '').slice(0, 300),
       dueDate: t.freq === 'once' ? localDateStr() : '', ...(validTime(t.dueTime) ? { dueTime: t.dueTime } : {}),
       subtasks: Object.fromEntries((Array.isArray(t.subtasks) ? t.subtasks : []).slice(0, MAX_TPL_SUBTASKS).map((n, i) =>
-        ['s' + Date.now() + i, { id: 's' + Date.now() + i, name: String(n).slice(0, 100), done: false }])),
+        ['s' + now + i, { id: 's' + now + i, name: String(n).slice(0, 100), done: false }])),
     };
     paths['tasks/' + taskId] = state.tasks[taskId];
     state.nextId++;

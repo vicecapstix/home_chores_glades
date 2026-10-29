@@ -3,6 +3,7 @@ import { READONLY, BADGES, CATEGORIES } from './config.js';
 import { patchPaths, takeCheckPending, adjustMemberPoints, appendHistory, removeHistoryEntry, patchTask, patchMember, patchRoot, removeTask, restoreTask, patchSubtask } from './firebase.js';
 import { showToast } from './ui.js';
 import { pushUndo } from './undo.js';
+import { activeMultiplier } from './doublepoints.js';
 import { esc, jsq, validTime, validInterval, INTERVAL_MIN, INTERVAL_MAX, freqDays, cycleDays, daysSince, dueStatus, taskPoints, getWeekStart, localDateStr, prevScheduledStart, isStaleDoneOnce, initialLastDone, nextRotationPerson, awayNames, DAY_NAMES } from './utils.js';
 
 // Re-export for other modules
@@ -320,6 +321,9 @@ const checking = new Set();
 
 async function applyToggle(id, t, awardee, nowTs, isAdminFn, checkedBy) {
   const done = !t.done;
+  // Double-points day (#225), judged at the tick time (for a parent check, when the child ticked);
+  // stored as lastDonePoints so uncheck reverses exactly.
+  const earned = taskPoints(t) * activeMultiplier(state.doublePoints, new Date(nowTs));
   // Check remembers the previous lastDone (and streak) so uncheck can restore them (#32).
   const taskUpdate = { done, lastDone: done ? nowTs : (typeof t.prevLastDone === 'number' ? t.prevLastDone : t.lastDone) };
   if (done) { taskUpdate.prevLastDone = t.lastDone || 0; taskUpdate.checkPending = null; taskUpdate.checkNote = null; }
@@ -328,11 +332,11 @@ async function applyToggle(id, t, awardee, nowTs, isAdminFn, checkedBy) {
     const am = state.members[awardee];
     if (am) {
       taskUpdate.prevStreak = am.streak || 0; taskUpdate.prevStreakDate = am.lastStreakDate || '';
-      const ids = completionAward(am, taskPoints(t), nowTs).newBadgeIds;
+      const ids = completionAward(am, earned, nowTs).newBadgeIds;
       taskUpdate.lastDoneBadges = ids.length ? ids : null; // uncheck takes back only these (#220)
     }
     taskUpdate.lastDoneBy     = awardee;
-    taskUpdate.lastDonePoints = taskPoints(t);
+    taskUpdate.lastDonePoints = earned;
     taskUpdate.lastDoneWeek   = getWeekStart();
   } else if (!done) {
     taskUpdate.lastDoneBy     = null;
@@ -374,7 +378,7 @@ async function applyToggle(id, t, awardee, nowTs, isAdminFn, checkedBy) {
   if (done && awardee) {
     const m = state.members[awardee];
     if (!m) return;
-    const pts = taskPoints(t);
+    const pts = earned;
     const { streakDate, newStreak, currentBadges, newBadgeIds } = completionAward(m, pts, nowTs);
     const memberUpdate = { streak: newStreak, lastStreakDate: streakDate };
     if (newBadgeIds.length) memberUpdate.badges = [...currentBadges, ...newBadgeIds];
@@ -389,7 +393,7 @@ async function applyToggle(id, t, awardee, nowTs, isAdminFn, checkedBy) {
       });
     } catch (err) { showToast('Member update failed: ' + (err.code || err.message)); }
     // History
-    const histEntry  = { taskId: id, taskName: t.name, person: awardee, completedAt: nowTs, points: taskPoints(t), ...(checkedBy ? { checkedBy } : {}) };
+    const histEntry  = { taskId: id, taskName: t.name, person: awardee, completedAt: nowTs, points: earned, ...(checkedBy ? { checkedBy } : {}) };
     try {
       await appendHistory(histEntry);
     } catch (err) { showToast('History update failed: ' + (err.code || err.message)); }
