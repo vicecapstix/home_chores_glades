@@ -377,11 +377,23 @@
     <button class="btn-lg" style="width:100%;margin-top:0.5rem;" onclick="window.pickRestoreFile()" title="Replace chores, points and history from a backup file. A safety backup is downloaded first.">Restore backup…</button>
     <label for="restore-file" class="sr-only">Backup file (.json)</label>
     <input type="file" id="restore-file" class="sr-only" tabindex="-1" accept=".json,application/json" onchange="window.onRestoreFile(this)" />
+    <button class="btn-lg" style="width:100%;margin-top:0.5rem;" onclick="window.closeAdminPanel();window.openFairness()" title="Who did how much over the last 4 weeks">Fairness report</button>
     <button class="btn-lg" style="width:100%;margin-top:0.5rem;" onclick="window.printChart()" title="Opens a printable Mon–Sun chart of the week's chores">Print chart</button>
     <button id="admin-parent-in" class="btn-lg" style="width:100%;margin-top:0.5rem;" onclick="window.openParentSignIn()">Parent sign in</button>
     <button id="admin-parent-out" class="btn-lg hidden" style="width:100%;margin-top:0.5rem;" onclick="window.parentSignOut()">Parent sign out</button>
     <button class="btn-lg" style="width:100%;margin-top:0.5rem;" onclick="window.clearSavedData()" title="Removes the offline copy stored on this device only.">Clear saved data on this device</button>
     <button class="btn-lg" style="width:100%;margin-top:0.5rem;" onclick="window.adminPanelSwitchUser()">Switch User</button>
+  </div>
+</div>
+
+<!-- FAIRNESS REPORT (admin) -->
+<div id="fairness-modal" class="hidden" role="dialog" aria-modal="true" aria-labelledby="fairness-title" onclick="window.closeModal('fairness-modal')">
+  <div class="lb-card prog-card" onclick="event.stopPropagation()">
+    <div class="lb-header">
+      <span class="lb-title" id="fairness-title">⚖️ Fairness report</span>
+      <button class="lb-close" aria-label="Close" onclick="window.closeModal('fairness-modal')">×</button>
+    </div>
+    <div id="fairness-list"></div>
   </div>
 </div>
 

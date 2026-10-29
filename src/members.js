@@ -85,6 +85,10 @@ export async function removeMember(name, isAdminFn, currentMemberFn, onSelfRemov
   Object.entries(state.redemptions || {}).forEach(([id, r]) => {
     if (r && r.member === name && r.status === 'pending') { delete state.redemptions[id]; paths['redemptions/' + id] = null; }
   });
+  // Claims are pending by design: drop theirs so a later member with the same name can't be paid for them.
+  Object.entries(state.claims || {}).forEach(([id, c]) => {
+    if (c && c.member === name) { delete state.claims[id]; paths['claims/' + id] = null; }
+  });
   try {
     await patchPaths(paths);
     if (wasSelf && onSelfRemoved) onSelfRemoved();
@@ -153,6 +157,9 @@ export function renamePaths(oldName, newName) {
   Object.entries(state.redemptions || {}).forEach(([id, r]) => {
     if (r && r.member === oldName) paths['redemptions/' + id + '/member'] = newName;
     if (r && r.decidedBy === oldName) paths['redemptions/' + id + '/decidedBy'] = newName;
+  });
+  Object.entries(state.claims || {}).forEach(([id, c]) => {
+    if (c && c.member === oldName) paths['claims/' + id + '/member'] = newName;
   });
   return paths;
 }
