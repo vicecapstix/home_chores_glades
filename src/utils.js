@@ -256,6 +256,7 @@ export function awayNames(now = Date.now()) { return Object.keys(_away).filter(n
 export function dueStatus(t, now = Date.now()) {
   if (!t.done && isPausedNow(now)) return 'ok'; // holiday pause: nothing is due
   if (!t.done && isAwayNow(t.person, now)) return 'ok'; // assignee is away
+  if (!t.done && t.checkPending) return 'ok'; // waiting for a parent check (#238)
   const s = rawDueStatus(t, now);
   // A skipped occurrence counts as on track until it would be overdue again.
   return isSkipped(t) && s !== 'overdue' ? 'ok' : s;

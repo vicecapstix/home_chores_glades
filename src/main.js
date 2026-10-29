@@ -31,7 +31,7 @@ import {
 
 import {
   checkTaskResets,
-  addTask, editTask, saveTask,
+  addTask, editTask, saveTask, approveCheck, sendBackCheck,
   toggleTask, deleteTask,
   toggleSubtasks, toggleSubtask, addSubtask, removeSubtask,
   claimTask, moveTask, skipTask, clearDoneOnes,
@@ -212,6 +212,8 @@ window.toggleNewNote = function() {
 // Tasks
 window.enableNotifications = () => enableNotifications();
 window.addTask       = ()         => addTask(_isAdmin);
+window.approveCheck  = id         => approveCheck(id, _isAdmin, _currentMember);
+window.sendBackCheck = id         => { const r = window.prompt('Why not yet? (optional, up to 100 characters)', ''); if (r !== null) sendBackCheck(id, r, _isAdmin); };
 window.editTask      = id         => editTask(id, _isAdmin);
 window.saveTask      = id         => saveTask(id, _isAdmin);
 window.cancelEdit    = function(id) {
