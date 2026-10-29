@@ -145,3 +145,17 @@ describe('a recorded badge still earned after the untick is kept (#220, JT optio
     expect(state.members.Alice.badges).toContain('getting_started');
   });
 });
+
+describe('streak left as is when another chore was done the same day (#220 review)', () => {
+  it('keeps Consistent when one of two same-day chores is unticked', async () => {
+    state.members = { Alice: member({ completedCount: 4, streak: 2 }) };
+    state.tasks.t2 = { id: 't2', name: 'Dishes', freq: 'daily', difficulty: 'easy', done: false,
+      lastDone: NOW - 3 * DAY, person: 'Alice', subtasks: {}, order: 2 };
+    await toggleTask('t1', () => 'Alice', admin); // streak 2 → 3, earns Consistent
+    expect(state.members.Alice.badges).toContain('consistent');
+    await toggleTask('t2', () => 'Alice', admin); // same day: streak stays 3
+    await toggleTask('t1', () => 'Alice', admin); // untick: t2 still done today
+    expect(state.members.Alice.streak).toBe(3);
+    expect(state.members.Alice.badges).toContain('consistent');
+  });
+});
