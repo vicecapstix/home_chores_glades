@@ -47,9 +47,9 @@ describe('adjustBonus', () => {
     expect(pushUndo).toHaveBeenCalledTimes(1);
   });
 
-  it('deduction does not touch week points', async () => {
+  it('deduction counts toward week points too (#221)', async () => {
     await adjustBonus('Alice', -3, 'Broke a plate', admin, asDad);
-    expect(adjustMemberPoints.mock.calls[0][1]).toMatchObject({ pts: -3, countWeek: false });
+    expect(adjustMemberPoints.mock.calls[0][1]).toMatchObject({ pts: -3, countWeek: true });
     expect(state.history[0].points).toBe(-3);
   });
 

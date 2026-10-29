@@ -189,8 +189,10 @@ export async function saveTask(id, isAdminFn) {
     [p + 'difficulty']: t.difficulty, [p + 'category']: t.category,
     [p + 'person']: t.person, [p + 'notes']: t.notes, [p + 'rotation']: t.rotation || null,
     [p + 'lastDone']: t.lastDone, [p + 'intervalDays']: t.intervalDays || null,
-    [p + 'needsCheck']: t.needsCheck || null, [p + 'checkPending']: t.needsCheck ? (t.checkPending || null) : null,
+    [p + 'needsCheck']: t.needsCheck || null,
   };
+  // Never write checkPending back from the local copy: another device may have just taken it (two parents must not both pay).
+  if (!t.needsCheck) paths[p + 'checkPending'] = null;
   try { await patchPaths(paths); } catch (err) { showToast('Save failed: ' + (err.code || err.message)); }
 }
 
@@ -199,8 +201,8 @@ export async function saveTask(id, isAdminFn) {
 // Non-admins act only on their own chores; a done 'Anyone' chore belongs to whoever completed it.
 function ownershipBlock(t, me, isAdminFn) {
   if (isAdminFn()) return '';
+  if (t.done && t.lastDoneBy) return t.lastDoneBy === me ? '' : 'Only ' + t.lastDoneBy + ' or a parent can undo this';
   if (t.person && t.person !== me) return 'Only your own tasks can be checked';
-  if (!t.person && t.done && t.lastDoneBy && t.lastDoneBy !== me) return 'Only ' + t.lastDoneBy + ' or a parent can undo this';
   return '';
 }
 
@@ -220,8 +222,16 @@ async function undoCompletionRecords(id, t, c) {
   catch (err) { showToast('Member update failed: ' + (err.code || err.message)); }
 }
 
+// Ids being toggled right now: a quick second tap must not run the uncheck path mid-check (#218).
+const toggling = new Set();
+
 export async function toggleTask(id, currentMemberFn, isAdminFn) {
-  if (READONLY) return;
+  if (READONLY || toggling.has(id)) return;
+  toggling.add(id);
+  try { await runToggle(id, currentMemberFn, isAdminFn); } finally { toggling.delete(id); }
+}
+
+async function runToggle(id, currentMemberFn, isAdminFn) {
   const t = state.tasks[id];
   if (!t) return;
   const me = currentMemberFn();
@@ -428,6 +438,7 @@ export async function claimTask(id, currentMemberFn) {
   const t = state.tasks[id];
   if (!t) return;
   if (t.person) { showToast('Already assigned to ' + t.person); return; }
+  if (t.done) { showToast('Already done'); return; }
   state.tasks[id].person = member;
   try { await patchTask(id, { person: member }); } catch (err) { showToast('Save failed: ' + (err.code || err.message)); }
 }

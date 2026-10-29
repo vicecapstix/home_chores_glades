@@ -172,6 +172,14 @@ describe('flag on add / edit and rendering', () => {
     expect(patchPaths.mock.calls[1][0]['tasks/a/needsCheck']).toBeNull();
     expect(patchPaths.mock.calls[1][0]['tasks/a/checkPending']).toBeNull();
   });
+  it('saveTask with the flag still on never writes checkPending back (another parent may have just taken it)', async () => {
+    state.tasks.a = mkTask({ checkPending: { by: 'Bo', at: TICK } }); // stale local copy
+    document.body.innerHTML = '<div id="tc-a" class="task-card editing"><input class="edit-name" value="Bathroom"><select class="edit-freq"><option value="weekly" selected></option></select><input class="edit-interval"><div class="edit-days"></div><input class="edit-duedate"><input class="edit-duetime"><select class="edit-diff"><option>easy</option></select><select class="edit-cat"><option value=""></option></select><select class="edit-person"><option value="Bo">Bo</option></select><input type="checkbox" class="edit-needscheck" checked><textarea class="edit-notes"></textarea></div><div id="toast"></div>';
+    await saveTask('a', () => true);
+    const paths = patchPaths.mock.calls[0][0];
+    expect(paths['tasks/a/needsCheck']).toBe(true);
+    expect('tasks/a/checkPending' in paths).toBe(false);
+  });
   it('card shows the tag, the waiting state and (admin only) the buttons, escaped', () => {
     expect(renderCard(mkTask())).toContain('✓ Parent check');
     const w = mkTask({ checkPending: { by: '<b>Bo</b>', at: TICK } });

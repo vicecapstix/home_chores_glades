@@ -78,6 +78,7 @@ import { printChart } from './printchart.js';
 import { saveSnapshot, loadSnapshot, clearSnapshot, setCacheBanner } from './cache.js';
 import { openHistory, setHistoryFilter, historyFilterClick } from './history.js';
 import { openProgress } from './progress.js';
+import { openFairness } from './fairness.js';
 import { openWeek } from './week.js';
 import { requestReward, decideRequest, markGiven } from './redemptions.js';
 import { rewardsHTML, openRewards, saveReward, editReward, deleteReward, cancelRewardEdit, refreshRewards, setGoalFor, pickGoalTarget } from './rewards.js';
@@ -383,6 +384,7 @@ window.setHistoryFilter = m       => setHistoryFilter(m);
 window.historyFilterClick = e    => historyFilterClick(e);
 
 // My progress (read-only; members see their own, admins anyone's — enforced in progress.js)
+window.openFairness = () => openFairness(_isAdmin);
 window.openProgress = name => openProgress(name || _currentMember(), _isAdmin, _currentMember);
 // Week planner (read-only)
 window.openWeek = () => openWeek();
