@@ -483,6 +483,7 @@ export async function claimTask(id, currentMemberFn) {
 // No points, no history, no streak: only lastDone/skippedAt move.
 export async function skipTask(id, isAdminFn) {
   if (READONLY || !isAdminFn()) return;
+  if (writeBlocked(showToast)) return;
   const t = state.tasks[id];
   if (!t || t.freq === 'once' || t.done) return;
   const prev = { lastDone: t.lastDone ?? 0, skippedAt: t.skippedAt ?? null };
@@ -542,6 +543,7 @@ export async function moveTask(id, dir, isAdminFn) {
 // History is untouched; the undo toast restores the tasks in one multi-path update too.
 export async function clearDoneOnes(isAdminFn) {
   if (READONLY || !isAdminFn()) return;
+  if (writeBlocked(showToast)) return;
   const ids = Object.keys(state.tasks).filter(id => isStaleDoneOnce(state.tasks[id]));
   if (!ids.length) return;
   if (!confirm('Delete ' + ids.length + ' done one-off chore' + (ids.length > 1 ? 's' : '') + '? History is kept.')) return;

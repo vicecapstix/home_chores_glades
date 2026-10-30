@@ -377,6 +377,7 @@ export async function setPinKey(digit) {
     const hash = await sha256(_setPinBuffer);
     _setPinBuffer = '';
     document.querySelectorAll('#setpin-dots .pin-dot').forEach(d => d.classList.remove('filled'));
+    if (writeBlocked(showToast)) return;
     if (!target || !state.members[target]) {
       document.getElementById('setpin-error').textContent = 'Member not found';
       return;

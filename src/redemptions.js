@@ -124,6 +124,7 @@ export async function decideRequest(id, status, isAdminFn, currentMemberFn) {
 // Admin marks an approved reward as handed over (#173). Status stays 'approved'.
 export async function markGiven(id, isAdminFn, currentMemberFn) {
   if (READONLY || !isAdminFn()) return;
+  if (writeBlocked(showToast)) return;
   const r = state.redemptions?.[id];
   if (!r || r.status !== 'approved' || r.givenAt) return;
   const at = Date.now(), by = currentMemberFn() || 'admin';
