@@ -32,6 +32,7 @@ src/
   a11y.js          — dialog accessibility: Esc to close, focus restore, Tab trap
   savings.js       — member saving goal: pin a reward, progress bar on chip and TV
   backup.js        — admin JSON backup download
+  chorefile.js     — admin download/upload of the chore list only (preview, skips duplicates, one multi-path add)
   bonus.js         — admin ± Points: bonus/deduction with history entry + undo
   cache.js         — device-local snapshot cache (localStorage) for offline start
   connection.js    — online/offline indicator (Firebase .info/connected)

@@ -36,7 +36,7 @@ A real-time chore tracker for families — assign tasks, track progress, earn po
 - **Avatars & rename** — admins can give members an emoji avatar or rename them (points and PIN are kept)
 - **Badges** — First Chore (1), Getting Started (10), Tenacious (25), Fifty Strong (50), Century (100 completions); Consistent (3-day streak), On Fire (7), Dedicated (30)
 - **Templates** — save the current task list as a reusable template
-- **Backup, restore & print** — admins can download a JSON backup (no PINs), restore from one (PINs kept), or print a Mon–Sun chart
+- **Backup, restore & print** — admins can download a JSON backup (no PINs), restore from one (PINs kept), or print a Mon–Sun chart. Admins can also download just the chore list as a file and upload it again later (new chores only; names that already exist are skipped).
 - **Stats** — completion charts by week, month, or all time; export to CSV
 - **Browser notifications** — get an alert when a chore goes overdue (requires permission)
 - **Due-time reminders** — the assignee gets one notification per chore per day once its due time passes

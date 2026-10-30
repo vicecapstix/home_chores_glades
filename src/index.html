@@ -379,6 +379,10 @@
     <button class="btn-lg" style="width:100%;margin-top:0.5rem;" onclick="window.pickRestoreFile()" title="Replace chores, points and history from a backup file. A safety backup is downloaded first.">Restore backup…</button>
     <label for="restore-file" class="sr-only">Backup file (.json)</label>
     <input type="file" id="restore-file" class="sr-only" tabindex="-1" accept=".json,application/json" onchange="window.onRestoreFile(this)" />
+    <button class="btn-lg" style="width:100%;margin-top:0.5rem;" onclick="window.downloadChores()" title="Saves only the chore list (names, how often, notes, sub-tasks) as a file. No people, points or history.">Download chores</button>
+    <button class="btn-lg" style="width:100%;margin-top:0.5rem;" onclick="window.pickChoresFile()" title="Add chores from a chore-list file. Existing chores are never changed.">Upload chores…</button>
+    <label for="chores-file" class="sr-only">Chore list file (.json)</label>
+    <input type="file" id="chores-file" class="sr-only" tabindex="-1" accept=".json,application/json" onchange="window.onChoresFile(this)" />
     <button class="btn-lg" style="width:100%;margin-top:0.5rem;" onclick="window.closeAdminPanel();window.openFairness()" title="Who did how much over the last 4 weeks">Fairness report</button>
     <button class="btn-lg" style="width:100%;margin-top:0.5rem;" onclick="window.printChart()" title="Opens a printable Mon–Sun chart of the week's chores">Print chart</button>
     <button id="admin-parent-in" class="btn-lg" style="width:100%;margin-top:0.5rem;" onclick="window.openParentSignIn()">Parent sign in</button>
@@ -411,6 +415,20 @@
     <label for="restore-confirm">Type RESTORE to confirm</label>
     <input type="text" id="restore-confirm" autocomplete="off" oninput="window.onRestoreInput(this.value)" />
     <button id="restore-go" class="btn-lg" style="width:100%;margin-top:0.5rem;" disabled onclick="window.confirmRestore()">Restore</button>
+  </div>
+</div>
+
+<!-- UPLOAD CHORES -->
+<div id="chores-upload-modal" class="hidden" role="dialog" aria-modal="true" aria-labelledby="chores-upload-title" onclick="window.cancelChoreUpload()">
+  <div class="lb-card" onclick="event.stopPropagation()" style="max-width:360px;">
+    <div class="lb-header">
+      <span class="lb-title" id="chores-upload-title">Upload chores</span>
+      <button class="lb-close" aria-label="Close" onclick="window.cancelChoreUpload()">×</button>
+    </div>
+    <div id="chores-upload-summary"></div>
+    <p>New chores are added for Anyone. Nothing existing is changed or deleted.</p>
+    <button id="chores-upload-go" class="btn-lg btn-accent" style="width:100%;margin-top:0.5rem;" onclick="window.confirmChoreUpload()">Add</button>
+    <button class="btn-lg" style="width:100%;margin-top:0.5rem;" onclick="window.cancelChoreUpload()">Cancel</button>
   </div>
 </div>
 
