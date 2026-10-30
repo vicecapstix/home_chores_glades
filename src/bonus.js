@@ -40,7 +40,10 @@ export async function adjustBonus(name, amount, reason, isAdminFn, currentMember
     if (!r.ok) { showToast('Points update failed'); return false; }
     const weekMoved = r.weekDelta ?? amount;
     const entry = { type: 'bonus', taskName: 'Bonus: ' + reason, person: name, points: amount, reason, by: currentMemberFn() || '', completedAt: Date.now() };
-    await appendHistory(entry);
+    // The points have moved by now; a failed log line must not look like a failed award
+    // (callers such as claim approval would retry and pay twice).
+    try { await appendHistory(entry); }
+    catch (err) { showToast('Points updated, but the history entry failed: ' + (err.code || err.message)); }
     pushUndo({
       label: (amount > 0 ? '+' : '') + amount + ' ' + name,
       verb: amount > 0 ? 'Awarded' : 'Deducted',
