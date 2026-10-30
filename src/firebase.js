@@ -93,6 +93,7 @@ export async function writeState() {
       templates: Object.keys(state.templates || {}).length ? state.templates : null,
       rewards:   Object.keys(state.rewards   || {}).length ? state.rewards   : null,
       redemptions: Object.keys(state.redemptions || {}).length ? state.redemptions : null,
+      claims:    Object.keys(state.claims || {}).length ? state.claims : null,
       pause:     state.pause || null,
     });
   } catch (err) {
@@ -163,6 +164,14 @@ export async function decideRedemption(id, status, by) {
   if (READONLY || !_db || !_live) return false;
   const res = await runTransaction(ref(_db, 'state/redemptions/' + id),
     cur => (cur && cur.status === 'pending' ? { ...cur, status, decidedAt: Date.now(), decidedBy: by } : undefined));
+  return !!res.committed;
+}
+
+// Atomically remove a pending extra-job claim (#224). Returns true only for the
+// one caller whose transaction removed it, so two parents can't both award it.
+export async function takeClaim(id) {
+  if (READONLY || !_db || !_live) return false;
+  const res = await runTransaction(ref(_db, 'state/claims/' + id), cur => (cur ? null : undefined));
   return !!res.committed;
 }
 

@@ -45,6 +45,7 @@ src/
   pwa.js           — service worker registration
   week.js          — "This week" planner modal (display only)
   redemptions.js   — reward requests: request, approve/deny, refund
+  claims.js        — extra job claims: member logs an unlisted job, admin approves points (state/claims)
   rewards.js       — rewards catalog UI
   rollover.js      — local timer so open screens roll over resets/due status
   away.js          — per-member away mode (members/<name>/awayUntil), expiry + return patch
@@ -101,6 +102,7 @@ Database path: `/state`
   templates: { "tpl<timestamp>": { id, name, tasks: [{name,freq,difficulty}] } }
   rewards:   { "<id>": { id, name, cost, icon } }
   teamGoal:  { points, reward }  ← weekly family goal; progress computed from history
+  claims:    { "cl<timestamp>": { id, member, name, points, requestedAt } }  ← pending only, max 20 per member
   redemptions: { "<id>": { id, rewardId, rewardName, cost, member, requestedAt, status, …, givenAt?, givenBy? } }
   pause:     { until, by, since }  ← house pause (holiday mode); absent when not paused
   doublePoints: { date, mult }  ← double-points day (x2/x3 on one local date); absent when off
