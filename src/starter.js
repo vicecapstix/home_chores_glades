@@ -26,6 +26,18 @@ export const STARTER = [
 ];
 
 const key = n => String(n).trim().toLowerCase();
+
+// One new chore from a definition ({ name, freq, difficulty, category } plus optional notes,
+// days, intervalDays, dueDate, dueTime, subtasks[]). Shared with the chore-file upload (#234).
+export function makeTask(s, id, base, n) {
+  const subtasks = {};
+  (s.subtasks || []).forEach((name, j) => { const sid = 's' + (base + n) + '_' + j; subtasks[sid] = { id: sid, name, done: false }; });
+  return { id, name: s.name, freq: s.freq, person: '', done: false,
+    lastDone: initialLastDone(s.freq === 'interval' ? { freq: s.freq, intervalDays: s.intervalDays } : s.freq, base),
+    ...(s.freq === 'weekdays' ? { days: s.days } : {}), ...(s.freq === 'interval' ? { intervalDays: s.intervalDays } : {}),
+    ...(s.dueTime ? { dueTime: s.dueTime } : {}),
+    notes: s.notes || '', difficulty: s.difficulty, category: s.category, dueDate: s.dueDate || '', subtasks, order: base + n };
+}
 const existing = () => new Set(Object.values(state.tasks || {}).map(t => key(t.name)));
 
 export function openStarter(isAdminFn) {
@@ -61,10 +73,9 @@ export async function addStarterChores(names, isAdminFn) {
   let n = 0;
   STARTER.forEach(s => {
     if (!want.has(key(s.name)) || have.has(key(s.name))) return;
-    const id = 't' + (base + n);
-    state.tasks[id] = { id, name: s.name, freq: s.freq, person: '', done: false, lastDone: initialLastDone(s.freq, base),
-      notes: '', difficulty: s.difficulty, category: s.category, dueDate: '', subtasks: {}, order: base + n };
-    paths['tasks/' + id] = state.tasks[id];
+    const t = makeTask(s, 't' + (base + n), base, n);
+    state.tasks[t.id] = t;
+    paths['tasks/' + t.id] = t;
     n++;
   });
   if (!n) { showToast('Nothing new to add'); return 0; }
