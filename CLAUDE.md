@@ -52,6 +52,7 @@ src/
   restore.js       — admin restore from JSON backup (validate, caps, keeps PINs)
   theme.js         — Auto/Light/Dark theme setting (follows prefers-color-scheme)
   teamgoal.js      — family weekly points goal (state/teamGoal), bar + admin form
+  doublepoints.js  — double-points day (state/doublePoints {date, mult}), banner + admin form
   tv.js            — TV dashboard helpers for ?readonly=1
   starter.js       — built-in starter chore list + "Add from list" modal (static code, survives a wipe)
   public/          — sw.js, manifest.webmanifest, icons (copied to dist/ by Vite)
@@ -104,6 +105,7 @@ Database path: `/state`
   claims:    { "cl<timestamp>": { id, member, name, points, requestedAt } }  ← pending only, max 20 per member
   redemptions: { "<id>": { id, rewardId, rewardName, cost, member, requestedAt, status, …, givenAt?, givenBy? } }
   pause:     { until, by, since }  ← house pause (holiday mode); absent when not paused
+  doublePoints: { date, mult }  ← double-points day (x2/x3 on one local date); absent when off
 ```
 
 Required rules (Firebase Console → Realtime Database → Rules):
@@ -218,7 +220,11 @@ Every piece of user-supplied data injected into `innerHTML` or an `onclick` stri
   lastDone,      // timestamp ms
   lastDoneBy,    // member name — set on check, cleared on uncheck (prevents point farming)
   lastDonePoints,// points awarded — set on check, cleared on uncheck
+  lastDoneBadges,// badge ids that check awarded (null when none) — uncheck takes back those whose check now fails, then clears it
   notes,         // string, max 300 chars
+  needsCheck,    // true when a parent must check the job before points are given (omitted otherwise)
+  checkPending,  // { by, at } while a member's tick waits for a parent check (no points yet)
+  checkNote,     // optional reason (<=100 chars) from "Not yet"; cleared on the next tick
   difficulty,    // 'easy'|'medium'|'hard'
   category,      // one of CATEGORIES or ''
   subtasks,      // { 's<timestamp>': { id, name, done } }

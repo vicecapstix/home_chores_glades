@@ -31,7 +31,7 @@ import {
 
 import {
   checkTaskResets,
-  addTask, editTask, saveTask,
+  addTask, editTask, saveTask, approveCheck, sendBackCheck,
   toggleTask, deleteTask,
   toggleSubtasks, toggleSubtask, addSubtask, removeSubtask,
   claimTask, moveTask, skipTask, clearDoneOnes,
@@ -39,6 +39,7 @@ import {
 
 import { setAway, clearAway, checkAwayExpiry, awayAdminHTML } from './away.js';
 import { setTeamGoal, clearTeamGoal, teamGoalAdminHTML } from './teamgoal.js';
+import { setDoublePoints, clearDoublePoints, doublePointsAdminHTML } from './doublepoints.js';
 import { checkPauseExpiry, renderPauseBanner, setPause, clearPause, pauseAdminHTML } from './pause.js';
 import { addMember, backfillColors, removeMember, toggleRole, toggleRoleInPanel, setAvatar, renameMember } from './members.js';
 
@@ -134,6 +135,7 @@ initCardArrowNav();
       claims: val.claims || {},
       pause: val.pause || null,
       teamGoal: val.teamGoal || null,
+      doublePoints: val.doublePoints || null,
     });
 
     setWritesEnabled(true);
@@ -214,6 +216,8 @@ window.toggleNewNote = function() {
 // Tasks
 window.enableNotifications = () => enableNotifications();
 window.addTask       = ()         => addTask(_isAdmin);
+window.approveCheck  = id         => approveCheck(id, _isAdmin, _currentMember);
+window.sendBackCheck = id         => { const r = window.prompt('Why not yet? (optional, up to 100 characters)', ''); if (r !== null) sendBackCheck(id, r, _isAdmin); };
 window.editTask      = id         => editTask(id, _isAdmin);
 window.saveTask      = id         => saveTask(id, _isAdmin);
 window.cancelEdit    = function(id) {
@@ -283,7 +287,7 @@ window.openAdminPanel = function() {
       '<button class="btn-sm" aria-label="Progress for ' + esc(m) + '" onclick="window.closeAdminPanel();window.openProgress(\'' + jsq(m) + '\')">Progress</button>' +
       '<button class="btn-sm" aria-label="Adjust points for ' + esc(m) + '" onclick="window.adjustBonus(\'' + jsq(m) + '\')">± Points</button>' +
       '</div>';
-  }).join('') + pauseAdminHTML() + awayAdminHTML() + teamGoalAdminHTML();
+  }).join('') + pauseAdminHTML() + awayAdminHTML() + teamGoalAdminHTML() + doublePointsAdminHTML();
   document.getElementById('admin-parent-in').classList.toggle('hidden', !!state.parentEmail);
   document.getElementById('admin-parent-out').classList.toggle('hidden', !state.parentEmail);
   openModal('admin-panel-modal');
@@ -293,6 +297,8 @@ window.setAway = () => setAway(document.getElementById('away-member')?.value, do
 window.clearAway = name => clearAway(name, _isAdmin).then(ok => ok && window.openAdminPanel());
 window.setTeamGoal = () => setTeamGoal(document.getElementById('tg-points')?.value, document.getElementById('tg-reward')?.value, _isAdmin).then(ok => ok && window.openAdminPanel());
 window.clearTeamGoal = () => clearTeamGoal(_isAdmin).then(ok => ok && window.openAdminPanel());
+window.setDoublePoints = () => setDoublePoints(document.getElementById('dp-date')?.value, document.getElementById('dp-mult')?.value, _isAdmin).then(ok => ok && window.openAdminPanel());
+window.clearDoublePoints = () => clearDoublePoints(_isAdmin).then(ok => ok && window.openAdminPanel());
 window.clearPause = () => clearPause(_isAdmin).then(() => window.openAdminPanel());
 // Parent sign in (#97)
 window.openParentSignIn = function() {
