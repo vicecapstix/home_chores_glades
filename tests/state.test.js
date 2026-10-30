@@ -154,3 +154,15 @@ describe('migrateLegacyMembers', () => {
     });
   });
 });
+
+describe('applySnapshot claims (#224)', () => {
+  it('loads state/claims so a parent on another phone sees them', () => {
+    applySnapshot({ claims: { c1: { id: 'c1', member: 'Ann', title: 'Car', points: 5 } } });
+    expect(state.claims.c1.title).toBe('Car');
+  });
+  it('defaults to an empty object when claims is absent', () => {
+    state.claims = { stale: { id: 'stale' } };
+    applySnapshot({});
+    expect(state.claims).toEqual({});
+  });
+});

@@ -151,6 +151,17 @@ describe('removeMember', () => {
     expect(patchPaths).toHaveBeenCalledOnce();
     expect(Object.keys(state.redemptions).sort()).toEqual(['r2', 'r3']);
   });
+  it('drops the removed member\'s pending claims in the same write (#224)', async () => {
+    state.claims = {
+      c1: { id: 'c1', member: 'Bob', title: 'Washed car', points: 5 },
+      c2: { id: 'c2', member: 'Alice', title: 'Raked leaves', points: 3 },
+    };
+    await removeMember('Bob', isAdmin);
+    expect(patchPaths).toHaveBeenCalledOnce();
+    expect(patchPaths.mock.calls[0][0]['claims/c1']).toBeNull();
+    expect(patchPaths.mock.calls[0][0]).not.toHaveProperty('claims/c2');
+    expect(Object.keys(state.claims)).toEqual(['c2']);
+  });
   it('calls onSelfRemoved after writing when removing the logged-in member (#89)', async () => {
     state.members.Bob.role = 'admin';
     const cb = vi.fn();
