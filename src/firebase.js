@@ -144,6 +144,19 @@ export async function spendPoints(name, cost) {
   return !!res.committed;
 }
 
+// Parent check (#238): atomically take (and clear) a task's pending check request. Returns the
+// request, or null if there was none, so only one parent's tap can complete it.
+export async function takeCheckPending(id) {
+  if (READONLY || !_db) return null;
+  if (!isLive()) throw Object.assign(new Error('Still connecting — try again in a moment'), { code: 'offline' });
+  let taken = null;
+  const res = await runTransaction(ref(_db, 'state/tasks/' + id + '/checkPending'), cur => {
+    if (!cur) return undefined;
+    taken = cur; return null;
+  });
+  return res.committed ? taken : null;
+}
+
 // Atomically move a pending redemption to approved/denied. Returns false if it
 // no longer exists or was already decided (so a request is decided only once).
 export async function decideRedemption(id, status, by) {
@@ -155,26 +168,31 @@ export async function decideRedemption(id, status, by) {
 
 // Atomic award/reversal of task points on the member's LIVE server value (never
 // an absolute from the local cache). opts: { pts (signed), count (signed),
-// weekStart, countWeek (touch weekPoints?), allowNegative }. Without
-// allowNegative a reversal that the balance cannot cover aborts untouched.
-// Returns { ok, reason: 'insufficient'|'missing'|'readonly'|'offline', member }.
+// weekStart, countWeek (touch weekPoints?), weekPts (week change if not pts),
+// allowNegative }. Without allowNegative a reversal that the balance cannot
+// cover aborts untouched. weekPoints never goes below 0.
+// Returns { ok, reason: 'insufficient'|'missing'|'readonly'|'offline', member, weekDelta }
+// (weekDelta = how much weekPoints actually moved, after the 0 floor).
 export async function adjustMemberPoints(name, opts) {
   if (READONLY || !_db) return { ok: false, reason: 'readonly' };
   if (!isLive()) return { ok: false, reason: 'offline' };
   const { pts = 0, count = 0, weekStart, countWeek = true, allowNegative = false } = opts;
-  let reason = '';
+  const weekPts = opts.weekPts ?? pts;
+  let reason = '', weekDelta = 0;
   const res = await runTransaction(ref(_db, 'state/members/' + name), cur => {
     if (!cur) { reason = 'missing'; return undefined; }
     const balance = cur.points || 0;
     if (pts < 0 && !allowNegative && balance < -pts) { reason = 'insufficient'; return undefined; }
     const next = { ...cur, points: balance + pts, completedCount: Math.max(0, (cur.completedCount || 0) + count) };
     if (countWeek) {
-      next.weekPoints = Math.max(0, (cur.weekStart === weekStart ? (cur.weekPoints || 0) : 0) + pts);
+      const prevWeek = cur.weekStart === weekStart ? (cur.weekPoints || 0) : 0;
+      next.weekPoints = Math.max(0, prevWeek + weekPts);
       next.weekStart = weekStart;
+      weekDelta = next.weekPoints - prevWeek;
     }
     return next;
   });
-  return { ok: !!res.committed, reason: res.committed ? '' : reason, member: res.snapshot?.val?.() ?? null };
+  return { ok: !!res.committed, reason: res.committed ? '' : reason, member: res.snapshot?.val?.() ?? null, weekDelta };
 }
 
 const toList = cur => (Array.isArray(cur) ? cur : (cur ? Object.values(cur) : []));

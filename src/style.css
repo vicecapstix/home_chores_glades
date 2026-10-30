@@ -254,6 +254,7 @@ body[data-reorder] .move-btns { display: flex; }
 #leaderboard-modal,
 #history-modal,
 #progress-modal,
+#fairness-modal,
 #week-modal,
 #rewards-modal,
 #stats-modal,
@@ -265,6 +266,7 @@ body[data-reorder] .move-btns { display: flex; }
 #leaderboard-modal.hidden,
 #history-modal.hidden,
 #progress-modal.hidden,
+#fairness-modal.hidden,
 #week-modal.hidden,
 #rewards-modal.hidden,
 #stats-modal.hidden,
@@ -444,6 +446,8 @@ body.tv-panel-on #main-content { display: none; }
 .starter-meta { font-size: 0.8rem; color: var(--muted); text-align: right; }
 .starter-add { width: 100%; margin-top: var(--space-md); }
 .empty-link { background: none; border: none; color: var(--accent); font: inherit; text-decoration: underline; cursor: pointer; padding: 0; }
+.new-check, .edit-check { display: inline-flex; align-items: center; gap: 6px; font-size: 0.85rem; color: var(--muted); min-height: 44px; }
+.check-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-sm); padding: 6px 0 2px; font-size: 0.85rem; color: var(--muted); }
 .tpl-item { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
 .tpl-item:last-child { border-bottom: none; }
 .tpl-item-info { flex: 1; }
@@ -528,6 +532,11 @@ body.tv-panel-on #main-content { display: none; }
   body.tv .section[data-k="available"] { grid-row: 2; }
   body.tv .section[data-k="ok"] { grid-row: 3; }
 }
+/* DOUBLE-POINTS DAY (#225) */
+.double-banner { flex: 1 1 100%; order: 8; padding: 6px 10px; border-radius: var(--radius-sm); background: var(--warn, var(--accent)); color: #fff; font-weight: 700; font-size: 0.9rem; text-align: center; }
+.double-banner.hidden { display: none; }
+[data-theme="dark"] .double-banner { color: var(--bg); } /* white on the dark --warn was ~2.5:1 */
+body.tv .double-banner { font-size: 2rem; padding: 10px 16px; }
 /* FAMILY DAILY GOAL */
 .goal { position: relative; flex: 1 1 100%; order: 9; }
 .goal.hidden { display: none; }

@@ -9,9 +9,12 @@ A real-time chore tracker for families — assign tasks, track progress, earn po
 - **Per-member login** — each member selects their name and enters their own 4-digit PIN
 - **Roles** — first member is admin (can add/edit/delete); other members can tick off, claim and uncheck chores, use **My chores**, and request rewards, but cannot add, edit or delete
 - **TV / readonly view** — append `?readonly=1` to the URL for a display-only TV dashboard (no writes, no login)
+- **TV auto-cycle** — use `?readonly=1&cycle=1` to rotate the TV between chores, the leaderboard and rewards every 30 s
 - **Installable (PWA)** — add to your home screen; an offline indicator shows when the connection drops
 - **Rewards** — admins define a rewards catalog; members spend points on requests, admins approve or deny them
-- **Activity history** — recent completions, filterable by member
+- **Reward limits** — an optional cap of N requests per week per member, shown as "n/N this week"
+- **To give** — approved rewards wait in a To give list until an admin taps Given ✓
+- **Activity history** — recent completions, bonuses, reward requests and refunds, filterable by member
 - **My chores** — filter to the chores assigned to you; reorder with the move up/down buttons
 - **Theme** — Auto (follows the device), Light or Dark, from the header button
 - **Chore frequencies** — daily, specific weekdays, weekly, fortnightly, monthly, **Every N days**, or a one-off task with a due date; optional due time
@@ -25,7 +28,7 @@ A real-time chore tracker for families — assign tasks, track progress, earn po
 - **Notes** — attach a note to any task or chore
 - **Status tracking** — Available (unassigned) / Overdue / Due soon / Upcoming / Done sections; earlier finished one-offs fold into a collapsed Done list
 - **Inline editing** — edit a task's name, frequency, assignee, or difficulty without deleting it
-- **Points & leaderboard** — members earn points for completing chores; see all-time, weekly and last-week rankings
+- **Points & leaderboard** — members earn points for completing chores (shown on each chore card); see all-time, weekly and last-week rankings, where ties share a rank
 - **± Points** — admins can give a bonus or a deduction with a reason (recorded in history, undoable)
 - **Saving goal** — a member pins a reward to save towards; a progress bar shows on their chip and the TV
 - **Family goal** — a shared weekly points target with a reward, shown as a progress bar
@@ -36,6 +39,7 @@ A real-time chore tracker for families — assign tasks, track progress, earn po
 - **Backup, restore & print** — admins can download a JSON backup (no PINs), restore from one (PINs kept), or print a Mon–Sun chart
 - **Stats** — completion charts by week, month, or all time; export to CSV
 - **Browser notifications** — get an alert when a chore goes overdue (requires permission)
+- **Due-time reminders** — the assignee gets one notification per chore per day once its due time passes
 - **Bulk actions** — select multiple tasks to bulk-assign or bulk-delete
 - **Daily summary** — on first visit each day, shows what's overdue or due soon
 - **PIN protection** — optional 4-digit PIN per member (see [RESET.md](RESET.md) if one is forgotten)

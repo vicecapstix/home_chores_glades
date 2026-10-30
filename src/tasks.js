@@ -1,9 +1,10 @@
 import { state, getMembers } from './state.js';
 import { READONLY, BADGES, CATEGORIES } from './config.js';
-import { patchPaths, adjustMemberPoints, appendHistory, removeHistoryEntry, patchTask, patchMember, patchRoot, removeTask, restoreTask, patchSubtask } from './firebase.js';
+import { patchPaths, takeCheckPending, adjustMemberPoints, appendHistory, removeHistoryEntry, patchTask, patchMember, patchRoot, removeTask, restoreTask, patchSubtask } from './firebase.js';
 import { showToast } from './ui.js';
 import { writeBlocked } from './writegate.js';
 import { pushUndo } from './undo.js';
+import { activeMultiplier } from './doublepoints.js';
 import { esc, jsq, validTime, validInterval, INTERVAL_MIN, INTERVAL_MAX, freqDays, cycleDays, daysSince, dueStatus, taskPoints, getWeekStart, localDateStr, prevScheduledStart, isStaleDoneOnce, initialLastDone, nextRotationPerson, awayNames, DAY_NAMES } from './utils.js';
 
 // Re-export for other modules
@@ -84,6 +85,7 @@ export async function addTask(isAdminFn) {
   const interval = freq === 'interval' ? validInterval(document.getElementById('new-interval')?.value) : 0;
   if (freq === 'interval' && !interval) { showToast('Enter a whole number of days from ' + INTERVAL_MIN + ' to ' + INTERVAL_MAX); return; }
   const dueTime = validTime(document.getElementById('new-duetime')?.value);
+  const needsCheck = !!document.getElementById('new-needscheck')?.checked;
   const notesEl = document.getElementById('new-notes');
   const notes   = notesEl.value.trim();
   const id      = 't' + Date.now();
@@ -92,6 +94,7 @@ export async function addTask(isAdminFn) {
     done: false, lastDone: initialLastDone(freq === 'interval' ? { freq, intervalDays: interval } : freq),
     ...(freq === 'weekdays' ? { days } : {}),
     ...(interval ? { intervalDays: interval } : {}),
+    ...(needsCheck ? { needsCheck: true } : {}),
     notes: notes || '', difficulty: diff, category: cat || '',
     dueDate: dueDate || '', ...(dueTime ? { dueTime } : {}), subtasks: {}, order: Date.now(),
   };
@@ -107,6 +110,7 @@ export async function addTask(isAdminFn) {
   document.querySelectorAll('#new-days input').forEach(i => { i.checked = false; });
   notesEl.value = '';
   notesEl.style.display = 'none';
+  if (document.getElementById('new-needscheck')) document.getElementById('new-needscheck').checked = false;
   try { await patchPaths({ ['tasks/' + id]: state.tasks[id], nextId: state.nextId }); } catch (err) { showToast('Save failed: ' + (err.code || err.message)); }
 }
 
@@ -144,6 +148,7 @@ export function editTask(id, isAdminFn) {
     '</div>' +
     dayChipsHTML(t.days, 'day-chips edit-days' + (t.freq === 'weekdays' ? '' : ' hidden')) +
     rotationChipsHTML(t, members) +
+    '<label class="edit-check"><input type="checkbox" class="edit-needscheck"' + (t.needsCheck ? ' checked' : '') + ' /> Needs parent check</label>' +
     '<textarea class="edit-notes" placeholder="Notes..." maxlength="300">' + esc(t.notes || '') + '</textarea>' +
     '<div class="edit-actions">' +
       '<button class="btn-sm btn-accent" onclick="window.saveTask(\'' + jsq(id) + '\')">Save</button>' +
@@ -180,6 +185,7 @@ export async function saveTask(id, isAdminFn) {
   state.tasks[id].category   = card.querySelector('.edit-cat').value;
   state.tasks[id].person     = card.querySelector('.edit-person').value;
   state.tasks[id].notes      = card.querySelector('.edit-notes').value.trim();
+  if (card.querySelector('.edit-needscheck')?.checked) state.tasks[id].needsCheck = true; else { delete state.tasks[id].needsCheck; delete state.tasks[id].checkPending; }
   const t = state.tasks[id], p = 'tasks/' + id + '/';
   const paths = {
     [p + 'name']: t.name, [p + 'freq']: t.freq, [p + 'days']: t.days || null,
@@ -187,7 +193,10 @@ export async function saveTask(id, isAdminFn) {
     [p + 'difficulty']: t.difficulty, [p + 'category']: t.category,
     [p + 'person']: t.person, [p + 'notes']: t.notes, [p + 'rotation']: t.rotation || null,
     [p + 'lastDone']: t.lastDone, [p + 'intervalDays']: t.intervalDays || null,
+    [p + 'needsCheck']: t.needsCheck || null,
   };
+  // Never write checkPending back from the local copy: another device may have just taken it (two parents must not both pay).
+  if (!t.needsCheck) paths[p + 'checkPending'] = null;
   try { await patchPaths(paths); } catch (err) { showToast('Save failed: ' + (err.code || err.message)); }
 }
 
@@ -196,12 +205,13 @@ export async function saveTask(id, isAdminFn) {
 // Non-admins act only on their own chores; a done 'Anyone' chore belongs to whoever completed it.
 function ownershipBlock(t, me, isAdminFn) {
   if (isAdminFn()) return '';
+  if (t.done && t.lastDoneBy) return t.lastDoneBy === me ? '' : 'Only ' + t.lastDoneBy + ' or a parent can undo this';
   if (t.person && t.person !== me) return 'Only your own tasks can be checked';
-  if (!t.person && t.done && t.lastDoneBy && t.lastDoneBy !== me) return 'Only ' + t.lastDoneBy + ' or a parent can undo this';
   return '';
 }
 
 // Uncheck (#32): drop this completion's history entry and give back the streak it added.
+// Returns the restored streak, or undefined when the streak is left as is.
 async function undoCompletionRecords(id, t, c) {
   let r;
   try { r = await removeHistoryEntry({ taskId: id, completedAt: c.at, person: c.by || undefined }); }
@@ -213,31 +223,124 @@ async function undoCompletionRecords(id, t, c) {
   const day = localDateStr(new Date(c.at));
   const otherSameDay = rest.some(h => h.person === c.by && localDateStr(new Date(h.completedAt)) === day);
   if (m.lastStreakDate !== day || otherSameDay || c.prevStreakDate === day) return;
-  try { await patchMember(c.by, { streak: c.prevStreak || 0, lastStreakDate: c.prevStreakDate || null }); }
+  try { await patchMember(c.by, { streak: c.prevStreak || 0, lastStreakDate: c.prevStreakDate || null }); return c.prevStreak || 0; }
   catch (err) { showToast('Member update failed: ' + (err.code || err.message)); }
 }
 
+const asList = v => (Array.isArray(v) ? v : (v ? Object.values(v) : []));
+
+// What checking a chore does to a member's streak and badges (shared by toggleTask's task and member writes).
+function completionAward(m, pts, nowTs = Date.now()) {
+  const today     = localDateStr(new Date(nowTs)); // the tick time, which for a parent check is when the child ticked
+  const yd        = new Date(nowTs); yd.setDate(yd.getDate() - 1);
+  const yesterday = localDateStr(yd);
+  const lateCheck = !!m.lastStreakDate && m.lastStreakDate > today; // approved after a newer completion: leave the streak alone
+  const newStreak = lateCheck || m.lastStreakDate === today ? (m.streak || 0) :
+                    m.lastStreakDate === yesterday ? (m.streak || 0) + 1 : 1;
+  const currentBadges = asList(m.badges);
+  const virtualMember = { ...m, points: (m.points || 0) + pts, completedCount: (m.completedCount || 0) + 1, streak: newStreak };
+  const newBadgeIds = BADGES.filter(b => !currentBadges.includes(b.id) && b.check(virtualMember)).map(b => b.id);
+  return { streakDate: lateCheck ? m.lastStreakDate : today, newStreak, currentBadges, newBadgeIds };
+}
+
+// Uncheck (#220): take back the badges this completion awarded (task.lastDoneBadges) whose check
+// now fails on `after` (the member once this completion is undone), filtered from the member's
+// live badges so ones added elsewhere meanwhile survive.
+async function revokeBadges(name, awarded, after) {
+  const have = asList(state.members[name]?.badges);
+  const ids = awarded.filter(id => have.includes(id) && !BADGES.find(b => b.id === id)?.check(after));
+  if (!ids.length) return;
+  try { await patchMember(name, { badges: have.filter(id => !ids.includes(id)) }); }
+  catch (err) { showToast('Member update failed: ' + (err.code || err.message)); }
+}
+
+// Ids being toggled right now: a quick second tap must not run the uncheck path mid-check (#218).
+const toggling = new Set();
+
 export async function toggleTask(id, currentMemberFn, isAdminFn) {
-  if (READONLY) return;
+  if (READONLY || toggling.has(id)) return;
   if (writeBlocked(showToast)) return;
+  toggling.add(id);
+  try { await runToggle(id, currentMemberFn, isAdminFn); } finally { toggling.delete(id); }
+}
+
+async function runToggle(id, currentMemberFn, isAdminFn) {
   const t = state.tasks[id];
   if (!t) return;
   const me = currentMemberFn();
   const blocked = ownershipBlock(t, me, isAdminFn);
   if (blocked) { showToast(blocked); return; }
-  const done = !t.done;
   // 'Anyone' tasks credit the logged-in member who ticks them (if they exist).
   const awardee = t.person || (me && state.members[me] ? me : '');
-  const nowTs = Date.now(); // shared by lastDone and the history entry so uncheck can match them
+  if (t.needsCheck && !t.done && !isAdminFn()) return submitForCheck(id, t, me, awardee);
+  // A parent ticking a waiting card means "Looks good" for the child (taken atomically, awarded once).
+  if (!t.done && t.checkPending && isAdminFn()) return approveCheck(id, isAdminFn, currentMemberFn);
+  return applyToggle(id, t, awardee, Date.now(), isAdminFn);
+}
+
+// Parent check (#238): a member's tick on a needs-check chore only records a pending request.
+async function submitForCheck(id, t, me, awardee) {
+  if (!awardee) { showToast('Select a member first'); return; }
+  try {
+    if (t.checkPending) {
+      if (t.checkPending.by !== me) { showToast('Waiting for ' + t.checkPending.by + "'s parent check"); return; }
+      await patchTask(id, { checkPending: null }); // cancel own request
+    } else await patchTask(id, { checkPending: { by: awardee, at: Date.now() }, checkNote: null });
+  } catch (err) { showToast('Update failed: ' + (err.code || err.message)); }
+}
+
+// Admin: "Looks good". The pending request is taken atomically first, so a double tap or a second
+// parent cannot award twice; it is put back if the completion cannot start.
+export async function approveCheck(id, isAdminFn, currentMemberFn) {
+  if (READONLY || !isAdminFn()) return;
+  const t = state.tasks[id];
+  if (!t || t.done || !t.checkPending || checking.has(id)) return;
+  checking.add(id);
+  try {
+    let p;
+    try { p = await takeCheckPending(id); } catch (err) { showToast('Update failed: ' + (err.code || err.message)); return; }
+    if (!p) { showToast('Already checked'); return; }
+    if (!state.members[p.by]) { showToast(p.by + ' is no longer a member'); await patchTask(id, { checkPending: p }).catch(() => {}); return; }
+    const ok = await applyToggle(id, t, p.by, p.at, isAdminFn, currentMemberFn() || 'admin');
+    if (ok === false) await patchTask(id, { checkPending: p }).catch(() => {}); // completion not saved: keep the child's request
+  } finally { checking.delete(id); }
+}
+
+// Admin: "Not yet". Clears the request and stores an optional short reason; no points.
+export async function sendBackCheck(id, reason, isAdminFn) {
+  if (READONLY || !isAdminFn()) return;
+  const t = state.tasks[id];
+  if (!t || !t.checkPending || checking.has(id)) return;
+  checking.add(id);
+  try {
+    const p = await takeCheckPending(id);
+    if (!p) { showToast('Already checked'); return; }
+    const note = String(reason || '').trim().slice(0, 100);
+    await patchTask(id, { checkNote: note || null });
+    showToast('Sent back to ' + p.by);
+  } catch (err) { showToast('Update failed: ' + (err.code || err.message)); }
+  finally { checking.delete(id); }
+}
+const checking = new Set();
+
+async function applyToggle(id, t, awardee, nowTs, isAdminFn, checkedBy) {
+  const done = !t.done;
+  // Double-points day (#225), judged at the tick time (for a parent check, when the child ticked);
+  // stored as lastDonePoints so uncheck reverses exactly.
+  const earned = taskPoints(t) * activeMultiplier(state.doublePoints, new Date(nowTs));
   // Check remembers the previous lastDone (and streak) so uncheck can restore them (#32).
   const taskUpdate = { done, lastDone: done ? nowTs : (typeof t.prevLastDone === 'number' ? t.prevLastDone : t.lastDone) };
-  if (done) taskUpdate.prevLastDone = t.lastDone || 0;
+  if (done) { taskUpdate.prevLastDone = t.lastDone || 0; taskUpdate.checkPending = null; taskUpdate.checkNote = null; }
   else taskUpdate.prevLastDone = null;
   if (done && awardee) {
     const am = state.members[awardee];
-    if (am) { taskUpdate.prevStreak = am.streak || 0; taskUpdate.prevStreakDate = am.lastStreakDate || ''; }
+    if (am) {
+      taskUpdate.prevStreak = am.streak || 0; taskUpdate.prevStreakDate = am.lastStreakDate || '';
+      const ids = completionAward(am, earned, nowTs).newBadgeIds;
+      taskUpdate.lastDoneBadges = ids.length ? ids : null; // uncheck takes back only these (#220)
+    }
     taskUpdate.lastDoneBy     = awardee;
-    taskUpdate.lastDonePoints = taskPoints(t);
+    taskUpdate.lastDonePoints = earned;
     taskUpdate.lastDoneWeek   = getWeekStart();
   } else if (!done) {
     taskUpdate.lastDoneBy     = null;
@@ -245,12 +348,14 @@ export async function toggleTask(id, currentMemberFn, isAdminFn) {
     taskUpdate.lastDoneWeek   = null;
     taskUpdate.prevStreak     = null;
     taskUpdate.prevStreakDate = null;
+    taskUpdate.lastDoneBadges = null;
   }
   const weekStart = getWeekStart();
-  const completion = { by: t.lastDoneBy, at: t.lastDone, prevStreak: t.prevStreak, prevStreakDate: t.prevStreakDate };
+  const completion = { by: t.lastDoneBy, at: t.lastDone, prevStreak: t.prevStreak, prevStreakDate: t.prevStreakDate, badges: asList(t.lastDoneBadges) };
   // Uncheck: reverse points FIRST, atomically on the live value. A member may
   // not claw back points they already spent; an admin can (balance may go < 0).
   let reversal = null;
+  const beforeUncheck = !done && state.members[t.lastDoneBy] ? { ...state.members[t.lastDoneBy] } : null;
   if (!done && t.lastDoneBy && t.lastDonePoints && state.members[t.lastDoneBy]) {
     const countedWeek = t.lastDoneWeek || (t.lastDone ? getWeekStart(new Date(t.lastDone)) : '');
     reversal = { pts: -t.lastDonePoints, count: -1, weekStart, countWeek: countedWeek === weekStart, allowNegative: isAdminFn() };
@@ -266,27 +371,20 @@ export async function toggleTask(id, currentMemberFn, isAdminFn) {
     showToast('Update failed: ' + (err.code || err.message));
     // Task still checked: put the reversed points back.
     if (reversal) adjustMemberPoints(t.lastDoneBy, { ...reversal, pts: -reversal.pts, count: 1, allowNegative: true }).catch(() => {});
-    return;
+    return false;
   }
-  if (!done) await undoCompletionRecords(id, t, completion);
+  if (!done) {
+    const streak = await undoCompletionRecords(id, t, completion);
+    const b = beforeUncheck;
+    if (reversal && b) await revokeBadges(completion.by, completion.badges, { ...b, completedCount: Math.max(0, (b.completedCount || 0) - 1), streak: streak ?? b.streak });
+  }
   // Award points when checking
   if (done && awardee) {
     const m = state.members[awardee];
     if (!m) return;
-    const pts       = taskPoints(t);
-    const today     = localDateStr();
-    const yd        = new Date(); yd.setDate(yd.getDate() - 1);
-    const yesterday = localDateStr(yd);
-    const newPoints = (m.points || 0) + pts;
-    const newCount  = (m.completedCount || 0) + 1;
-    const newStreak = m.lastStreakDate === today     ? (m.streak || 0) :
-                      m.lastStreakDate === yesterday ? (m.streak || 0) + 1 : 1;
-    const currentBadges = m.badges || [];
-    const virtualMember = { ...m, points: newPoints, completedCount: newCount, streak: newStreak };
-    const newBadgeIds = BADGES
-      .filter(b => !currentBadges.includes(b.id) && b.check(virtualMember))
-      .map(b => b.id);
-    const memberUpdate = { streak: newStreak, lastStreakDate: today };
+    const pts = earned;
+    const { streakDate, newStreak, currentBadges, newBadgeIds } = completionAward(m, pts, nowTs);
+    const memberUpdate = { streak: newStreak, lastStreakDate: streakDate };
     if (newBadgeIds.length) memberUpdate.badges = [...currentBadges, ...newBadgeIds];
     try {
       // Points/count/week via one atomic transaction; streak/badges stay a patch.
@@ -299,7 +397,7 @@ export async function toggleTask(id, currentMemberFn, isAdminFn) {
       });
     } catch (err) { showToast('Member update failed: ' + (err.code || err.message)); }
     // History
-    const histEntry  = { taskId: id, taskName: t.name, person: awardee, completedAt: nowTs, points: taskPoints(t) };
+    const histEntry  = { taskId: id, taskName: t.name, person: awardee, completedAt: nowTs, points: earned, ...(checkedBy ? { checkedBy } : {}) };
     try {
       await appendHistory(histEntry);
     } catch (err) { showToast('History update failed: ' + (err.code || err.message)); }
@@ -375,6 +473,7 @@ export async function claimTask(id, currentMemberFn) {
   const t = state.tasks[id];
   if (!t) return;
   if (t.person) { showToast('Already assigned to ' + t.person); return; }
+  if (t.done) { showToast('Already done'); return; }
   state.tasks[id].person = member;
   try { await patchTask(id, { person: member }); } catch (err) { showToast('Save failed: ' + (err.code || err.message)); }
 }
