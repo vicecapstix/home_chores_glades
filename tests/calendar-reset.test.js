@@ -45,6 +45,8 @@ describe('calendar-day resets (#102)', () => {
     vi.setSystemTime(L(2026, 10, 12, 23, 59));
     expect(dueStatus({ freq: 'daily', lastDone: done })).not.toBe('overdue');
     vi.setSystemTime(L(2026, 10, 13, 0, 1));
+    expect(dueStatus({ freq: 'daily', lastDone: done })).toBe('soon'); // due today (#222)
+    vi.setSystemTime(L(2026, 10, 14, 0, 1));
     expect(dueStatus({ freq: 'daily', lastDone: done })).toBe('overdue');
   });
   it('daysSince counts calendar days (also across DST changes)', () => {

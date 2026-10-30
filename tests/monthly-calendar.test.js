@@ -66,11 +66,12 @@ describe('monthly = same date next calendar month (#137)', () => {
 
 describe('dueStatus for monthly', () => {
   const t = (lastDone, extra) => task(lastDone, { done: false, ...extra });
-  it('ok -> soon (day before) -> overdue on the calendar date', () => {
+  it('ok -> soon (day before and the date itself) -> overdue the day after (#222)', () => {
     const d = L(2026, 1, 31, 9);
     expect(dueStatus(t(d), L(2026, 2, 26, 12))).toBe('ok');
     expect(dueStatus(t(d), L(2026, 2, 27, 12))).toBe('soon');
-    expect(dueStatus(t(d), L(2026, 2, 28, 12))).toBe('overdue');
+    expect(dueStatus(t(d), L(2026, 2, 28, 12))).toBe('soon');
+    expect(dueStatus(t(d), L(2026, 3, 1, 12))).toBe('overdue');
   });
   it('1 Jan is not overdue on 31 Jan', () => {
     expect(dueStatus(t(L(2026, 1, 1, 9)), L(2026, 1, 31, 12))).toBe('soon');
@@ -82,7 +83,8 @@ describe('dueStatus for monthly', () => {
   });
   it('other frequencies unchanged', () => {
     const d = L(2026, 1, 31, 9);
-    expect(dueStatus({ ...t(d), freq: 'weekly' }, L(2026, 2, 7, 12))).toBe('overdue');
+    expect(dueStatus({ ...t(d), freq: 'weekly' }, L(2026, 2, 7, 12))).toBe('soon');
+    expect(dueStatus({ ...t(d), freq: 'weekly' }, L(2026, 2, 8, 12))).toBe('overdue');
     expect(dueStatus({ ...t(d), freq: 'fortnightly' }, L(2026, 2, 13, 12))).toBe('soon');
   });
 });
@@ -108,7 +110,8 @@ describe('helpers and pause', () => {
     const p = computeResumePatch({ since }, { a: task(lastDone) }, {}, end);
     const shifted = p['tasks/a/lastDone'];
     expect(localDateStr(new Date(shifted))).toBe('2026-03-12');
-    expect(dueStatus(task(shifted, { done: false }), L(2026, 4, 12, 12))).toBe('overdue');
+    expect(dueStatus(task(shifted, { done: false }), L(2026, 4, 12, 12))).toBe('soon');
+    expect(dueStatus(task(shifted, { done: false }), L(2026, 4, 13, 12))).toBe('overdue');
     expect(dueStatus(task(shifted, { done: false }), L(2026, 4, 10, 12))).toBe('ok');
   });
 });

@@ -323,7 +323,7 @@ function baseStatus(t, now = Date.now()) {
     return p === today.getTime() ? 'soon' : 'overdue';
   }
   const d = cycleDays(t, t.lastDone), s = daysSince(t.lastDone || 0, now);
-  if (s >= d) return 'overdue';
+  if (s > d) return 'overdue'; // the due day itself is 'soon' (#222)
   if (s >= d - 1) return 'soon';
   return 'ok';
 }
@@ -340,8 +340,8 @@ export function todayProgress(tasks, now = Date.now()) {
     if (isSkipped(t)) continue;
     const s = dueStatus(t, now);
     let dueToday = t.freq === 'once' ? t.dueDate === today : t.freq === 'weekdays' && s === 'soon';
-    // Recurring chore with a due time: 'soon' until the time passes, but still due today (#161).
-    if (!dueToday && s === 'soon' && t.freq !== 'once' && t.freq !== 'weekdays' && validTime(t.dueTime)) {
+    // Recurring chore 'soon': counts as due today when its cycle ends today (#161, #222).
+    if (!dueToday && s === 'soon' && t.freq !== 'once' && t.freq !== 'weekdays') {
       const d = new Date(t.lastDone || 0);
       d.setDate(d.getDate() + cycleDays(t, t.lastDone));
       dueToday = localDateStr(d) === today;
