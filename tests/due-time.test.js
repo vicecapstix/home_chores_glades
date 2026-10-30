@@ -29,10 +29,10 @@ describe('dueStatus with dueTime', () => {
     at(19, 0);  expect(dueStatus(t)).toBe('overdue');
     at(23, 30); expect(dueStatus(t)).toBe('overdue');
   });
-  it('without dueTime daily tasks are overdue from the next local calendar day (#102)', () => {
+  it('without dueTime daily tasks are due the next local calendar day, all day (#102, #222)', () => {
     const t = { freq: 'daily', done: false, lastDone: new Date(2026, 4, 12, 9, 0).getTime() };
-    at(8, 0); expect(dueStatus(t)).toBe('overdue');
-    at(9, 1); expect(dueStatus(t)).toBe('overdue');
+    at(8, 0); expect(dueStatus(t)).toBe('soon');
+    at(9, 1); expect(dueStatus(t)).toBe('soon');
   });
   it('weekly task due today flips overdue after the time; not on other days', () => {
     const due = { freq: 'weekly', done: false, lastDone: new Date(2026, 4, 6, 10, 0).getTime(), dueTime: '17:00' };

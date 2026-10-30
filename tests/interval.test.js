@@ -54,8 +54,8 @@ describe('reset at N-1 / N / N+1 days', () => {
 
 describe('dueStatus at N-1 / N / N+1 days', () => {
   const st = ago => dueStatus(mk({ done: false, lastDone: NOW - ago * DAY }), NOW);
-  it('ok well before, soon at N-1, overdue at N and N+1', () => {
-    expect(st(1)).toBe('ok'); expect(st(2)).toBe('soon'); expect(st(3)).toBe('overdue'); expect(st(4)).toBe('overdue');
+  it('ok well before, soon at N-1 and N (due day), overdue at N+1 (#222)', () => {
+    expect(st(1)).toBe('ok'); expect(st(2)).toBe('soon'); expect(st(3)).toBe('soon'); expect(st(4)).toBe('overdue');
   });
   it('honours dueTime on the due day', () => {
     const t = mk({ done: false, lastDone: NOW - 3 * DAY, dueTime: '18:00' });

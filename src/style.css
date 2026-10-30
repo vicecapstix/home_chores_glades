@@ -346,6 +346,11 @@ body[data-readonly] .wk-day h3 { font-size: 1.3rem; }
 .rewards-admin #reward-name { flex: 1 1 140px; }
 .rewards-admin #reward-cost { width: 80px; }
 .rewards-admin #reward-perweek { width: 84px; }
+.claim-form { display: flex; flex-wrap: wrap; gap: 8px; margin-top: var(--space-md); }
+.claim-form.hidden { display: none; }
+.claim-form input, .claim-pts { padding: 6px 8px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); font-family: inherit; font-size: 0.9rem; background: var(--bg); color: var(--text); }
+.claim-form #claim-name { flex: 1 1 140px; }
+.claim-form #claim-points, .claim-pts { width: 64px; }
 .reward-limit { font-size: 0.75rem; opacity: 0.8; white-space: nowrap; }
 .rewards-admin #reward-icon { width: 56px; text-align: center; }
 body[data-role="member"] .rewards-admin { display: none !important; }

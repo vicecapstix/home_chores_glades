@@ -48,6 +48,14 @@ describe('renameMember', () => {
     expect(p['redemptions/r1/member']).toBe('Anna');
     expect(p['redemptions/r1/decidedBy']).toBeUndefined();
   });
+  it('moves pending extra-job claims to the new name in the same update (#224)', async () => {
+    state.claims = { c1: { id: 'c1', member: 'Ann', title: 'Car' }, c2: { id: 'c2', member: 'Bo', title: 'Leaves' } };
+    await renameMember('Ann', 'Anna', admin);
+    expect(patchPaths).toHaveBeenCalledTimes(1);
+    const p = patchPaths.mock.calls[0][0];
+    expect(p['claims/c1/member']).toBe('Anna');
+    expect(p['claims/c2/member']).toBeUndefined();
+  });
   it('rejects duplicates and invalid names', async () => {
     expect(await renameMember('Ann', 'Bo', admin)).toBe(false);
     expect(await renameMember('Ann', 'A.b', admin)).toBe(false);
