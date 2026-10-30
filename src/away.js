@@ -5,6 +5,7 @@ import { state, getMembers } from './state.js';
 import { READONLY } from './config.js';
 import { patchMember, patchPaths } from './firebase.js';
 import { showToast } from './ui.js';
+import { writeBlocked, isLive } from './writegate.js';
 import { esc, jsq, localDateStr, awayText } from './utils.js';
 
 const DAY = 86400000;
@@ -37,6 +38,7 @@ export function computeReturnPatch(member, tasks, endMs, today = localDateStr(ne
 export async function setAway(name, until, isAdminFn) {
   if (READONLY || !isAdminFn()) return false;
   if (!state.members[name]) return false;
+  if (writeBlocked(showToast)) return false;
   if (!DATE_RE.test(until || '') || until < localDateStr()) { showToast('Pick a return date from today on'); return false; }
   const fields = { awayUntil: until, awaySince: Date.now() };
   try { await patchMember(name, fields); Object.assign(state.members[name], fields); showToast(name + ' is away until ' + until); return true; }
@@ -58,6 +60,7 @@ async function endAway(name, endMs) {
 
 export async function clearAway(name, isAdminFn) {
   if (READONLY || !isAdminFn() || !state.members[name] || !state.members[name].awayUntil) return false;
+  if (writeBlocked(showToast)) return false;
   const ok = await endAway(name, Date.now());
   if (ok) showToast(name + ' is back');
   return ok;
@@ -65,7 +68,7 @@ export async function clearAway(name, isAdminFn) {
 
 // Any editing client ends an expired away period (start of the day after awayUntil).
 export function checkAwayExpiry(now = Date.now()) {
-  if (READONLY) return;
+  if (READONLY || !isLive()) return;
   const today = localDateStr(new Date(now));
   Object.values(state.members).forEach(m => {
     if (!m || !m.awayUntil || !DATE_RE.test(m.awayUntil) || today <= m.awayUntil) return;

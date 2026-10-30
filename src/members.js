@@ -2,6 +2,7 @@ import { state, getMembers, nextColorIdx } from './state.js';
 import { READONLY, PCOLS } from './config.js';
 import { patchMember, patchPaths } from './firebase.js';
 import { showToast } from './ui.js';
+import { writeBlocked } from './writegate.js';
 import { getWeekStart, AVATARS } from './utils.js';
 
 export const MAX_MEMBER_NAME = 30;
@@ -159,6 +160,7 @@ export function renamePaths(oldName, newName) {
 
 export async function renameMember(oldName, newName, isAdminFn) {
   if (READONLY || !isAdminFn()) return false;
+  if (writeBlocked(showToast)) return false;
   newName = (newName || '').trim();
   if (!state.members[oldName] || !newName || newName === oldName) return false;
   if (state.members[newName]) { showToast('That name is already taken'); return false; }

@@ -4,6 +4,7 @@
 import { state } from './state.js';
 import { READONLY } from './config.js';
 import { patchRoot } from './firebase.js';
+import { writeBlocked } from './writegate.js';
 import { showToast } from './ui.js';
 import { esc, getWeekStart, weekRecap } from './utils.js';
 
@@ -65,6 +66,7 @@ export function renderTeamGoal(goal = state.teamGoal, history = state.history, n
 // Admin only.
 export async function setTeamGoal(points, reward, isAdminFn) {
   if (READONLY || !isAdminFn()) return false;
+  if (writeBlocked(showToast)) return false;
   const g = validTeamGoal(points, reward);
   if (!g) { showToast('Goal: ' + TEAM_GOAL_MIN + '-' + TEAM_GOAL_MAX + ' points and a reward up to ' + TEAM_GOAL_REWARD_MAX + ' characters'); return false; }
   try { await patchRoot({ teamGoal: g }); state.teamGoal = g; showToast('Family goal set'); return true; }
@@ -73,6 +75,7 @@ export async function setTeamGoal(points, reward, isAdminFn) {
 
 export async function clearTeamGoal(isAdminFn) {
   if (READONLY || !isAdminFn()) return false;
+  if (writeBlocked(showToast)) return false;
   try { await patchRoot({ teamGoal: null }); state.teamGoal = null; showToast('Family goal cleared'); return true; }
   catch (err) { showToast('Save failed: ' + (err.code || err.message)); return false; }
 }

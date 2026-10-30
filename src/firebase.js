@@ -1,4 +1,5 @@
 import { initializeApp } from 'firebase/app';
+import { isLive, setLive } from './writegate.js';
 import { getDatabase, ref, set, remove, update, onValue, runTransaction } from 'firebase/database';
 import { getAuth, signInAnonymously, onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import { FB_URL, READONLY, HISTORY_CAP } from './config.js';
@@ -7,9 +8,8 @@ import { trackWrite } from './pending.js';
 
 let _db = null;
 let _app = null;
-let _live = true; // false while showing cached data, until the first live snapshot
 
-export function setWritesEnabled(v) { _live = !!v; }
+export function setWritesEnabled(v) { setLive(v); }
 
 export function initFirebase() {
   _app = initializeApp({ databaseURL: FB_URL }, 'homechores');
@@ -83,7 +83,7 @@ export function describeAuthFailure(res) {
 // ── Write helpers ─────────────────────────────────────────────────────────────
 
 export async function writeState() {
-  if (READONLY || !_db || !_live) return;
+  if (READONLY || !_db || !isLive()) return;
   try {
     await set(ref(_db, 'state'), {
       members:   Object.keys(state.members).length   ? state.members   : null,
@@ -101,44 +101,44 @@ export async function writeState() {
 }
 
 export async function patchTask(id, fields) {
-  if (READONLY || !_db || !_live) return;
+  if (READONLY || !_db || !isLive()) return;
   await trackWrite(id, () => update(ref(_db, 'state/tasks/' + id), fields));
 }
 
 export async function patchMember(name, fields) {
-  if (READONLY || !_db || !_live) return;
+  if (READONLY || !_db || !isLive()) return;
   await update(ref(_db, 'state/members/' + name), fields);
 }
 
 // Multi-path update rooted at /state: keys are relative paths, null deletes.
 export async function patchPaths(paths) {
-  if (READONLY || !_db || !_live) return;
+  if (READONLY || !_db || !isLive()) return;
   await update(ref(_db, 'state'), paths);
 }
 
 export async function patchRoot(fields) {
-  if (READONLY || !_db || !_live) return;
+  if (READONLY || !_db || !isLive()) return;
   await update(ref(_db, 'state'), fields);
 }
 
 export async function removeTask(id) {
-  if (READONLY || !_db || !_live) return;
+  if (READONLY || !_db || !isLive()) return;
   await remove(ref(_db, 'state/tasks/' + id));
 }
 
 export async function restoreTask(id, data) {
-  if (READONLY || !_db || !_live) return;
+  if (READONLY || !_db || !isLive()) return;
   await set(ref(_db, 'state/tasks/' + id), data);
 }
 
 export async function patchSubtask(taskId, subId, fields) {
-  if (READONLY || !_db || !_live) return;
+  if (READONLY || !_db || !isLive()) return;
   await trackWrite(taskId, () => update(ref(_db, 'state/tasks/' + taskId + '/subtasks/' + subId), fields));
 }
 
 // Atomic points spend: aborts (returns false) if the balance is below cost.
 export async function spendPoints(name, cost) {
-  if (READONLY || !_db || !_live) return false;
+  if (READONLY || !_db || !isLive()) return false;
   const res = await runTransaction(ref(_db, 'state/members/' + name + '/points'),
     cur => ((cur || 0) >= cost ? (cur || 0) - cost : undefined));
   return !!res.committed;
@@ -148,7 +148,7 @@ export async function spendPoints(name, cost) {
 // request, or null if there was none, so only one parent's tap can complete it.
 export async function takeCheckPending(id) {
   if (READONLY || !_db) return null;
-  if (!_live) throw Object.assign(new Error('Still connecting — try again in a moment'), { code: 'offline' });
+  if (!isLive()) throw Object.assign(new Error('Still connecting — try again in a moment'), { code: 'offline' });
   let taken = null;
   const res = await runTransaction(ref(_db, 'state/tasks/' + id + '/checkPending'), cur => {
     if (!cur) return undefined;
@@ -160,7 +160,7 @@ export async function takeCheckPending(id) {
 // Atomically move a pending redemption to approved/denied. Returns false if it
 // no longer exists or was already decided (so a request is decided only once).
 export async function decideRedemption(id, status, by) {
-  if (READONLY || !_db || !_live) return false;
+  if (READONLY || !_db || !isLive()) return false;
   const res = await runTransaction(ref(_db, 'state/redemptions/' + id),
     cur => (cur && cur.status === 'pending' ? { ...cur, status, decidedAt: Date.now(), decidedBy: by } : undefined));
   return !!res.committed;
@@ -171,10 +171,11 @@ export async function decideRedemption(id, status, by) {
 // weekStart, countWeek (touch weekPoints?), weekPts (week change if not pts),
 // allowNegative }. Without allowNegative a reversal that the balance cannot
 // cover aborts untouched. weekPoints never goes below 0.
-// Returns { ok, reason: 'insufficient'|'missing'|'readonly', member, weekDelta }
+// Returns { ok, reason: 'insufficient'|'missing'|'readonly'|'offline', member, weekDelta }
 // (weekDelta = how much weekPoints actually moved, after the 0 floor).
 export async function adjustMemberPoints(name, opts) {
-  if (READONLY || !_db || !_live) return { ok: false, reason: 'readonly' };
+  if (READONLY || !_db) return { ok: false, reason: 'readonly' };
+  if (!isLive()) return { ok: false, reason: 'offline' };
   const { pts = 0, count = 0, weekStart, countWeek = true, allowNegative = false } = opts;
   const weekPts = opts.weekPts ?? pts;
   let reason = '', weekDelta = 0;
@@ -226,7 +227,7 @@ export async function removeHistoryEntry(match) {
 }
 
 export async function refundPoints(name, cost) {
-  if (READONLY || !_db || !_live) return;
+  if (READONLY || !_db || !isLive()) return;
   await runTransaction(ref(_db, 'state/members/' + name + '/points'), cur => (cur || 0) + cost);
 }
 

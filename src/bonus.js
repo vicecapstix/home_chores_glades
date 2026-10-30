@@ -3,6 +3,7 @@ import { READONLY } from './config.js';
 import { adjustMemberPoints, appendHistory, removeHistoryEntry } from './firebase.js';
 import { showToast } from './ui.js';
 import { pushUndo } from './undo.js';
+import { writeBlocked } from './writegate.js';
 import { getWeekStart } from './utils.js';
 
 export const BONUS_MAX = 50;
@@ -26,6 +27,7 @@ export function validateBonus(amount, reason) {
 export async function adjustBonus(name, amount, reason, isAdminFn, currentMemberFn, confirmFn = confirm) {
   if (READONLY || !isAdminFn()) return false;
   if (!state.members[name]) return false;
+  if (writeBlocked(showToast)) return false;
   amount = Number(amount);
   reason = String(reason || '').trim();
   const bad = validateBonus(amount, reason);

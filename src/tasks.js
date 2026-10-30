@@ -2,6 +2,7 @@ import { state, getMembers } from './state.js';
 import { READONLY, BADGES, CATEGORIES } from './config.js';
 import { patchPaths, takeCheckPending, adjustMemberPoints, appendHistory, removeHistoryEntry, patchTask, patchMember, patchRoot, removeTask, restoreTask, patchSubtask } from './firebase.js';
 import { showToast } from './ui.js';
+import { writeBlocked } from './writegate.js';
 import { pushUndo } from './undo.js';
 import { activeMultiplier } from './doublepoints.js';
 import { esc, jsq, validTime, validInterval, INTERVAL_MIN, INTERVAL_MAX, freqDays, cycleDays, daysSince, dueStatus, taskPoints, getWeekStart, localDateStr, prevScheduledStart, isStaleDoneOnce, initialLastDone, nextRotationPerson, awayNames, DAY_NAMES } from './utils.js';
@@ -71,6 +72,7 @@ export function rotationChipsHTML(t, members) {
 
 export async function addTask(isAdminFn) {
   if (READONLY || !isAdminFn()) return;
+  if (writeBlocked(showToast)) return;
   const name = document.getElementById('new-task').value.trim();
   if (!name) return;
   const freq    = document.getElementById('new-freq').value;
@@ -157,6 +159,7 @@ export function editTask(id, isAdminFn) {
 
 export async function saveTask(id, isAdminFn) {
   if (READONLY || !isAdminFn()) return;
+  if (writeBlocked(showToast)) return;
   const card = document.getElementById('tc-' + id);
   if (!card) return;
   const name = card.querySelector('.edit-name').value.trim();
@@ -256,6 +259,7 @@ const toggling = new Set();
 
 export async function toggleTask(id, currentMemberFn, isAdminFn) {
   if (READONLY || toggling.has(id)) return;
+  if (writeBlocked(showToast)) return;
   toggling.add(id);
   try { await runToggle(id, currentMemberFn, isAdminFn); } finally { toggling.delete(id); }
 }
@@ -404,6 +408,7 @@ async function applyToggle(id, t, awardee, nowTs, isAdminFn, checkedBy) {
 
 export async function deleteTask(id, isAdminFn) {
   if (READONLY || !isAdminFn()) return;
+  if (writeBlocked(showToast)) return;
   const t = state.tasks[id];
   if (!t) return;
   const savedData = { ...t };
@@ -478,6 +483,7 @@ export async function claimTask(id, currentMemberFn) {
 // No points, no history, no streak: only lastDone/skippedAt move.
 export async function skipTask(id, isAdminFn) {
   if (READONLY || !isAdminFn()) return;
+  if (writeBlocked(showToast)) return;
   const t = state.tasks[id];
   if (!t || t.freq === 'once' || t.done) return;
   const prev = { lastDone: t.lastDone ?? 0, skippedAt: t.skippedAt ?? null };
@@ -537,6 +543,7 @@ export async function moveTask(id, dir, isAdminFn) {
 // History is untouched; the undo toast restores the tasks in one multi-path update too.
 export async function clearDoneOnes(isAdminFn) {
   if (READONLY || !isAdminFn()) return;
+  if (writeBlocked(showToast)) return;
   const ids = Object.keys(state.tasks).filter(id => isStaleDoneOnce(state.tasks[id]));
   if (!ids.length) return;
   if (!confirm('Delete ' + ids.length + ' done one-off chore' + (ids.length > 1 ? 's' : '') + '? History is kept.')) return;

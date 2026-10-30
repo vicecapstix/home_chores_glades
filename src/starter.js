@@ -3,6 +3,7 @@ import { state } from './state.js';
 import { READONLY, CATEGORIES } from './config.js';
 import { patchPaths } from './firebase.js';
 import { showToast } from './ui.js';
+import { writeBlocked } from './writegate.js';
 import { openModal, closeModal } from './modals.js';
 import { esc, jsq, taskPoints, freqLabel, initialLastDone } from './utils.js';
 
@@ -57,6 +58,7 @@ export function toggleStarterCat(cat) {
 // Adds the named starter chores in one multi-path update. Skips names that already exist.
 export async function addStarterChores(names, isAdminFn) {
   if (READONLY || !isAdminFn()) return 0;
+  if (writeBlocked(showToast)) return 0;
   const want = new Set((names || []).map(key)), have = existing(), base = Date.now(), paths = {};
   let n = 0;
   STARTER.forEach(s => {
