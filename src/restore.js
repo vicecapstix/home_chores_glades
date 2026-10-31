@@ -55,7 +55,7 @@ export function validateBackup(raw, current = state.members) {
   }
 
   const history = (Array.isArray(b.history) ? b.history : []).filter(e => isObj(e) && Number.isFinite(Number(e.completedAt)))
-    .slice(0, HISTORY_CAP).map(clone);
+    .slice(-HISTORY_CAP).map(clone);
 
   const rewards = {};
   for (const [key, r] of entries(b.rewards || {})) {
