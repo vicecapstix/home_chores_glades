@@ -38,7 +38,8 @@ export async function setAway(name, until, isAdminFn) {
   if (READONLY || !isAdminFn()) return false;
   if (!state.members[name]) return false;
   if (!DATE_RE.test(until || '') || until < localDateStr()) { showToast('Pick a return date from today on'); return false; }
-  const fields = { awayUntil: until, awaySince: Date.now() };
+  const fields = { awayUntil: until };
+  if (!(state.members[name].awayUntil && state.members[name].awaySince)) fields.awaySince = Date.now(); // extending keeps the original start (#230)
   try { await patchMember(name, fields); Object.assign(state.members[name], fields); showToast(name + ' is away until ' + until); return true; }
   catch (err) { showToast('Save failed: ' + (err.code || err.message)); return false; }
 }
