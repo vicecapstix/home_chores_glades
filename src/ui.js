@@ -165,7 +165,8 @@ export function csvField(v) {
 
 export function exportCSV(from, to) {
   const fromTs = from ? new Date(from + 'T00:00:00').getTime() : 0;
-  const toTs   = to   ? new Date(to + 'T00:00:00').getTime() + 86399999 : Date.now();
+  let toTs = Date.now();
+  if (to) { const [y, m, d] = to.split('-').map(Number); toTs = new Date(y, m - 1, d + 1).getTime() - 1; } // end of the local day, DST-safe (#251)
   const rows = (state.history || []).filter(e => e.completedAt >= fromTs && e.completedAt <= toTs);
   let csv = 'date,time,person,task,frequency,difficulty,points\n';
   rows.forEach(e => {
