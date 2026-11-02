@@ -7,13 +7,14 @@ import { openModal, closeModal } from './modals.js';
 import { esc, jsq, taskPoints, freqLabel, initialLastDone } from './utils.js';
 
 const c = (name, freq, difficulty, category, extra = {}) => ({ name, freq, difficulty, category, ...extra });
+const CHK = { needsCheck: true }; // a parent checks these before points are given (#240)
 export const STARTER = [
   c('Wash the dishes', 'daily', 'easy', 'Kitchen'), c('Wipe kitchen counters', 'daily', 'easy', 'Kitchen'),
   c('Empty the dishwasher', 'daily', 'easy', 'Kitchen'), c('Take out the kitchen rubbish', 'daily', 'easy', 'Kitchen'),
-  c('Clean the fridge', 'monthly', 'medium', 'Kitchen'), c('Clean the oven', 'monthly', 'hard', 'Kitchen'),
-  c('Clean the toilet', 'weekly', 'medium', 'Bathroom'), c('Clean the sink and mirror', 'weekly', 'easy', 'Bathroom'),
-  c('Scrub the shower', 'weekly', 'hard', 'Bathroom'), c('Wash the bath mats', 'fortnightly', 'easy', 'Bathroom'),
-  c('Make your bed', 'daily', 'easy', 'Bedroom'), c('Tidy your room', 'weekly', 'easy', 'Bedroom'),
+  c('Clean the fridge', 'monthly', 'medium', 'Kitchen'), c('Clean the oven', 'monthly', 'hard', 'Kitchen', CHK),
+  c('Clean the toilet', 'weekly', 'medium', 'Bathroom', CHK), c('Clean the sink and mirror', 'weekly', 'easy', 'Bathroom'),
+  c('Scrub the shower', 'weekly', 'hard', 'Bathroom', CHK), c('Wash the bath mats', 'fortnightly', 'easy', 'Bathroom'),
+  c('Make your bed', 'daily', 'easy', 'Bedroom'), c('Tidy your room', 'weekly', 'easy', 'Bedroom', CHK),
   c('Change the bed sheets', 'fortnightly', 'medium', 'Bedroom'), c('Put away clean laundry', 'weekly', 'easy', 'Bedroom'),
   c('Wash and dry the laundry', 'weekly', 'medium', 'Bedroom'), c('Dust the bedrooms', 'fortnightly', 'easy', 'Bedroom'),
   c('Tidy the living room', 'daily', 'easy', 'Living Room'), c('Vacuum the floors', 'weekly', 'medium', 'Living Room'),
@@ -35,7 +36,7 @@ export function makeTask(s, id, base, n) {
   return { id, name: s.name, freq: s.freq, person: '', done: false,
     lastDone: initialLastDone(s.freq === 'interval' ? { freq: s.freq, intervalDays: s.intervalDays } : s.freq, base),
     ...(s.freq === 'weekdays' ? { days: s.days } : {}), ...(s.freq === 'interval' ? { intervalDays: s.intervalDays } : {}),
-    ...(s.dueTime ? { dueTime: s.dueTime } : {}),
+    ...(s.dueTime ? { dueTime: s.dueTime } : {}), ...(s.needsCheck === true ? { needsCheck: true } : {}),
     notes: s.notes || '', difficulty: s.difficulty, category: s.category, dueDate: s.dueDate || '', subtasks, order: base + n };
 }
 const existing = () => new Set(Object.values(state.tasks || {}).map(t => key(t.name)));
@@ -51,7 +52,7 @@ export function openStarter(isAdminFn) {
     items.forEach(s => {
       const dup = have.has(key(s.name));
       html += '<label class="starter-item"><input type="checkbox" data-cat="' + esc(cat) + '" value="' + esc(s.name) + '"' + (dup ? ' checked disabled' : '') + ' />' +
-        '<span class="starter-name">' + esc(s.name) + '</span><span class="starter-meta">' + (dup ? 'already added' : esc(freqLabel(s)) + ' · ' + taskPoints(s) + ' pts') + '</span></label>';
+        '<span class="starter-name">' + esc(s.name) + '</span><span class="starter-meta">' + (dup ? 'already added' : esc(freqLabel(s)) + ' · ' + taskPoints(s) + ' pts' + (s.needsCheck ? ' · ✓ Parent check' : '')) + '</span></label>';
     });
   });
   document.getElementById('starter-list').innerHTML = html;
