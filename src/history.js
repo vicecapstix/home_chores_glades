@@ -49,7 +49,7 @@ export function historyHTML(history, members, member, redemptions) {
     const c = memberColor(e.person, members) || { bg: 'var(--bg)', text: 'var(--muted)' };
     return '<div class="hist-row">' +
       '<span class="lb-name hist-who" style="background:' + c.bg + ';color:' + c.text + '">' + esc(e.person || 'Anyone') + '</span>' +
-      '<span class="hist-task">' + esc(e.label) + '</span>' +
+      '<span class="hist-task">' + esc(e.label) + (e.checkedBy ? ' <span class="hist-checked">✓ checked by ' + esc(e.checkedBy) + '</span>' : '') + '</span>' +
       '<span class="hist-when">' + esc(when(e.completedAt)) + '</span>' +
       '<span class="hist-pts' + ((e.points || 0) < 0 ? ' neg' : '') + '">' + ((e.points || 0) > 0 ? '+' : '') + esc(String(e.points || 0)) + '</span>' +
       '</div>';

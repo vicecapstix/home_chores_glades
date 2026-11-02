@@ -290,6 +290,7 @@ body[data-reorder] .move-btns { display: flex; }
 .hist-row:last-child { border-bottom: none; }
 .hist-who { max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex-shrink: 0; }
 .hist-task { flex: 1; min-width: 120px; font-size: 0.9rem; }
+.hist-checked { font-size: 0.75rem; color: var(--muted); white-space: nowrap; }
 .hist-when { font-size: 0.75rem; color: var(--muted); }
 .hist-pts { font-size: 0.8rem; font-weight: 600; color: var(--accent); }
 .hist-pts.neg { color: var(--warn); }

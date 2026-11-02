@@ -63,7 +63,7 @@ export function chartHTML(tasks, members, weekStart) {
   groups.forEach(g => {
     html += '<tbody><tr class="pc-person"><th colspan="9" scope="colgroup">' + esc(g.person || 'Anyone') + '</th></tr>';
     g.rows.forEach(r => {
-      html += '<tr><th scope="row">' + esc(r.task.name) + '</th>' +
+      html += '<tr><th scope="row">' + esc(r.task.name) + (r.task.needsCheck ? ' <span class="pc-check" title="Parent check" aria-label="parent check">✓</span>' : '') + '</th>' +
         r.days.map(on => '<td>' + (on ? '<span class="pc-box" aria-label="due"></span>' : '') + '</td>').join('') +
         '<td>' + (r.anyDay ? '<span class="pc-box" aria-label="due any day"></span>' : '') + '</td></tr>';
     });

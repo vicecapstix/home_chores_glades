@@ -27,6 +27,7 @@ export function buildChoreFile(tasks = state.tasks, now = new Date()) {
       ...(t.freq === 'interval' ? { intervalDays: t.intervalDays } : {}),
       ...(t.freq === 'once' && t.dueDate ? { dueDate: t.dueDate } : {}),
       ...(t.dueTime ? { dueTime: t.dueTime } : {}),
+      ...(t.needsCheck ? { needsCheck: true } : {}),
       ...(subs.length ? { subtasks: subs } : {}),
     };
   });
@@ -68,6 +69,7 @@ function checkChore(c, out) {
   }
   if (c.freq === 'interval') { if (!validInterval(c.intervalDays)) return 'Interval must be a whole number of days from 2 to 60'; out.intervalDays = c.intervalDays; }
   if (c.freq === 'once' && c.dueDate) { if (!/^\d{4}-\d{2}-\d{2}$/.test(String(c.dueDate))) return 'Due date must be YYYY-MM-DD'; out.dueDate = c.dueDate; }
+  if (c.needsCheck === true) out.needsCheck = true; // parent check (#240); anything else is ignored
   if (c.dueTime) { if (!validTime(c.dueTime)) return 'Due time must be HH:MM'; out.dueTime = c.dueTime; }
   const subs = c.subtasks === undefined ? [] : c.subtasks;
   if (!Array.isArray(subs) || subs.length > MAX_SUBTASKS || !subs.every(s => typeof s === 'string' && s.trim() && s.trim().length <= MAX_SUB_NAME)) return 'Up to ' + MAX_SUBTASKS + ' sub-tasks of 1-' + MAX_SUB_NAME + ' characters';
