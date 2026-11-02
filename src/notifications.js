@@ -118,4 +118,20 @@ export function runDueTimeCheck(now = Date.now()) {
   }));
 }
 
-export function _resetForTests() { _duePending.clear(); _notifiedIds = new Set(); _pending.clear(); _started = false; _currentMember = () => ''; }
+// Parent check (#239): one local "N chores to check" notification per day on the admin's device.
+// Called by tocheck.js with the waiting count; no server push, nothing on the TV.
+const TC_KEY = 'ff_tocheck_notified';
+let _tcBusy = false;
+export function runToCheckNotify(count, now = Date.now()) {
+  if (READONLY || !(count > 0) || !notificationsSupported() || Notification.permission !== 'granted' || _tcBusy) return Promise.resolve(false);
+  const today = localDateStr(new Date(now));
+  try { if (localStorage.getItem(TC_KEY) === today) return Promise.resolve(false); } catch(e) {}
+  _tcBusy = true;
+  return showOverdue(count + (count === 1 ? ' chore' : ' chores') + ' to check', 'ff-tocheck').then(ok => {
+    _tcBusy = false;
+    if (ok) { try { localStorage.setItem(TC_KEY, today); } catch(e) {} } // only mark once actually shown
+    return ok;
+  });
+}
+
+export function _resetForTests() { _tcBusy = false; _duePending.clear(); _notifiedIds = new Set(); _pending.clear(); _started = false; _currentMember = () => ''; }

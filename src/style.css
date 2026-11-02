@@ -195,6 +195,12 @@ button.tag-sync-fail { border: 1px solid var(--warn); cursor: pointer; font-fami
 .note-toggle:hover { text-decoration: underline; }
 .note-input { flex-basis: 100%; min-height: 48px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg); color: var(--text); font-size: 0.85rem; padding: var(--space-sm) 12px; font-family: inherit; resize: vertical; }
 .note-input:focus { outline: none; border-color: var(--accent); }
+.check-note { color: var(--warn); }
+.tc-list { list-style: none; margin: 0; padding: 0; }
+.tc-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.tc-info { display: flex; flex-direction: column; min-width: 0; flex: 1 1 160px; }
+.tc-meta { font-size: 0.8rem; color: var(--muted); }
+.tc-actions { display: flex; gap: 6px; }
 .task-note { font-size: 0.8rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 .edit-notes { width: 100%; min-height: 48px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); font-size: 0.85rem; font-family: inherit; background: var(--bg); color: var(--text); padding: 6px var(--space-sm); resize: vertical; margin-top: 6px; }
 .edit-notes:focus { outline: none; border-color: var(--accent); }
@@ -256,6 +262,7 @@ body[data-reorder] .move-btns { display: flex; }
 #progress-modal,
 #fairness-modal,
 #week-modal,
+#tocheck-modal,
 #rewards-modal,
 #stats-modal,
 #summary-modal,
@@ -268,6 +275,7 @@ body[data-reorder] .move-btns { display: flex; }
 #progress-modal.hidden,
 #fairness-modal.hidden,
 #week-modal.hidden,
+#tocheck-modal.hidden,
 #rewards-modal.hidden,
 #stats-modal.hidden,
 #summary-modal.hidden,

@@ -82,6 +82,7 @@ import { openHistory, setHistoryFilter, historyFilterClick } from './history.js'
 import { openProgress } from './progress.js';
 import { openFairness } from './fairness.js';
 import { openWeek } from './week.js';
+import { openToCheck } from './tocheck.js';
 import { requestReward, decideRequest, markGiven } from './redemptions.js';
 import { submitClaim, decideClaim } from './claims.js';
 import { rewardsHTML, openRewards, saveReward, editReward, deleteReward, cancelRewardEdit, refreshRewards, setGoalFor, pickGoalTarget } from './rewards.js';
@@ -400,6 +401,7 @@ window.openFairness = () => openFairness(_isAdmin);
 window.openProgress = name => openProgress(name || _currentMember(), _isAdmin, _currentMember);
 // Week planner (read-only)
 window.openWeek = () => openWeek();
+window.openToCheck = () => openToCheck(_isAdmin);
 
 // Rewards catalog (everyone can browse; admin-only edits are guarded in rewards.js)
 window.openRewards       = ()     => openRewards(_isAdmin, _currentMember);

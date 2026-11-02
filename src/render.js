@@ -7,6 +7,7 @@ import { renderDoublePointsBanner, activeMultiplier } from './doublepoints.js';
 import { awayText, esc, num, jsq, taskPoints, avatarPrefix, validTime, dueStatus, freqLabel, rotationTag, isMine, isSkipped, localDateStr, doneAgoLabel, currentStreak, goalHTML, isStaleDoneOnce, viewFromSearch } from './utils.js';
 import { pColor } from './ui.js';
 import { syncTagHTML } from './pending.js';
+import { refreshToCheck } from './tocheck.js';
 
 // ── Session function references (set once via initRender) ─────────────────────
 let _isAdmin       = () => false;
@@ -165,6 +166,7 @@ export function render() {
   _applyMineDefault();
   _renderHeader();
   _renderMembers();
+  refreshToCheck(_isAdmin); // badge, live modal, daily notification (#239)
   _renderMemberSelect();
   _renderFilters();
   _renderTasks();
@@ -410,6 +412,9 @@ export function cardHTML(t) {
     ? '<div class="task-note">' + esc(t.notes.length > 80 ? t.notes.slice(0, 80) + '…' : t.notes) + '</div>'
     : '';
 
+  const sentBack = !t.done && !t.checkPending && t.checkNote
+    ? '<div class="task-note check-note">Not yet: ' + esc(t.checkNote) + '</div>' : '';
+
   const subs     = t.subtasks ? Object.values(t.subtasks) : [];
   const subsDone = subs.filter(st => st.done).length;
   const subsBadge = subs.length ? '<span class="subtask-badge">' + subsDone + '/' + subs.length + '</span>' : '';
@@ -449,7 +454,7 @@ export function cardHTML(t) {
       checkEl +
       '<div class="card-info">' +
         '<span class="task-name">' + esc(t.name) + subsBadge + '</span>' +
-        notesLine +
+        notesLine + sentBack +
       '</div>' +
       '<div class="task-meta">' + dueTag + diffTag + ptsTag + freqTag + timeTag + rotationTag(t, getMembers()) + syncTagHTML(t.id) + checkTag + catTag + personTag + '</div>' +
       chevronBtn +
