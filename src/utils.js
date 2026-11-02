@@ -154,6 +154,9 @@ export function prevWeekStart(from) {
   return localDateStr(new Date(y, m - 1, d - 7));
 }
 
+// Numbers from the database are untrusted: anything that is not a finite number becomes 0 (#247).
+export function num(x) { const n = Number(x); return Number.isFinite(n) ? n : 0; }
+
 // Per-member points and completions for the local week starting on `weekStart`
 // (Mon 00:00 to next Mon 00:00), computed from history. Members with nothing
 // are omitted. Sorted by points desc, then name.
@@ -165,7 +168,7 @@ export function weekRecap(history, weekStart) {
   (history || []).forEach(e => {
     if (!e || !e.person || !(e.completedAt >= start && e.completedAt < end)) return;
     const r = by[e.person] || (by[e.person] = { name: e.person, points: 0, count: 0 });
-    r.points += e.points || 0;
+    r.points += num(e.points);
     if (e.type !== 'bonus') r.count++;
   });
   return Object.values(by).filter(r => r.points > 0 || r.count > 0)
@@ -187,7 +190,7 @@ export function memberWeeks(history, member, now = Date.now(), n = 4, cap = 500)
     let points = 0, count = 0;
     list.forEach(e => {
       if (!e || e.person !== member || !(e.completedAt >= start && e.completedAt < end)) return;
-      points += e.points || 0;
+      points += num(e.points);
       if (e.type !== 'bonus') count++;
     });
     weeks.push({ weekStart: localDateStr(new Date(start)), points, count, partial: capped && oldest > start });
@@ -213,7 +216,7 @@ export function lastWeekChampion(history, from, cap = 500) {
 
 // Points earned this week; stale (previous-week) totals count as 0.
 export function currentWeekPoints(m) {
-  return m && m.weekStart === getWeekStart() ? (m.weekPoints || 0) : 0;
+  return m && m.weekStart === getWeekStart() ? num(m.weekPoints) : 0;
 }
 
 export function taskPoints(t) {
