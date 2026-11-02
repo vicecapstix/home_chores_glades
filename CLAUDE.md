@@ -45,6 +45,7 @@ src/
   printchart.js    — admin printable Mon–Sun weekly chart (browser print)
   pwa.js           — service worker registration
   week.js          — "This week" planner modal (display only)
+  tocheck.js       — admin "To check" list + header count for parent checks; daily local notification (#239)
   redemptions.js   — reward requests: request, approve/deny, refund
   claims.js        — extra job claims: member logs an unlisted job, admin approves points (state/claims)
   rewards.js       — rewards catalog UI
