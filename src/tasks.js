@@ -3,6 +3,7 @@ import { READONLY, BADGES, CATEGORIES } from './config.js';
 import { patchPaths, takeCheckPending, adjustMemberPoints, appendHistory, removeHistoryEntry, patchTask, patchMember, patchRoot, removeTask, restoreTask, patchSubtask } from './firebase.js';
 import { showToast } from './ui.js';
 import { pushUndo } from './undo.js';
+import { dropRetry } from './pending.js';
 import { activeMultiplier } from './doublepoints.js';
 import { esc, jsq, validTime, validInterval, INTERVAL_MIN, INTERVAL_MAX, freqDays, cycleDays, daysSince, dueStatus, taskPoints, getWeekStart, localDateStr, prevScheduledStart, isStaleDoneOnce, initialLastDone, nextRotationPerson, awayNames, DAY_NAMES } from './utils.js';
 
@@ -365,6 +366,7 @@ async function applyToggle(id, t, awardee, nowTs, isAdminFn, checkedBy) {
     await patchTask(id, taskUpdate);
   } catch (err) {
     showToast('Update failed: ' + (err.code || err.message));
+    dropRetry(id); // retrying the bare task write would skip points/history (#271)
     // Task still checked: put the reversed points back.
     if (reversal) adjustMemberPoints(t.lastDoneBy, { ...reversal, pts: -reversal.pts, count: 1, allowNegative: true }).catch(() => {});
     return false;
