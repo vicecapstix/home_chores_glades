@@ -5,7 +5,7 @@ import { showToast } from './ui.js';
 import { pushUndo } from './undo.js';
 import { dropRetry } from './pending.js';
 import { activeMultiplier } from './doublepoints.js';
-import { esc, jsq, validTime, validInterval, INTERVAL_MIN, INTERVAL_MAX, freqDays, cycleDays, daysSince, dueStatus, taskPoints, getWeekStart, localDateStr, prevScheduledStart, isStaleDoneOnce, initialLastDone, nextRotationPerson, awayNames, DAY_NAMES } from './utils.js';
+import { esc, jsq, validTime, validInterval, validMonthDay, INTERVAL_MIN, INTERVAL_MAX, freqDays, cycleDays, daysSince, dueStatus, taskPoints, getWeekStart, localDateStr, prevScheduledStart, isStaleDoneOnce, initialLastDone, monthDayLabel, nextRotationPerson, awayNames, DAY_NAMES } from './utils.js';
 
 // Re-export for other modules
 export { dueStatus, taskPoints, freqDays };
@@ -68,6 +68,15 @@ export function rotationChipsHTML(t, members) {
     '</div>';
 }
 
+// "On day" select options for a monthly chore (#255): blank keeps the 'a month after last done' behaviour.
+export function monthDayOptions(sel) {
+  const cur = validMonthDay(sel);
+  const opt = (v, label) => '<option value="' + v + '"' + (String(cur || '') === String(v) ? ' selected' : '') + '>' + label + '</option>';
+  let html = opt('', 'Any day');
+  for (let i = 1; i <= 28; i++) html += opt(i, 'On the ' + monthDayLabel(i));
+  return html + opt('last', 'On the last day');
+}
+
 // ── Add task ──────────────────────────────────────────────────────────────────
 
 export async function addTask(isAdminFn) {
@@ -84,15 +93,17 @@ export async function addTask(isAdminFn) {
   const interval = freq === 'interval' ? validInterval(document.getElementById('new-interval')?.value) : 0;
   if (freq === 'interval' && !interval) { showToast('Enter a whole number of days from ' + INTERVAL_MIN + ' to ' + INTERVAL_MAX); return; }
   const dueTime = validTime(document.getElementById('new-duetime')?.value);
+  const monthDay = freq === 'monthly' ? validMonthDay(document.getElementById('new-monthday')?.value) : 0;
   const needsCheck = !!document.getElementById('new-needscheck')?.checked;
   const notesEl = document.getElementById('new-notes');
   const notes   = notesEl.value.trim();
   const id      = 't' + Date.now();
   state.tasks[id] = {
     id, name, freq, person,
-    done: false, lastDone: initialLastDone(freq === 'interval' ? { freq, intervalDays: interval } : freq),
+    done: false, lastDone: initialLastDone(freq === 'interval' ? { freq, intervalDays: interval } : monthDay ? { freq, monthDay } : freq),
     ...(freq === 'weekdays' ? { days } : {}),
     ...(interval ? { intervalDays: interval } : {}),
+    ...(monthDay ? { monthDay } : {}),
     ...(needsCheck ? { needsCheck: true } : {}),
     notes: notes || '', difficulty: diff, category: cat || '',
     dueDate: dueDate || '', ...(dueTime ? { dueTime } : {}), subtasks: {}, order: Date.now(),
@@ -105,6 +116,8 @@ export async function addTask(isAdminFn) {
   document.getElementById('new-freq').value = 'weekly';
   document.getElementById('new-days').classList.add('hidden');
   document.getElementById('new-interval')?.classList.add('hidden');
+  document.getElementById('new-monthday')?.classList.add('hidden');
+  if (document.getElementById('new-monthday')) document.getElementById('new-monthday').value = '';
   if (document.getElementById('new-interval')) document.getElementById('new-interval').value = '';
   document.querySelectorAll('#new-days input').forEach(i => { i.checked = false; });
   notesEl.value = '';
@@ -137,8 +150,9 @@ export function editTask(id, isAdminFn) {
   card.innerHTML =
     '<input class="edit-name" value="' + esc(t.name) + '" maxlength="60" />' +
     '<div class="edit-row">' +
-      '<select class="edit-freq" onchange="this.closest(\'.task-card\').querySelector(\'.edit-duedate\').style.display=this.value===\'once\'?\'\':\'none\';this.closest(\'.task-card\').querySelector(\'.edit-days\').classList.toggle(\'hidden\',this.value!==\'weekdays\');this.closest(\'.task-card\').querySelector(\'.edit-interval\').classList.toggle(\'hidden\',this.value!==\'interval\')">' + freqOpts + '</select>' +
+      '<select class="edit-freq" onchange="this.closest(\'.task-card\').querySelector(\'.edit-duedate\').style.display=this.value===\'once\'?\'\':\'none\';this.closest(\'.task-card\').querySelector(\'.edit-days\').classList.toggle(\'hidden\',this.value!==\'weekdays\');this.closest(\'.task-card\').querySelector(\'.edit-interval\').classList.toggle(\'hidden\',this.value!==\'interval\');this.closest(\'.task-card\').querySelector(\'.edit-monthday\').classList.toggle(\'hidden\',this.value!==\'monthly\')">' + freqOpts + '</select>' +
       '<input type="number" class="edit-interval' + (t.freq === 'interval' ? '' : ' hidden') + '" aria-label="Repeat every N days" min="' + INTERVAL_MIN + '" max="' + INTERVAL_MAX + '" step="1" inputmode="numeric" placeholder="Days" value="' + esc(String(validInterval(t.intervalDays) || '')) + '" />' +
+      '<select class="edit-monthday' + (t.freq === 'monthly' ? '' : ' hidden') + '" aria-label="Monthly on day">' + monthDayOptions(t.monthDay) + '</select>' +
       '<input type="date" class="edit-duedate" value="' + esc(t.dueDate || '') + '" style="flex:1;padding:6px 8px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:0.85rem;font-family:inherit;background:var(--bg);color:var(--text);display:' + (t.freq === 'once' ? '' : 'none') + '" />' +
       '<input type="time" class="edit-duetime" aria-label="Due time" value="' + esc(validTime(t.dueTime)) + '" />' +
       '<select class="edit-diff">' + diffOpts + '</select>' +
@@ -167,6 +181,7 @@ export async function saveTask(id, isAdminFn) {
   if (newFreq === 'weekdays' && !days.length) { showToast('Pick at least one day'); return; }
   const interval = newFreq === 'interval' ? validInterval(card.querySelector('.edit-interval').value) : 0;
   if (newFreq === 'interval' && !interval) { showToast('Enter a whole number of days from ' + INTERVAL_MIN + ' to ' + INTERVAL_MAX); return; }
+  const monthDay = newFreq === 'monthly' ? validMonthDay(card.querySelector('.edit-monthday')?.value) : 0;
   card.classList.remove('editing');
   document.activeElement?.blur?.();
   const rot = [...card.querySelectorAll('.edit-rotation input:checked')].map(i => i.value);
@@ -176,6 +191,7 @@ export async function saveTask(id, isAdminFn) {
   state.tasks[id].freq       = newFreq;
   if (newFreq === 'weekdays') state.tasks[id].days = days; else delete state.tasks[id].days;
   if (interval) state.tasks[id].intervalDays = interval; else delete state.tasks[id].intervalDays;
+  if (monthDay) state.tasks[id].monthDay = monthDay; else delete state.tasks[id].monthDay;
   state.tasks[id].dueDate    = card.querySelector('.edit-freq').value === 'once' ? (card.querySelector('.edit-duedate').value || '') : '';
   const dt = validTime(card.querySelector('.edit-duetime')?.value);
   if (dt) state.tasks[id].dueTime = dt; else delete state.tasks[id].dueTime;
@@ -190,7 +206,7 @@ export async function saveTask(id, isAdminFn) {
     [p + 'dueDate']: t.dueDate, [p + 'dueTime']: t.dueTime || null,
     [p + 'difficulty']: t.difficulty, [p + 'category']: t.category,
     [p + 'person']: t.person, [p + 'notes']: t.notes, [p + 'rotation']: t.rotation || null,
-    [p + 'lastDone']: t.lastDone, [p + 'intervalDays']: t.intervalDays || null,
+    [p + 'lastDone']: t.lastDone, [p + 'intervalDays']: t.intervalDays || null, [p + 'monthDay']: t.monthDay || null,
     [p + 'needsCheck']: t.needsCheck || null,
   };
   // Never write checkPending back from the local copy: another device may have just taken it (two parents must not both pay).

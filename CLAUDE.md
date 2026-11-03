@@ -214,6 +214,7 @@ Every piece of user-supplied data injected into `innerHTML` or an `onclick` stri
   name,
   freq,          // 'daily'|'weekdays'|'weekly'|'fortnightly'|'monthly'|'once'|'interval'
   intervalDays,  // whole days between resets, only used when freq === 'interval' ("Every N days")
+  monthDay,      // 1-28 or 'last', only used when freq === 'monthly' (set day of the month; omitted = a month after last done)
   days,          // number[] 0-6 (Sun=0), only used when freq === 'weekdays'
   dueDate,       // YYYY-MM-DD string, only used when freq === 'once'
   dueTime,       // 'HH:MM' optional due time (omitted when unset)

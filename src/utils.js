@@ -46,7 +46,9 @@ export function initialLastDone(freq, now = Date.now()) {
     return s.getTime() - 1;
   }
   const d = new Date(now);
-  if (freq === 'monthly') return addMonthClamped(d, -1).getTime(); // due today
+  const md = freq && freq.freq === 'monthly' ? validMonthDay(freq.monthDay) : 0;
+  if (md) return prevMonthDayDate(d, md).getTime(); // set day (#255): last occurrence before today, so due on the next one
+  if ((freq && freq.freq || freq) === 'monthly') return addMonthClamped(d, -1).getTime(); // due today
   d.setDate(d.getDate() - freqDays(freq));
   return d.getTime();
 }
@@ -61,10 +63,45 @@ export function addMonthClamped(date, n) {
   return d;
 }
 
-// Whole local days in the chore's cycle that started at `lastDone`. Monthly follows the calendar (#137).
+// Monthly chore on a set day (#255): 1-28 or 'last' (month end). Returns the number or 'last', else 0 (invalid).
+export function validMonthDay(v) {
+  if (v === 'last') return 'last';
+  const n = typeof v === 'string' && v.trim() !== '' ? Number(v) : v;
+  return Number.isInteger(n) && n >= 1 && n <= 28 ? n : 0;
+}
+// "15th" / "1st" / "last day" for a monthly chore's set day ('' when none).
+export function monthDayLabel(v) {
+  const md = validMonthDay(v);
+  if (!md) return '';
+  if (md === 'last') return 'last day';
+  return md + (md % 100 >= 11 && md % 100 <= 13 ? 'th' : ({ 1: 'st', 2: 'nd', 3: 'rd' }[md % 10] || 'th'));
+}
+// Date (same time of day as `from`) of the set day in the month `k` months from `from`'s month.
+function monthDayIn(from, md, k) {
+  const d = new Date(from);
+  d.setDate(1);
+  d.setMonth(d.getMonth() + k);
+  d.setDate(md === 'last' ? new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate() : md);
+  return d;
+}
+// First set-day occurrence strictly after `from`'s calendar day.
+export function nextMonthDayDate(from, md) {
+  const a = monthDayIn(from, md, 0);
+  return daysSince(from, a) > 0 ? a : monthDayIn(from, md, 1);
+}
+// Most recent set-day occurrence strictly before `from`'s calendar day.
+function prevMonthDayDate(from, md) {
+  const a = monthDayIn(from, md, 0);
+  return daysSince(a, from) > 0 ? a : monthDayIn(from, md, -1);
+}
+
+// Whole local days in the chore's cycle that started at `lastDone`. Monthly follows the calendar (#137);
+// with a set day (#255) the cycle ends on the next occurrence of that day after `lastDone`.
 export function cycleDays(f, lastDone) {
   const freq = f && typeof f === 'object' ? f.freq : f;
   if (freq !== 'monthly') return freqDays(f);
+  const md = f && typeof f === 'object' ? validMonthDay(f.monthDay) : 0;
+  if (md) return daysSince(lastDone || 0, nextMonthDayDate(new Date(lastDone || 0), md).getTime());
   return daysSince(lastDone || 0, addMonthClamped(new Date(lastDone || 0), 1).getTime());
 }
 
@@ -97,6 +134,7 @@ export function freqLabel(t) {
   return t.freq === 'weekdays'
     ? (t.days || []).map(Number).sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7)).map(d => DAY_NAMES[d]).join(', ') || 'No days'
     : t.freq === 'interval' ? 'Every ' + (validInterval(t.intervalDays) || 7) + ' days'
+    : t.freq === 'monthly' && validMonthDay(t.monthDay) ? 'monthly · ' + monthDayLabel(t.monthDay)
     : t.freq;
 }
 

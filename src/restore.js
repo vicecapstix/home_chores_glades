@@ -9,7 +9,7 @@ import { validateMemberName } from './members.js';
 import { validateReward, MAX_REWARDS } from './rewards.js';
 import { MAX_REDEMPTIONS } from './redemptions.js';
 import { BACKUP_SCHEMA_VERSION, downloadBackup } from './backup.js';
-import { esc } from './utils.js';
+import { esc, validMonthDay } from './utils.js';
 
 export const CONFIRM_WORD = 'RESTORE';
 const FREQS = ['daily', 'weekdays', 'weekly', 'fortnightly', 'monthly', 'once', 'interval'];
@@ -18,6 +18,12 @@ const ID_RE = /^[A-Za-z0-9_-]{1,64}$/;
 const isObj = v => v && typeof v === 'object' && !Array.isArray(v);
 const entries = v => (Array.isArray(v) ? v.map((x, i) => [String(i), x]) : isObj(v) ? Object.entries(v) : []);
 const num = v => (Number.isFinite(Number(v)) && Number(v) >= 0 ? Number(v) : 0);
+// monthDay (#255): keep only a valid 1-28 / 'last' on a monthly chore; drop it otherwise.
+function cleanMonthDay(t) {
+  const md = t.freq === 'monthly' ? validMonthDay(t.monthDay) : 0;
+  if (md) t.monthDay = md; else delete t.monthDay;
+  return t;
+}
 const clone = v => JSON.parse(JSON.stringify(v));
 
 // Pure. Returns { ok:true, clean, summary } or { ok:false, error }.
@@ -52,6 +58,7 @@ export function validateBackup(raw, current = state.members) {
     const name = isObj(t) ? String(t.name || '').trim().slice(0, 60) : '';
     if (!ID_RE.test(id) || !name || !FREQS.includes(t.freq)) { skipped++; continue; }
     tasks[id] = { ...clone(t), id, name };
+    cleanMonthDay(tasks[id]);
   }
 
   const history = (Array.isArray(b.history) ? b.history : []).filter(e => isObj(e) && Number.isFinite(Number(e.completedAt)))
@@ -77,7 +84,7 @@ export function validateBackup(raw, current = state.members) {
     const name = isObj(t) ? String(t.name || '').trim().slice(0, 40) : '';
     if (!ID_RE.test(id) || !name || Object.keys(templates).length >= MAX_TEMPLATES) { skipped++; continue; }
     const list = (Array.isArray(t.tasks) ? t.tasks : []).filter(x => isObj(x) && String(x.name || '').trim() && FREQS.includes(x.freq)).slice(0, MAX_TEMPLATE_TASKS);
-    templates[id] = { ...clone(t), id, name, tasks: clone(list) };
+    templates[id] = { ...clone(t), id, name, tasks: clone(list).map(cleanMonthDay) };
   }
 
   const nextId = Math.max(1, Math.floor(num(b.nextId)));
