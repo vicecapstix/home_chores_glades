@@ -294,6 +294,8 @@ body[data-reorder] .move-btns { display: flex; }
 /* ACTIVITY HISTORY */
 .hist-card { width: min(480px, 94vw); max-height: 80vh; overflow-y: auto; }
 #history-filters { flex-wrap: wrap; }
+.hist-opts { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin-bottom: var(--space-md); font-size: 0.8rem; color: var(--muted); }
+.hist-opts select { height: 36px; max-width: 100%; min-width: 0; flex: 1 1 120px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg); color: var(--text); font-size: 0.85rem; padding: 0 8px; font-family: inherit; }
 .hist-row { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; padding: 8px 0; border-bottom: 1px solid var(--border); }
 .hist-row:last-child { border-bottom: none; }
 .hist-who { max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex-shrink: 0; }
