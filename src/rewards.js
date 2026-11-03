@@ -78,7 +78,9 @@ export function renderRewards() {
     sel.classList.toggle('hidden', !canEdit);
     sel.innerHTML = canEdit ? Object.keys(state.members).map(n => '<option value="' + esc(n) + '"' + (n === target ? ' selected' : '') + '>' + esc(n) + '</option>').join('') : '';
   }
-  list.innerHTML = rewardsHTML(state.rewards, canEdit, member ? { me: target, points: member.points || 0, goalId: member.goalRewardId } : {});
+  // Request buttons are always for the logged-in member; the dropdown only picks the saving-goal target (#248).
+  const self = me && state.members[me];
+  list.innerHTML = rewardsHTML(state.rewards, canEdit, self ? { me, points: self.points || 0, goalId: member ? member.goalRewardId : '' } : {});
   const pend = document.getElementById('rewards-pending');
   if (pend) {
     const mine = pendingFor(me);
