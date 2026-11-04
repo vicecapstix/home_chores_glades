@@ -30,12 +30,13 @@ export function toGive() {
     .sort((a, b) => (a.decidedAt || a.requestedAt || 0) - (b.decidedAt || b.requestedAt || 0));
 }
 
-// Ids to drop (oldest non-pending first) so one more entry fits under the cap.
+// Ids to drop (oldest first) so one more entry fits under the cap. Only finished entries go:
+// denied, or approved and already handed out. Pending and approved-not-given are never dropped (#217).
 export function idsToDrop(redemptions) {
   const all = Object.values(redemptions || {});
   const over = all.length - (MAX_REDEMPTIONS - 1);
   if (over <= 0) return [];
-  return all.filter(r => r.status !== 'pending')
+  return all.filter(r => r.status === 'denied' || (r.status === 'approved' && r.givenAt))
     .sort((a, b) => a.requestedAt - b.requestedAt)
     .slice(0, over).map(r => r.id);
 }
@@ -63,7 +64,7 @@ export async function requestReward(rewardId, currentMemberFn) {
   }
   const drops = idsToDrop(state.redemptions);
   if (Object.keys(state.redemptions || {}).length - drops.length >= MAX_REDEMPTIONS) {
-    showToast('Too many pending requests'); return;
+    showToast('Too many unfinished requests - ask a parent to give or clear some'); return;
   }
   busy = true;
   try {
