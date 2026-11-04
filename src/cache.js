@@ -1,3 +1,4 @@
+import { formatUpdated } from './connection.js';
 // Device-local snapshot cache (localStorage) so a slow/offline screen shows last-known data.
 // history is oldest-first, so keep the newest entries (slice(-N)).
 // Never stores pinHash, /private or session data. No extra Firebase reads.
@@ -47,7 +48,9 @@ export function clearSnapshot(storage = globalThis.localStorage) {
   try { storage.removeItem(CACHE_KEY); return true; } catch (e) { return false; }
 }
 
-export function setCacheBanner(show, doc = document) {
+export function setCacheBanner(show, doc = document, savedAt = 0) {
   const b = doc.getElementById('cache-banner');
-  if (b) b.classList.toggle('hidden', !show);
+  if (!b) return;
+  b.classList.toggle('hidden', !show);
+  if (show && savedAt) b.textContent = 'Showing saved data from ' + formatUpdated(savedAt) + ' — connecting…';
 }

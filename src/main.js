@@ -2,7 +2,7 @@ import { adjustBonus, BONUS_MAX, BONUS_REASON_MAX } from './bonus.js';
 import './style.css';
 
 import { onValue, ref } from 'firebase/database';
-import { watchConnection, markSynced, setPendingCount } from './connection.js';
+import { watchConnection, markSynced, setPendingCount, setLastUpdated } from './connection.js';
 import { setPendingHandler, retrySync } from './pending.js';
 
 import { FB_URL, READONLY } from './config.js';
@@ -110,7 +110,8 @@ initCardArrowNav();
   if (cached) {
     setWritesEnabled(false);
     applySnapshot({ ...cached, members: migrateLegacyMembers(cached.members) });
-    setCacheBanner(true);
+    setCacheBanner(true, document, cached.savedAt);
+    setLastUpdated(cached.savedAt);
     render();
     renderPauseBanner();
   }

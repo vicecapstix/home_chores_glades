@@ -5,11 +5,26 @@ let graceOver = false;
 let timer = null;
 let pendingN = 0;
 let isOffline = false;
+let lastUpdated = 0; // ms of the last live snapshot, or the cache time on a cached start (#258)
 const BANNER_DEFAULT = 'Offline — changes will sync when you reconnect';
 
 export function formatTime(d = new Date()) {
   return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
+
+// "14:05", "yesterday 21:10", or "Mon, 4 May 21:10" for older (#258).
+export function formatUpdated(ms, now = Date.now()) {
+  if (!ms) return '';
+  const d = new Date(ms), n = new Date(now);
+  const day = x => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  const diff = Math.round((day(n) - day(d)) / 86400000);
+  const t = formatTime(d);
+  if (diff <= 0) return t;
+  if (diff === 1) return 'yesterday ' + t;
+  return d.toLocaleDateString([], { weekday: 'short', day: 'numeric', month: 'short' }) + ' ' + t;
+}
+
+export function setLastUpdated(ms, doc = document) { lastUpdated = ms > 0 ? ms : 0; paintBanner(doc); }
 
 // Shows "offline" only after we have been connected once, or the first connect took > GRACE_MS,
 // so the banner doesn't flash on every page load.
@@ -20,7 +35,6 @@ export function setConnection(connected, doc = document) {
   const banner = doc.getElementById('offline-banner');
   if (dot) {
     dot.classList.toggle('offline', offline);
-    dot.title = offline ? 'Offline' : 'Live sync';
   }
   if (banner) banner.classList.toggle('hidden', !offline);
   isOffline = offline;
@@ -29,17 +43,22 @@ export function setConnection(connected, doc = document) {
 }
 
 function paintBanner(doc) {
+  const dot = doc.querySelector('.live-dot');
+  if (dot) dot.title = isOffline ? 'Offline' + (lastUpdated ? ' · last updated ' + formatUpdated(lastUpdated) : '') : 'Live sync';
   const banner = doc.getElementById('offline-banner');
   if (!banner) return;
-  banner.textContent = isOffline && pendingN > 0
+  const when = formatUpdated(lastUpdated);
+  const base = isOffline && pendingN > 0
     ? pendingN + (pendingN === 1 ? ' change' : ' changes') + ' waiting — will sync when you reconnect'
     : BANNER_DEFAULT;
+  banner.textContent = base + (when ? ' · Last updated ' + when : '');
 }
 
 // Unsynced task writes (#144): shown in the offline banner while offline.
 export function setPendingCount(n, doc = document) { pendingN = n; paintBanner(doc); }
 
 export function markSynced(now = new Date(), doc = document) {
+  lastUpdated = now.getTime();
   const el = doc.getElementById('tv-synced');
   if (el) el.textContent = 'Last synced ' + formatTime(now);
 }
@@ -51,4 +70,4 @@ export function watchConnection(db, { onValue, ref }, doc = document) {
   return onValue(ref(db, '.info/connected'), snap => setConnection(snap.val() === true, doc));
 }
 
-export function _resetForTests() { pendingN = 0; isOffline = false; everConnected = false; graceOver = false; clearTimeout(timer); timer = null; }
+export function _resetForTests() { pendingN = 0; lastUpdated = 0; isOffline = false; everConnected = false; graceOver = false; clearTimeout(timer); timer = null; }
