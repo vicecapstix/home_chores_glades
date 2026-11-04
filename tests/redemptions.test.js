@@ -91,8 +91,8 @@ describe('requestReward', () => {
 
 describe('100-entry cap', () => {
   const mk = (n, status) => ({ id: 'x' + n, member: 'Bob', rewardName: 'r', cost: 1, requestedAt: n, status });
-  it('drops the oldest non-pending entries in the same write', async () => {
-    state.redemptions = Object.fromEntries(Array.from({ length: 100 }, (_, i) => [`x${i}`, mk(i, i < 2 ? 'approved' : 'pending')]));
+  it('drops the oldest finished entries in the same write', async () => {
+    state.redemptions = Object.fromEntries(Array.from({ length: 100 }, (_, i) => [`x${i}`, mk(i, i < 2 ? 'denied' : 'pending')]));
     await D.requestReward('r1', asAlice);
     const fields = patchRoot.mock.calls[0][0];
     expect(fields['redemptions/x0']).toBeNull();
@@ -103,10 +103,10 @@ describe('100-entry cap', () => {
     state.redemptions = Object.fromEntries(Array.from({ length: 100 }, (_, i) => [`x${i}`, mk(i, 'pending')]));
     await D.requestReward('r1', asAlice);
     expect(spendPoints).not.toHaveBeenCalled();
-    expect(showToast).toHaveBeenCalledWith('Too many pending requests');
+    expect(showToast).toHaveBeenCalledWith(expect.stringMatching(/unfinished/i));
   });
   it('idsToDrop is empty under the cap', () => {
-    expect(D.idsToDrop({ a: mk(1, 'approved') })).toEqual([]);
+    expect(D.idsToDrop({ a: mk(1, 'denied') })).toEqual([]);
   });
 });
 
