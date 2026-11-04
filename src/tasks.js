@@ -341,6 +341,9 @@ async function applyToggle(id, t, awardee, nowTs, isAdminFn, checkedBy) {
   // Double-points day (#225), judged at the tick time (for a parent check, when the child ticked);
   // stored as lastDonePoints so uncheck reverses exactly.
   const earned = taskPoints(t) * activeMultiplier(state.doublePoints, new Date(nowTs));
+  // Points belong to the week of the tick (#272): a parent check approved after the week rolled
+  // over must not count in the new week's weekPoints (history already uses the tick time).
+  const tickWeek = getWeekStart(new Date(nowTs));
   // Check remembers the previous lastDone (and streak) so uncheck can restore them (#32).
   const taskUpdate = { done, lastDone: done ? nowTs : (typeof t.prevLastDone === 'number' ? t.prevLastDone : t.lastDone) };
   if (done) { taskUpdate.prevLastDone = t.lastDone || 0; taskUpdate.checkPending = null; taskUpdate.checkNote = null; }
@@ -354,7 +357,7 @@ async function applyToggle(id, t, awardee, nowTs, isAdminFn, checkedBy) {
     }
     taskUpdate.lastDoneBy     = awardee;
     taskUpdate.lastDonePoints = earned;
-    taskUpdate.lastDoneWeek   = getWeekStart();
+    taskUpdate.lastDoneWeek   = tickWeek;
   } else if (!done) {
     taskUpdate.lastDoneBy     = null;
     taskUpdate.lastDonePoints = null;
@@ -402,7 +405,7 @@ async function applyToggle(id, t, awardee, nowTs, isAdminFn, checkedBy) {
     if (newBadgeIds.length) memberUpdate.badges = [...currentBadges, ...newBadgeIds];
     try {
       // Points/count/week via one atomic transaction; streak/badges stay a patch.
-      const r = await adjustMemberPoints(awardee, { pts, count: 1, weekStart });
+      const r = await adjustMemberPoints(awardee, { pts, count: 1, weekStart, countWeek: tickWeek === weekStart });
       if (!r.ok) { showToast('Member update failed'); return; }
       await patchMember(awardee, memberUpdate);
       newBadgeIds.forEach(bid => {

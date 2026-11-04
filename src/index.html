@@ -113,6 +113,16 @@
       <button class="lb-close" aria-label="Close" onclick="window.closeModal('history-modal')">×</button>
     </div>
     <div class="lb-tabs" id="history-filters" onclick="window.historyFilterClick(event)"></div>
+    <div class="hist-opts">
+      <label for="history-chore">Chore</label>
+      <select id="history-chore" onchange="window.historyOptChange(this)"></select>
+      <label for="history-period">When</label>
+      <select id="history-period" onchange="window.historyOptChange(this)">
+        <option value="all">All</option>
+        <option value="this">This week</option>
+        <option value="last">Last week</option>
+      </select>
+    </div>
     <div id="history-list"></div>
   </div>
 </div>

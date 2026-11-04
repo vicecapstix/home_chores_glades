@@ -78,7 +78,7 @@ import { downloadChores, prepareChoreUpload, cancelChoreUpload, confirmChoreUplo
 import { prepareRestore, onRestoreInput, cancelRestore, confirmRestore } from './restore.js';
 import { printChart } from './printchart.js';
 import { saveSnapshot, loadSnapshot, clearSnapshot, setCacheBanner } from './cache.js';
-import { openHistory, setHistoryFilter, historyFilterClick } from './history.js';
+import { openHistory, setHistoryFilter, historyFilterClick, historyOptChange } from './history.js';
 import { openProgress } from './progress.js';
 import { openFairness } from './fairness.js';
 import { openWeek } from './week.js';
@@ -396,6 +396,7 @@ window.exportCSV     = (f,t)      => exportCSV(f, t);
 window.openHistory      = ()      => openHistory();
 window.setHistoryFilter = m       => setHistoryFilter(m);
 window.historyFilterClick = e    => historyFilterClick(e);
+window.historyOptChange = el     => historyOptChange(el);
 
 // My progress (read-only; members see their own, admins anyone's — enforced in progress.js)
 window.openFairness = () => openFairness(_isAdmin);
