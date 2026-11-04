@@ -2,7 +2,7 @@ import { state, getMembers, memberColor } from './state.js';
 import { PCOLS, BADGES, CATEGORIES, READONLY } from './config.js';
 import { openModal, closeModal } from './modals.js';
 import { patchPaths } from './firebase.js';
-import { esc, num, jsq, avatarPrefix, sha256, initialLastDone, validInterval, validTime, dueStatus, localDateStr, currentStreak, currentWeekPoints, weekRecap, lastWeekChampion } from './utils.js';
+import { esc, num, jsq, avatarPrefix, sha256, initialLastDone, validInterval, validMonthDay, validTime, dueStatus, localDateStr, currentStreak, currentWeekPoints, weekRecap, lastWeekChampion } from './utils.js';
 import { cycleTheme, initTheme } from './theme.js';
 import { isAdmin } from './auth.js';
 
@@ -227,6 +227,7 @@ export function templateTask(t) {
     name: t.name, freq: t.freq, difficulty: t.difficulty || 'easy',
     ...(t.freq === 'weekdays' ? { days: t.days || [] } : {}),
     ...(t.freq === 'interval' ? { intervalDays: validInterval(t.intervalDays) || 7 } : {}),
+    ...(t.freq === 'monthly' && validMonthDay(t.monthDay) ? { monthDay: validMonthDay(t.monthDay) } : {}),
     ...(CATEGORIES.includes(t.category) && t.category ? { category: t.category } : {}),
     ...(t.notes ? { notes: String(t.notes).slice(0, 300) } : {}),
     ...(validTime(t.dueTime) ? { dueTime: t.dueTime } : {}),
@@ -270,6 +271,7 @@ export function applyTemplate(id) {
       id: taskId, name: t.name, freq: t.freq, difficulty: t.difficulty || 'easy',
       ...(t.freq === 'weekdays' ? { days: t.days || [] } : {}),
       ...(t.freq === 'interval' ? { intervalDays: validInterval(t.intervalDays) || 7 } : {}),
+      ...(t.freq === 'monthly' && validMonthDay(t.monthDay) ? { monthDay: validMonthDay(t.monthDay) } : {}),
       done: false, lastDone: initialLastDone(t),
       person: '', order: Date.now() + added,
       // Fields below are absent on legacy templates (#139)

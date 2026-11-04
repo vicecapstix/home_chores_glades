@@ -2,7 +2,7 @@
 // Browser print only; computed from local state, no Firebase access.
 import { state, getMembers } from './state.js';
 import { READONLY } from './config.js';
-import { esc, getWeekStart, localDateStr } from './utils.js';
+import { esc, getWeekStart, localDateStr, validMonthDay } from './utils.js';
 
 export const CHART_DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
@@ -26,6 +26,13 @@ export function dueDays(t, dates) {
   if (t.freq === 'once') {
     const i = dates.indexOf(t.dueDate);
     if (i >= 0) days[i] = true;
+    return { days, anyDay: false };
+  }
+  if (t.freq === 'monthly' && validMonthDay(t.monthDay)) { // set day (#255): only the weekday(s) of this week that fall on it
+    dates.forEach((ds, i) => {
+      const [y, m, d] = ds.split('-').map(Number);
+      days[i] = t.monthDay === 'last' ? d === new Date(y, m, 0).getDate() : d === Number(t.monthDay);
+    });
     return { days, anyDay: false };
   }
   return { days, anyDay: true };

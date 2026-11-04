@@ -4,7 +4,7 @@ import { READONLY, CATEGORIES } from './config.js';
 import { patchPaths } from './firebase.js';
 import { showToast } from './ui.js';
 import { openModal, closeModal } from './modals.js';
-import { esc, jsq, taskPoints, freqLabel, initialLastDone } from './utils.js';
+import { esc, jsq, taskPoints, freqLabel, initialLastDone, validMonthDay } from './utils.js';
 
 const c = (name, freq, difficulty, category, extra = {}) => ({ name, freq, difficulty, category, ...extra });
 const CHK = { needsCheck: true }; // a parent checks these before points are given (#240)
@@ -34,8 +34,9 @@ export function makeTask(s, id, base, n) {
   const subtasks = {};
   (s.subtasks || []).forEach((name, j) => { const sid = 's' + (base + n) + '_' + j; subtasks[sid] = { id: sid, name, done: false }; });
   return { id, name: s.name, freq: s.freq, person: '', done: false,
-    lastDone: initialLastDone(s.freq === 'interval' ? { freq: s.freq, intervalDays: s.intervalDays } : s.freq, base),
+    lastDone: initialLastDone(s.freq === 'interval' ? { freq: s.freq, intervalDays: s.intervalDays } : s.freq === 'monthly' && validMonthDay(s.monthDay) ? { freq: s.freq, monthDay: validMonthDay(s.monthDay) } : s.freq, base),
     ...(s.freq === 'weekdays' ? { days: s.days } : {}), ...(s.freq === 'interval' ? { intervalDays: s.intervalDays } : {}),
+    ...(s.freq === 'monthly' && validMonthDay(s.monthDay) ? { monthDay: validMonthDay(s.monthDay) } : {}),
     ...(s.dueTime ? { dueTime: s.dueTime } : {}), ...(s.needsCheck === true ? { needsCheck: true } : {}),
     notes: s.notes || '', difficulty: s.difficulty, category: s.category, dueDate: s.dueDate || '', subtasks, order: base + n };
 }

@@ -31,7 +31,7 @@ import {
 
 import {
   checkTaskResets,
-  addTask, editTask, saveTask, approveCheck, sendBackCheck,
+  addTask, editTask, saveTask, monthDayOptions, approveCheck, sendBackCheck,
   toggleTask, deleteTask,
   toggleSubtasks, toggleSubtask, addSubtask, removeSubtask,
   claimTask, moveTask, skipTask, clearDoneOnes,
@@ -175,7 +175,8 @@ initCardArrowNav();
 })();
 
 // ── DOM event listeners ───────────────────────────────────────────────────────
-document.getElementById('new-freq').addEventListener('change', e => { document.getElementById('new-days').classList.toggle('hidden', e.target.value !== 'weekdays'); document.getElementById('new-interval').classList.toggle('hidden', e.target.value !== 'interval'); });
+document.getElementById('new-freq').addEventListener('change', e => { document.getElementById('new-days').classList.toggle('hidden', e.target.value !== 'weekdays'); document.getElementById('new-interval').classList.toggle('hidden', e.target.value !== 'interval'); document.getElementById('new-monthday').classList.toggle('hidden', e.target.value !== 'monthly'); });
+document.getElementById('new-monthday').innerHTML = monthDayOptions('');
 document.getElementById('new-task').addEventListener('keydown', e => { if (e.key === 'Enter') addTask(_isAdmin); });
 document.getElementById('new-member').addEventListener('keydown', e => { if (e.key === 'Enter') addMember(_isAdmin); });
 
