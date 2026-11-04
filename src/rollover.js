@@ -1,6 +1,8 @@
 import { state } from './state.js';
 import { dueStatus } from './utils.js';
 import { checkTaskResets } from './tasks.js';
+import { checkPauseExpiry } from './pause.js';
+import { checkAwayExpiry } from './away.js';
 import { runDueTimeCheck } from './notifications.js';
 
 // Local rollover: screens left open keep recomputing resets and due status
@@ -17,6 +19,8 @@ function signature() {
 export function startRollover(render, intervalMs = 60000) {
   let last = signature();
   const tick = () => {
+    checkPauseExpiry(); // end an expired house pause / away period, as a snapshot would (#249)
+    checkAwayExpiry();
     checkTaskResets(); // writes via patchRoot unless READONLY
     runDueTimeCheck(); // local due-time reminder (#150); no-op on the TV
     const sig = signature();
