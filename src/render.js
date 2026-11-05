@@ -4,7 +4,7 @@ import { renderTvStrip } from './tv.js';
 import { renderGoal } from './goal.js';
 import { renderTeamGoal } from './teamgoal.js';
 import { renderDoublePointsBanner, activeMultiplier } from './doublepoints.js';
-import { awayText, esc, num, jsq, taskPoints, avatarPrefix, validTime, dueStatus, freqLabel, rotationTag, isMine, isSkipped, localDateStr, doneAgoLabel, currentStreak, goalHTML, isStaleDoneOnce, viewFromSearch } from './utils.js';
+import { awayText, esc, num, jsq, taskPoints, avatarPrefix, validTime, dueStatus, freqLabel, rotationTag, isMine, isSkipped, localDateStr, doneAgoLabel, currentStreak, freezeTag, goalHTML, isStaleDoneOnce, viewFromSearch } from './utils.js';
 import { pColor } from './ui.js';
 import { syncTagHTML } from './pending.js';
 import { refreshToCheck } from './tocheck.js';
@@ -209,7 +209,7 @@ function _renderMembers() {
     return '<span class="chip" data-member="' + esc(m) + '" style="background:' + c.bg + ';color:' + c.text + ';">' +
       esc(avatarPrefix(mem)) + esc(m) +
       ' <span style="opacity:0.55;font-size:0.75em">' + num(mem.points) + '</span>' +
-      (streak >= 2 ? ' 🔥' + streak : '') +
+      (streak >= 2 ? ' 🔥' + streak + freezeTag(mem) : '') +
       (awayText(mem) ? ' <span class="chip-away">' + esc(awayText(mem)) + '</span>' : '') +
       (badgeIcons ? ' ' + badgeIcons : '') +
       goalHTML(mem, state.rewards) +

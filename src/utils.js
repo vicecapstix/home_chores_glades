@@ -133,13 +133,33 @@ export function localDateStr(d = new Date()) {
   return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 }
 
+// Streak freezes (#227): earn 1 per FREEZE_EVERY-day streak (max FREEZE_MAX held); one is
+// spent to bridge a single missed day. Never spent while the house is paused.
+export const FREEZE_EVERY = 7, FREEZE_MAX = 2;
+export const freezeCount = m => Math.min(FREEZE_MAX, Math.max(0, Math.floor(Number(m && m.freezes) || 0)));
+export const freezeTag = m => (freezeCount(m) ? ' ❄️' + freezeCount(m) : '');
+
+const dayOffset = (ts, n) => { const d = new Date(ts); d.setDate(d.getDate() + n); return localDateStr(d); };
+
+// Pure: streak and freezes after a completion at `nowTs`.
+export function nextStreak(m, nowTs, paused = false) {
+  const today = localDateStr(new Date(nowTs)), last = m.lastStreakDate, old = m.streak || 0;
+  let freezes = freezeCount(m), streak;
+  if ((last && last > today) || last === today) return { streak: old, freezes };
+  if (last === dayOffset(nowTs, -1)) streak = old + 1;
+  else if (last === dayOffset(nowTs, -2) && freezes > 0 && !paused && old > 0) { streak = old + 1; freezes--; }
+  else streak = 1;
+  if (streak > old && streak % FREEZE_EVERY === 0 && freezes < FREEZE_MAX) freezes++;
+  return { streak, freezes };
+}
+
 // Streak to display: stored streak only if the last completion was today or
-// yesterday (local), otherwise 0. Display-only; never written back.
+// yesterday (local), or two days ago with a freeze held. Display-only; never written back.
 export function currentStreak(m, now = Date.now()) {
   if (!m || !m.streak || !m.lastStreakDate) return 0;
-  const y = new Date(now); y.setDate(y.getDate() - 1);
   const last = m.lastStreakDate;
-  return (last === localDateStr(new Date(now)) || last === localDateStr(y)) ? m.streak : 0;
+  if (last === localDateStr(new Date(now)) || last === dayOffset(now, -1)) return m.streak;
+  return last === dayOffset(now, -2) && freezeCount(m) > 0 && !isPausedNow(now) ? m.streak : 0;
 }
 
 export function getWeekStart(from) {

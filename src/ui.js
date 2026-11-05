@@ -2,7 +2,7 @@ import { state, getMembers, memberColor } from './state.js';
 import { PCOLS, BADGES, CATEGORIES, READONLY } from './config.js';
 import { openModal, closeModal } from './modals.js';
 import { patchPaths } from './firebase.js';
-import { esc, num, jsq, avatarPrefix, sha256, initialLastDone, validInterval, validTime, dueStatus, localDateStr, currentStreak, currentWeekPoints, weekRecap, lastWeekChampion } from './utils.js';
+import { esc, num, jsq, avatarPrefix, sha256, initialLastDone, validInterval, validTime, dueStatus, localDateStr, currentStreak, freezeTag, currentWeekPoints, weekRecap, lastWeekChampion } from './utils.js';
 import { cycleTheme, initTheme } from './theme.js';
 import { isAdmin } from './auth.js';
 
@@ -95,7 +95,7 @@ export function leaderboardHTML(tab) {
       '<span class="lb-rank">' + rank + '</span>' +
       '<span class="lb-name" style="background:' + c.bg + ';color:' + c.text + ';">' + esc(avatarPrefix(m)) + esc(m.name) + '</span>' +
       '<span class="lb-pts">' + pts + ' pts</span>' +
-      (streak > 0 ? '<span class="lb-streak">🔥 ' + streak + '</span>' : '') +
+      (streak > 0 ? '<span class="lb-streak">🔥 ' + streak + freezeTag(m) + '</span>' : '') +
       (badgeIcons ? '<span class="lb-badges">' + badgeIcons + '</span>' : '') +
       '</div>';
   }).join('') || '<div class="empty">No members yet.</div>';
