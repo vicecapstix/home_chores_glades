@@ -6,6 +6,7 @@ vi.mock('../src/firebase.js', () => ({
   writeState: vi.fn().mockResolvedValue(undefined),
   patchMember: vi.fn().mockResolvedValue(undefined),
   patchPaths: vi.fn().mockResolvedValue(undefined),
+  renameHistoryPerson: vi.fn().mockResolvedValue({ ok: true }),
 }));
 vi.mock('../src/ui.js', () => ({ showToast: vi.fn() }));
 import { patchPaths } from '../src/firebase.js';
@@ -42,9 +43,7 @@ describe('renameMember', () => {
     expect(p['tasks/t1/person']).toBe('Anna');
     expect(p['tasks/t1/lastDoneBy']).toBe('Anna');
     expect(p['tasks/t2/person']).toBeUndefined();
-    expect(p['history/0/person']).toBe('Anna');
-    expect(p['history/2/person']).toBe('Anna');
-    expect(p['history/1/person']).toBeUndefined();
+    expect(Object.keys(p).some(k => k.startsWith('history'))).toBe(false); // renamed by name in a transaction (#274)
     expect(p['redemptions/r1/member']).toBe('Anna');
     expect(p['redemptions/r1/decidedBy']).toBeUndefined();
   });

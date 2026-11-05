@@ -234,6 +234,22 @@ export async function removeHistoryEntry(match) {
   return { ok: !!res.committed, removed, rest };
 }
 
+// Rename a member in history on the LIVE array (#274), matching by name not by index, so a
+// concurrent append at the cap can't shift the wrong entries. Covers person, by, checkedBy.
+export async function renameHistoryPerson(oldName, newName) {
+  if (READONLY || !_db) return { ok: false };
+  const res = await runTransaction(ref(_db, 'state/history'), cur => {
+    if (cur === null) return cur;
+    return toList(cur).map(e => {
+      if (!e || ![e.person, e.by, e.checkedBy].includes(oldName)) return e;
+      const n = { ...e };
+      ['person', 'by', 'checkedBy'].forEach(k => { if (n[k] === oldName) n[k] = newName; });
+      return n;
+    });
+  });
+  return { ok: !!res.committed };
+}
+
 export async function refundPoints(name, cost) {
   if (READONLY || !_db || !_live) return;
   await runTransaction(ref(_db, 'state/members/' + name + '/points'), cur => (cur || 0) + cost);
