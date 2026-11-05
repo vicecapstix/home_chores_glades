@@ -45,12 +45,13 @@ export function prevScheduledStart(days, now = Date.now()) {
 
 // lastDone value for a brand-new task so it is not instantly overdue.
 export function initialLastDone(freq, now = Date.now()) {
-  if ((freq && freq.freq || freq) === 'weekdays') { // start of today minus 1 ms: due today if today is a scheduled day, never overdue for earlier days
+  const kind = freq && freq.freq || freq; // accepts a freq string or a task-like object (#275)
+  if (kind === 'weekdays') { // start of today minus 1 ms: due today if today is a scheduled day, never overdue for earlier days
     const s = new Date(now); s.setHours(0, 0, 0, 0);
     return s.getTime() - 1;
   }
   const d = new Date(now);
-  if (freq === 'monthly') return addMonthClamped(d, -1).getTime(); // due today
+  if (kind === 'monthly') return addMonthClamped(d, -1).getTime(); // due today
   d.setDate(d.getDate() - freqDays(freq));
   return d.getTime();
 }
