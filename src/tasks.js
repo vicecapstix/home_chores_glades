@@ -5,7 +5,7 @@ import { showToast } from './ui.js';
 import { pushUndo } from './undo.js';
 import { dropRetry } from './pending.js';
 import { activeMultiplier } from './doublepoints.js';
-import { esc, jsq, validTime, validInterval, INTERVAL_MIN, INTERVAL_MAX, freqDays, cycleDays, daysSince, dueStatus, taskPoints, getWeekStart, localDateStr, prevScheduledStart, isStaleDoneOnce, initialLastDone, nextRotationPerson, awayNames, DAY_NAMES } from './utils.js';
+import { esc, jsq, validTime, validInterval, INTERVAL_MIN, INTERVAL_MAX, freqDays, cycleDays, daysSince, dueStatus, taskPoints, getWeekStart, localDateStr, prevScheduledStart, isStaleDoneOnce, initialLastDone, nextStreak, isPausedNow, freezeCount, nextRotationPerson, awayNames, DAY_NAMES } from './utils.js';
 
 // Re-export for other modules
 export { dueStatus, taskPoints, freqDays };
@@ -221,7 +221,7 @@ async function undoCompletionRecords(id, t, c) {
   const day = localDateStr(new Date(c.at));
   const otherSameDay = rest.some(h => h.person === c.by && localDateStr(new Date(h.completedAt)) === day);
   if (m.lastStreakDate !== day || otherSameDay || c.prevStreakDate === day) return;
-  try { await patchMember(c.by, { streak: c.prevStreak || 0, lastStreakDate: c.prevStreakDate || null }); return c.prevStreak || 0; }
+  try { await patchMember(c.by, { streak: c.prevStreak || 0, lastStreakDate: c.prevStreakDate || null, freezes: c.prevFreezes || 0 }); return c.prevStreak || 0; }
   catch (err) { showToast('Member update failed: ' + (err.code || err.message)); }
 }
 
@@ -230,15 +230,12 @@ const asList = v => (Array.isArray(v) ? v : (v ? Object.values(v) : []));
 // What checking a chore does to a member's streak and badges (shared by toggleTask's task and member writes).
 function completionAward(m, pts, nowTs = Date.now()) {
   const today     = localDateStr(new Date(nowTs)); // the tick time, which for a parent check is when the child ticked
-  const yd        = new Date(nowTs); yd.setDate(yd.getDate() - 1);
-  const yesterday = localDateStr(yd);
   const lateCheck = !!m.lastStreakDate && m.lastStreakDate > today; // approved after a newer completion: leave the streak alone
-  const newStreak = lateCheck || m.lastStreakDate === today ? (m.streak || 0) :
-                    m.lastStreakDate === yesterday ? (m.streak || 0) + 1 : 1;
+  const { streak: newStreak, freezes } = nextStreak(m, nowTs, isPausedNow(nowTs)); // freeze bridges one missed day (#227)
   const currentBadges = asList(m.badges);
   const virtualMember = { ...m, points: (m.points || 0) + pts, completedCount: (m.completedCount || 0) + 1, streak: newStreak };
   const newBadgeIds = BADGES.filter(b => !currentBadges.includes(b.id) && b.check(virtualMember)).map(b => b.id);
-  return { streakDate: lateCheck ? m.lastStreakDate : today, newStreak, currentBadges, newBadgeIds };
+  return { streakDate: lateCheck ? m.lastStreakDate : today, newStreak, freezes, currentBadges, newBadgeIds };
 }
 
 // Uncheck (#220): take back the badges this completion awarded (task.lastDoneBadges) whose check
@@ -335,7 +332,7 @@ async function applyToggle(id, t, awardee, nowTs, isAdminFn, checkedBy) {
   if (done && awardee) {
     const am = state.members[awardee];
     if (am) {
-      taskUpdate.prevStreak = am.streak || 0; taskUpdate.prevStreakDate = am.lastStreakDate || '';
+      taskUpdate.prevStreak = am.streak || 0; taskUpdate.prevStreakDate = am.lastStreakDate || ''; taskUpdate.prevFreezes = freezeCount(am);
       const ids = completionAward(am, earned, nowTs).newBadgeIds;
       taskUpdate.lastDoneBadges = ids.length ? ids : null; // uncheck takes back only these (#220)
     }
@@ -348,10 +345,11 @@ async function applyToggle(id, t, awardee, nowTs, isAdminFn, checkedBy) {
     taskUpdate.lastDoneWeek   = null;
     taskUpdate.prevStreak     = null;
     taskUpdate.prevStreakDate = null;
+    taskUpdate.prevFreezes    = null;
     taskUpdate.lastDoneBadges = null;
   }
   const weekStart = getWeekStart();
-  const completion = { by: t.lastDoneBy, at: t.lastDone, prevStreak: t.prevStreak, prevStreakDate: t.prevStreakDate, badges: asList(t.lastDoneBadges) };
+  const completion = { by: t.lastDoneBy, at: t.lastDone, prevStreak: t.prevStreak, prevStreakDate: t.prevStreakDate, prevFreezes: t.prevFreezes, badges: asList(t.lastDoneBadges) };
   // Uncheck: reverse points FIRST, atomically on the live value. A member may
   // not claw back points they already spent; an admin can (balance may go < 0).
   let reversal = null;
@@ -384,8 +382,8 @@ async function applyToggle(id, t, awardee, nowTs, isAdminFn, checkedBy) {
     const m = state.members[awardee];
     if (!m) return;
     const pts = earned;
-    const { streakDate, newStreak, currentBadges, newBadgeIds } = completionAward(m, pts, nowTs);
-    const memberUpdate = { streak: newStreak, lastStreakDate: streakDate };
+    const { streakDate, newStreak, freezes, currentBadges, newBadgeIds } = completionAward(m, pts, nowTs);
+    const memberUpdate = { streak: newStreak, lastStreakDate: streakDate, freezes };
     if (newBadgeIds.length) memberUpdate.badges = [...currentBadges, ...newBadgeIds];
     try {
       // Points/count/week via one atomic transaction; streak/badges stay a patch.
