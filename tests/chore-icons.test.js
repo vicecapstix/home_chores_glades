@@ -15,6 +15,9 @@ import { templateTask, applyTemplate } from '../src/ui.js';
 import { iconPrefix, CHORE_ICONS } from '../src/utils.js';
 import { buildChoreFile, validateChoreFile, addPayload } from '../src/chorefile.js';
 import { weekHTML } from '../src/week.js';
+import { validateBackup } from '../src/restore.js';
+import { makeTask } from '../src/starter.js';
+import { BACKUP_SCHEMA_VERSION } from '../src/backup.js';
 
 const base = { id: 't1', name: 'Dishes', freq: 'daily', difficulty: 'easy', person: '', done: false, lastDone: 1, subtasks: {} };
 const admin = () => true, notAdmin = () => false;
@@ -107,4 +110,20 @@ describe('templates, chore files keep the icon (#257)', () => {
     expect(icons).toEqual(['🚗', undefined]);
   });
   it('list holds the 12 documented emoji', () => { expect(CHORE_ICONS).toHaveLength(12); });
+});
+
+describe('restore and starter keep the icon (#257)', () => {
+  it('restore keeps a listed icon and never renders an unlisted one', () => {
+    const raw = { schemaVersion: BACKUP_SCHEMA_VERSION, members: { Ann: { name: 'Ann', role: 'admin' } },
+      tasks: { t1: { ...base, icon: '🚗' }, t2: { ...base, id: 't2', name: 'Bad', icon: '<img src=x onerror=alert(1)>' } } };
+    const r = validateBackup(raw, {});
+    expect(r.ok).toBe(true);
+    expect(r.clean.tasks.t1.icon).toBe('🚗');
+    expect(cardHTML(r.clean.tasks.t1)).toContain('🚗 Dishes');
+    expect(cardHTML(r.clean.tasks.t2)).not.toContain('onerror');
+  });
+  it('starter/chore-file makeTask carries a listed icon and drops others', () => {
+    expect(makeTask({ name: 'A', freq: 'daily', difficulty: 'easy', category: '', icon: '🧹' }, 't1', 1000, 0).icon).toBe('🧹');
+    expect(makeTask({ name: 'B', freq: 'daily', difficulty: 'easy', category: '', icon: 'bad' }, 't2', 1000, 1).icon).toBeUndefined();
+  });
 });
