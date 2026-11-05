@@ -2,7 +2,7 @@ import { state, getMembers, memberColor } from './state.js';
 import { PCOLS, BADGES, CATEGORIES, READONLY } from './config.js';
 import { openModal, closeModal } from './modals.js';
 import { patchPaths } from './firebase.js';
-import { esc, num, jsq, avatarPrefix, sha256, initialLastDone, validInterval, validTime, dueStatus, localDateStr, currentStreak, freezeTag, currentWeekPoints, weekRecap, lastWeekChampion } from './utils.js';
+import { CHORE_ICONS, esc, num, jsq, avatarPrefix, sha256, initialLastDone, validInterval, validTime, dueStatus, localDateStr, currentStreak, currentWeekPoints, weekRecap, lastWeekChampion, freezeTag } from './utils.js';
 import { cycleTheme, initTheme } from './theme.js';
 import { isAdmin } from './auth.js';
 
@@ -231,6 +231,7 @@ export function templateTask(t) {
     ...(t.notes ? { notes: String(t.notes).slice(0, 300) } : {}),
     ...(validTime(t.dueTime) ? { dueTime: t.dueTime } : {}),
     ...(t.needsCheck ? { needsCheck: true } : {}), // parent check (#240)
+    ...(CHORE_ICONS.includes(t.icon) ? { icon: t.icon } : {}),
     ...(subs.length ? { subtasks: subs } : {}),
   };
 }
@@ -276,6 +277,7 @@ export function applyTemplate(id) {
       category: CATEGORIES.includes(t.category) ? t.category : '', notes: String(t.notes || '').slice(0, 300),
       dueDate: t.freq === 'once' ? localDateStr() : '', ...(validTime(t.dueTime) ? { dueTime: t.dueTime } : {}),
       ...(t.needsCheck === true ? { needsCheck: true } : {}),
+      ...(CHORE_ICONS.includes(t.icon) ? { icon: t.icon } : {}),
       subtasks: Object.fromEntries((Array.isArray(t.subtasks) ? t.subtasks : []).slice(0, MAX_TPL_SUBTASKS).map((n, i) =>
         ['s' + now + i, { id: 's' + now + i, name: String(n).slice(0, 100), done: false }])),
     };

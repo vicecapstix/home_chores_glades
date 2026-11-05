@@ -18,7 +18,7 @@ export function weekHTML(tasks = state.tasks, now = Date.now()) {
       const who = it.person ? avatarPrefix(state.members[it.person]) + it.person : 'Anyone';
       return '<li class="wk-item' + (it.done ? ' wk-done' : '') + '">' +
         (it.dueTime ? '<span class="wk-time">' + esc(it.dueTime) + '</span>' : '') +
-        '<span class="wk-name">' + (it.done ? '✓ ' : '') + esc(it.name) + '</span>' +
+        '<span class="wk-name">' + (it.done ? '✓ ' : '') + esc(it.icon || '') + esc(it.name) + '</span>' +
         '<span class="lb-name wk-who" style="background:' + c.bg + ';color:' + c.text + '">' + esc(who) + '</span></li>';
     }).join('');
     return '<section class="wk-day' + (day.isToday ? ' wk-today' : '') + '" aria-label="' + esc(dayLabel(day.date)) + '">' +

@@ -19,6 +19,10 @@ export async function sha256(str) {
 
 export const AVATARS = ['🦁', '🐯', '🐼', '🦊', '🐸', '🐵', '🐧', '🦄', '🐙', '🦖', '🐢', '🦋', '🚀', '⚽', '🎨', '🌈'];
 
+// Fixed list of chore icons (#257); anything else stored in the DB is never rendered.
+export const CHORE_ICONS = ['🧺', '🍽️', '🗑️', '🛏️', '🐶', '🌱', '🧹', '🚗', '🛁', '🍳', '📚', '🪴'];
+export const iconPrefix = t => (t && CHORE_ICONS.includes(t.icon) ? t.icon + ' ' : '');
+
 // '<emoji> ' for a member with a valid avatar, else '' (tampered DB values are never rendered).
 export function avatarPrefix(m) {
   return m && AVATARS.includes(m.avatar) ? m.avatar + ' ' : '';
@@ -423,7 +427,7 @@ export function weekPlan(tasks, now = Date.now()) {
   for (const t of Object.values(tasks || {})) {
     if (!t || !t.name) continue;
     const doneOn = t.done && t.lastDone ? localDateStr(new Date(t.lastDone)) : '';
-    const item = day => ({ id: t.id, name: t.name, person: t.person || '', dueTime: validTime(t.dueTime), done: !!t.done && doneOn === day.date });
+    const item = day => ({ id: t.id, name: t.name, icon: iconPrefix(t), person: t.person || '', dueTime: validTime(t.dueTime), done: !!t.done && doneOn === day.date });
     if (t.freq === 'once') {
       if (t.done || !/^\d{4}-\d{2}-\d{2}$/.test(String(t.dueDate || ''))) continue;
       const day = days.find(x => x.date === (t.dueDate < todayStr ? todayStr : t.dueDate)); // overdue one-offs are due now
