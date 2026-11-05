@@ -238,6 +238,7 @@ Every piece of user-supplied data injected into `innerHTML` or an `onclick` stri
   lastDoneWeek,  // YYYY-MM-DD week start the points were counted in, so uncheck reverses the right week
   prevStreak,    // completer's streak before this check, restored on uncheck
   prevStreakDate,// completer's lastStreakDate before this check, restored on uncheck
+  prevFreezes,   // completer's streak freezes before this check, restored on uncheck
 }
 ```
 
@@ -252,6 +253,7 @@ Every piece of user-supplied data injected into `innerHTML` or an `onclick` stri
   weekStart,      // YYYY-MM-DD of the Monday that started the current week
   streak,         // consecutive days with at least one completion
   lastStreakDate, // YYYY-MM-DD of last completion (for streak tracking)
+  freezes,        // streak freezes held (0-2): +1 per 7-day streak, one spent to bridge a single missed day
   completedCount, // all-time task completions
   badges,         // string[] — badge ids from BADGES: 'first', 'getting_started', 'tenacious', 'half_century',
                   //   'century', 'consistent', 'on_fire', 'dedicated'
