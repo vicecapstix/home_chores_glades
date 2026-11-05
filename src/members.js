@@ -1,6 +1,6 @@
 import { state, getMembers, nextColorIdx } from './state.js';
 import { READONLY, PCOLS } from './config.js';
-import { patchMember, patchPaths } from './firebase.js';
+import { patchMember, patchPaths, renameHistoryPerson } from './firebase.js';
 import { showToast } from './ui.js';
 import { getWeekStart, AVATARS } from './utils.js';
 
@@ -147,16 +147,17 @@ export function renamePaths(oldName, newName) {
   Object.values(state.tasks).forEach(t => {
     if (t.person === oldName) paths['tasks/' + t.id + '/person'] = newName;
     if (t.lastDoneBy === oldName) paths['tasks/' + t.id + '/lastDoneBy'] = newName;
+    if (t.checkPending && t.checkPending.by === oldName) paths['tasks/' + t.id + '/checkPending/by'] = newName;
     if (t.rotation && Object.values(t.rotation).includes(oldName)) {
       paths['tasks/' + t.id + '/rotation'] = Object.values(t.rotation).map(n => n === oldName ? newName : n);
     }
   });
-  state.history.forEach((e, i) => {
-    if (e && e.person === oldName) paths['history/' + i + '/person'] = newName;
-  });
+  // History is renamed separately by renameHistoryPerson (a transaction that matches by name, #274).
+  if (state.pause && state.pause.by === oldName) paths['pause/by'] = newName;
   Object.entries(state.redemptions || {}).forEach(([id, r]) => {
     if (r && r.member === oldName) paths['redemptions/' + id + '/member'] = newName;
     if (r && r.decidedBy === oldName) paths['redemptions/' + id + '/decidedBy'] = newName;
+    if (r && r.givenBy === oldName) paths['redemptions/' + id + '/givenBy'] = newName;
   });
   Object.entries(state.claims || {}).forEach(([id, c]) => {
     if (c && c.member === oldName) paths['claims/' + id + '/member'] = newName;
@@ -181,5 +182,7 @@ export async function renameMember(oldName, newName, isAdminFn) {
     showToast('Rename failed: ' + (err.code || err.message));
     return false;
   }
+  try { await renameHistoryPerson(oldName, newName); }
+  catch (err) { showToast('Renamed, but old history entries kept the old name: ' + (err.code || err.message)); }
   return true;
 }
