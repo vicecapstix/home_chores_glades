@@ -6,7 +6,7 @@ import { patchPaths } from './firebase.js';
 import { showToast } from './ui.js';
 import { openModal, closeModal } from './modals.js';
 import { makeTask } from './starter.js';
-import { esc, localDateStr, validInterval, validTime } from './utils.js';
+import { CHORE_ICONS, esc, localDateStr, validInterval, validTime } from './utils.js';
 
 export const CHORE_FILE_KIND = 'familyflow-chores';
 export const MAX_CHORES = 200, MAX_FILE_BYTES = 200 * 1024;
@@ -28,6 +28,7 @@ export function buildChoreFile(tasks = state.tasks, now = new Date()) {
       ...(t.freq === 'once' && t.dueDate ? { dueDate: t.dueDate } : {}),
       ...(t.dueTime ? { dueTime: t.dueTime } : {}),
       ...(t.needsCheck ? { needsCheck: true } : {}),
+      ...(CHORE_ICONS.includes(t.icon) ? { icon: t.icon } : {}),
       ...(subs.length ? { subtasks: subs } : {}),
     };
   });
@@ -69,6 +70,7 @@ function checkChore(c, out) {
   }
   if (c.freq === 'interval') { if (!validInterval(c.intervalDays)) return 'Interval must be a whole number of days from 2 to 60'; out.intervalDays = c.intervalDays; }
   if (c.freq === 'once' && c.dueDate) { if (!/^\d{4}-\d{2}-\d{2}$/.test(String(c.dueDate))) return 'Due date must be YYYY-MM-DD'; out.dueDate = c.dueDate; }
+  if (CHORE_ICONS.includes(c.icon)) out.icon = c.icon; // fixed list only (#257)
   if (c.needsCheck === true) out.needsCheck = true; // parent check (#240); anything else is ignored
   if (c.dueTime) { if (!validTime(c.dueTime)) return 'Due time must be HH:MM'; out.dueTime = c.dueTime; }
   const subs = c.subtasks === undefined ? [] : c.subtasks;

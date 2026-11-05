@@ -229,6 +229,7 @@ Every piece of user-supplied data injected into `innerHTML` or an `onclick` stri
   checkNote,     // optional reason (<=100 chars) from "Not yet"; cleared on the next tick
   difficulty,    // 'easy'|'medium'|'hard'
   category,      // one of CATEGORIES or ''
+  icon,          // optional emoji from CHORE_ICONS (src/utils.js); anything else is ignored (omitted when unset)
   subtasks,      // { 's<timestamp>': { id, name, done } }
   order,         // number used for move up/down ordering
   rotation,      // string[] of 2+ member names; person advances on each reset (omitted when off)

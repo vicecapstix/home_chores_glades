@@ -4,7 +4,7 @@ import { renderTvStrip } from './tv.js';
 import { renderGoal } from './goal.js';
 import { renderTeamGoal } from './teamgoal.js';
 import { renderDoublePointsBanner, activeMultiplier } from './doublepoints.js';
-import { awayText, esc, num, jsq, taskPoints, avatarPrefix, validTime, dueStatus, freqLabel, rotationTag, isMine, isSkipped, localDateStr, doneAgoLabel, currentStreak, goalHTML, isStaleDoneOnce, viewFromSearch } from './utils.js';
+import { awayText, esc, num, jsq, taskPoints, avatarPrefix, validTime, dueStatus, freqLabel, rotationTag, isMine, isSkipped, localDateStr, doneAgoLabel, currentStreak, iconPrefix, goalHTML, isStaleDoneOnce, viewFromSearch } from './utils.js';
 import { pColor } from './ui.js';
 import { syncTagHTML } from './pending.js';
 import { refreshToCheck } from './tocheck.js';
@@ -453,7 +453,7 @@ export function cardHTML(t) {
     '<div class="card-main">' +
       checkEl +
       '<div class="card-info">' +
-        '<span class="task-name">' + esc(t.name) + subsBadge + '</span>' +
+        '<span class="task-name">' + esc(iconPrefix(t)) + esc(t.name) + subsBadge + '</span>' +
         notesLine + sentBack +
       '</div>' +
       '<div class="task-meta">' + dueTag + diffTag + ptsTag + freqTag + timeTag + rotationTag(t, getMembers()) + syncTagHTML(t.id) + checkTag + catTag + personTag + '</div>' +

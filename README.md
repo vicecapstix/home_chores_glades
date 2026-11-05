@@ -34,6 +34,7 @@ A real-time chore tracker for families — assign tasks, track progress, earn po
 - **Family goal** — a shared weekly points target with a reward, shown as a progress bar
 - **This week / My progress** — a Mon–Sun planner of what's due, and each member's last 4 weeks of points
 - **Avatars & rename** — admins can give members an emoji avatar or rename them (points and PIN are kept)
+- **Chore icons** — admins can pick an optional emoji for a chore (fixed list); it shows on cards, the TV and the This week planner, and is kept in templates and chore files
 - **Badges** — First Chore (1), Getting Started (10), Tenacious (25), Fifty Strong (50), Century (100 completions); Consistent (3-day streak), On Fire (7), Dedicated (30)
 - **Templates** — save the current task list as a reusable template
 - **Backup, restore & print** — admins can download a JSON backup (no PINs), restore from one (PINs kept), or print a Mon–Sun chart. Admins can also download just the chore list as a file and upload it again later (new chores only; names that already exist are skipped).

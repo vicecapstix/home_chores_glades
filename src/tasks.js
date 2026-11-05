@@ -5,7 +5,7 @@ import { showToast } from './ui.js';
 import { pushUndo } from './undo.js';
 import { dropRetry } from './pending.js';
 import { activeMultiplier } from './doublepoints.js';
-import { esc, jsq, validTime, validInterval, INTERVAL_MIN, INTERVAL_MAX, freqDays, cycleDays, daysSince, dueStatus, taskPoints, getWeekStart, localDateStr, prevScheduledStart, isStaleDoneOnce, initialLastDone, nextRotationPerson, awayNames, DAY_NAMES } from './utils.js';
+import { esc, jsq, validTime, validInterval, INTERVAL_MIN, INTERVAL_MAX, freqDays, cycleDays, daysSince, dueStatus, taskPoints, getWeekStart, localDateStr, prevScheduledStart, isStaleDoneOnce, initialLastDone, CHORE_ICONS, nextRotationPerson, awayNames, DAY_NAMES } from './utils.js';
 
 // Re-export for other modules
 export { dueStatus, taskPoints, freqDays };
@@ -78,6 +78,7 @@ export async function addTask(isAdminFn) {
   const person  = document.getElementById('new-person').value;
   const diff    = document.getElementById('new-diff').value;
   const cat     = document.getElementById('new-cat').value;
+  const icon    = CHORE_ICONS.includes(document.getElementById('new-icon')?.value) ? document.getElementById('new-icon').value : '';
   const dueDate = freq === 'once' ? document.getElementById('new-duedate').value : '';
   const days    = freq === 'weekdays' ? readDays(document.getElementById('new-days')) : [];
   if (freq === 'weekdays' && !days.length) { showToast('Pick at least one day'); return; }
@@ -94,6 +95,7 @@ export async function addTask(isAdminFn) {
     ...(freq === 'weekdays' ? { days } : {}),
     ...(interval ? { intervalDays: interval } : {}),
     ...(needsCheck ? { needsCheck: true } : {}),
+    ...(icon ? { icon } : {}),
     notes: notes || '', difficulty: diff, category: cat || '',
     dueDate: dueDate || '', ...(dueTime ? { dueTime } : {}), subtasks: {}, order: Date.now(),
   };
@@ -110,6 +112,7 @@ export async function addTask(isAdminFn) {
   notesEl.value = '';
   notesEl.style.display = 'none';
   if (document.getElementById('new-needscheck')) document.getElementById('new-needscheck').checked = false;
+  if (document.getElementById('new-icon')) document.getElementById('new-icon').value = '';
   try { await patchPaths({ ['tasks/' + id]: state.tasks[id], nextId: state.nextId }); } catch (err) { showToast('Save failed: ' + (err.code || err.message)); }
 }
 
@@ -131,6 +134,8 @@ export function editTask(id, isAdminFn) {
   const catOpts = ['', ...CATEGORIES].map(c =>
     '<option value="' + esc(c) + '"' + ((t.category || '') === c ? ' selected' : '') + '>' + (c || 'No category') + '</option>'
   ).join('');
+  const iconOpts = '<option value="">No icon</option>' +
+    CHORE_ICONS.map(i => '<option' + (t.icon === i ? ' selected' : '') + '>' + i + '</option>').join('');
   const personOpts = '<option value="">Anyone</option>' +
     members.map(m => '<option value="' + esc(m) + '"' + (t.person === m ? ' selected' : '') + '>' + esc(m) + '</option>').join('');
   card.className = 'task-card editing';
@@ -142,6 +147,7 @@ export function editTask(id, isAdminFn) {
       '<input type="date" class="edit-duedate" value="' + esc(t.dueDate || '') + '" style="flex:1;padding:6px 8px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:0.85rem;font-family:inherit;background:var(--bg);color:var(--text);display:' + (t.freq === 'once' ? '' : 'none') + '" />' +
       '<input type="time" class="edit-duetime" aria-label="Due time" value="' + esc(validTime(t.dueTime)) + '" />' +
       '<select class="edit-diff">' + diffOpts + '</select>' +
+      '<select class="edit-icon" aria-label="Icon">' + iconOpts + '</select>' +
       '<select class="edit-cat">' + catOpts + '</select>' +
       '<select class="edit-person">' + personOpts + '</select>' +
     '</div>' +
@@ -181,6 +187,8 @@ export async function saveTask(id, isAdminFn) {
   if (dt) state.tasks[id].dueTime = dt; else delete state.tasks[id].dueTime;
   state.tasks[id].difficulty = card.querySelector('.edit-diff').value;
   state.tasks[id].category   = card.querySelector('.edit-cat').value;
+  const ic = card.querySelector('.edit-icon')?.value;
+  if (CHORE_ICONS.includes(ic)) state.tasks[id].icon = ic; else delete state.tasks[id].icon;
   state.tasks[id].person     = card.querySelector('.edit-person').value;
   state.tasks[id].notes      = card.querySelector('.edit-notes').value.trim();
   if (card.querySelector('.edit-needscheck')?.checked) state.tasks[id].needsCheck = true; else { delete state.tasks[id].needsCheck; delete state.tasks[id].checkPending; }
@@ -191,7 +199,7 @@ export async function saveTask(id, isAdminFn) {
     [p + 'difficulty']: t.difficulty, [p + 'category']: t.category,
     [p + 'person']: t.person, [p + 'notes']: t.notes, [p + 'rotation']: t.rotation || null,
     [p + 'lastDone']: t.lastDone, [p + 'intervalDays']: t.intervalDays || null,
-    [p + 'needsCheck']: t.needsCheck || null,
+    [p + 'needsCheck']: t.needsCheck || null, [p + 'icon']: t.icon || null,
   };
   // Never write checkPending back from the local copy: another device may have just taken it (two parents must not both pay).
   if (!t.needsCheck) paths[p + 'checkPending'] = null;
