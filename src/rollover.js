@@ -2,6 +2,7 @@ import { state } from './state.js';
 import { dueStatus } from './utils.js';
 import { checkTaskResets } from './tasks.js';
 import { checkPauseExpiry } from './pause.js';
+import { checkOffExpiry } from './seasonal.js';
 import { checkAwayExpiry } from './away.js';
 import { runDueTimeCheck } from './notifications.js';
 
@@ -21,6 +22,7 @@ export function startRollover(render, intervalMs = 60000) {
   const tick = () => {
     checkPauseExpiry(); // end an expired house pause / away period, as a snapshot would (#249)
     checkAwayExpiry();
+    checkOffExpiry(); // switch seasonal chores back on (#300)
     checkTaskResets(); // writes via patchRoot unless READONLY
     runDueTimeCheck(); // local due-time reminder (#150); no-op on the TV
     const sig = signature();

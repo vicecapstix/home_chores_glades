@@ -50,6 +50,7 @@ src/
   claims.js        — extra job claims: member logs an unlisted job, admin approves points (state/claims)
   rewards.js       — rewards catalog UI
   rollover.js      — local timer so open screens roll over resets/due status
+  seasonal.js      — chore "Switch off until" (task.offUntil): checkOffExpiry switches it back on
   away.js          — per-member away mode (members/<name>/awayUntil), expiry + return patch
   restore.js       — admin restore from JSON backup (validate, caps, keeps PINs)
   theme.js         — Auto/Light/Dark theme setting (follows prefers-color-scheme)
@@ -231,6 +232,7 @@ Every piece of user-supplied data injected into `innerHTML` or an `onclick` stri
   category,      // one of CATEGORIES or ''
   icon,          // optional emoji from CHORE_ICONS (src/utils.js); anything else is ignored (omitted when unset)
   subtasks,      // { 's<timestamp>': { id, name, done } }
+  offUntil,      // YYYY-MM-DD inclusive: chore switched off for the season (never due, no resets); removed by checkOffExpiry (omitted when unset)
   timeOfDay,     // 'morning'|'afternoon'|'evening' (After school) — optional label; anything else is ignored (omitted when unset)
   order,         // number used for move up/down ordering
   rotation,      // string[] of 2+ member names; person advances on each reset (omitted when off)

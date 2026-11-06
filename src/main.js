@@ -40,6 +40,7 @@ import {
 import { setAway, clearAway, checkAwayExpiry, awayAdminHTML } from './away.js';
 import { setTeamGoal, clearTeamGoal, teamGoalAdminHTML } from './teamgoal.js';
 import { setDoublePoints, clearDoublePoints, doublePointsAdminHTML } from './doublepoints.js';
+import { checkOffExpiry } from './seasonal.js';
 import { checkPauseExpiry, renderPauseBanner, setPause, clearPause, pauseAdminHTML } from './pause.js';
 import { addMember, backfillColors, removeMember, toggleRole, toggleRoleInPanel, setAvatar, renameMember } from './members.js';
 
@@ -146,6 +147,7 @@ initCardArrowNav();
     saveSnapshot(state);
     checkPauseExpiry();
     checkAwayExpiry();
+    checkOffExpiry();
     checkTaskResets();
     render();
     renderPauseBanner();
