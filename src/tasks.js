@@ -5,7 +5,7 @@ import { showToast } from './ui.js';
 import { pushUndo } from './undo.js';
 import { dropRetry } from './pending.js';
 import { activeMultiplier } from './doublepoints.js';
-import { esc, jsq, validTime, validInterval, INTERVAL_MIN, INTERVAL_MAX, freqDays, cycleDays, daysSince, dueStatus, taskPoints, getWeekStart, localDateStr, prevScheduledStart, isStaleDoneOnce, initialLastDone, CHORE_ICONS, nextRotationPerson, awayNames, DAY_NAMES, nextStreak, isPausedNow, freezeCount } from './utils.js';
+import { esc, jsq, validTime, validInterval, INTERVAL_MIN, INTERVAL_MAX, freqDays, cycleDays, daysSince, dueStatus, taskPoints, getWeekStart, localDateStr, prevScheduledStart, isStaleDoneOnce, initialLastDone, CHORE_ICONS, isOffNow, validDateStr, nextRotationPerson, awayNames, DAY_NAMES, nextStreak, isPausedNow, freezeCount } from './utils.js';
 
 // Re-export for other modules
 export { dueStatus, taskPoints, freqDays };
@@ -17,7 +17,7 @@ export function checkTaskResets() {
   const patch = {};
   const now = Date.now();
   Object.values(state.tasks).forEach(t => {
-    if (t.freq === 'once') return;
+    if (t.freq === 'once' || isOffNow(t, now)) return;
     const due = t.freq === 'weekdays'
       ? (prevScheduledStart(t.days, now) !== null && prevScheduledStart(t.days, now) > (t.lastDone || 0))
       : daysSince(t.lastDone || 0, now) >= cycleDays(t, t.lastDone);
@@ -153,6 +153,7 @@ export function editTask(id, isAdminFn) {
     '</div>' +
     dayChipsHTML(t.days, 'day-chips edit-days' + (t.freq === 'weekdays' ? '' : ' hidden')) +
     rotationChipsHTML(t, members) +
+    '<label class="edit-check">Switch off until <input type="date" class="edit-offuntil" min="' + localDateStr() + '" value="' + esc(isOffNow(t) ? t.offUntil : '') + '" /></label>' +
     '<label class="edit-check"><input type="checkbox" class="edit-needscheck"' + (t.needsCheck ? ' checked' : '') + ' /> Needs parent check</label>' +
     '<textarea class="edit-notes" placeholder="Notes..." maxlength="300">' + esc(t.notes || '') + '</textarea>' +
     '<div class="edit-actions">' +
@@ -189,6 +190,8 @@ export async function saveTask(id, isAdminFn) {
   state.tasks[id].category   = card.querySelector('.edit-cat').value;
   const ic = card.querySelector('.edit-icon')?.value;
   if (CHORE_ICONS.includes(ic)) state.tasks[id].icon = ic; else delete state.tasks[id].icon;
+  const off = card.querySelector('.edit-offuntil')?.value;
+  if (validDateStr(off) && off >= localDateStr()) state.tasks[id].offUntil = off; else delete state.tasks[id].offUntil;
   state.tasks[id].person     = card.querySelector('.edit-person').value;
   state.tasks[id].notes      = card.querySelector('.edit-notes').value.trim();
   if (card.querySelector('.edit-needscheck')?.checked) state.tasks[id].needsCheck = true; else { delete state.tasks[id].needsCheck; delete state.tasks[id].checkPending; }
@@ -199,7 +202,7 @@ export async function saveTask(id, isAdminFn) {
     [p + 'difficulty']: t.difficulty, [p + 'category']: t.category,
     [p + 'person']: t.person, [p + 'notes']: t.notes, [p + 'rotation']: t.rotation || null,
     [p + 'lastDone']: t.lastDone, [p + 'intervalDays']: t.intervalDays || null,
-    [p + 'needsCheck']: t.needsCheck || null, [p + 'icon']: t.icon || null,
+    [p + 'needsCheck']: t.needsCheck || null, [p + 'icon']: t.icon || null, [p + 'offUntil']: t.offUntil || null,
   };
   // Never write checkPending back from the local copy: another device may have just taken it (two parents must not both pay).
   if (!t.needsCheck) paths[p + 'checkPending'] = null;

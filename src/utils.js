@@ -267,6 +267,11 @@ let _pausedUntil = '';
 export function setPauseUntil(d) { _pausedUntil = d || ''; }
 export function isPausedNow(now = Date.now()) { return !!_pausedUntil && localDateStr(new Date(now)) <= _pausedUntil; }
 
+// Seasonal chores (#300): task.offUntil (YYYY-MM-DD, inclusive) switches one chore off.
+export const validDateStr = v => /^\d{4}-\d{2}-\d{2}$/.test(String(v || ''));
+export const parseLocalDate = s => { const [y, m, d] = String(s).split('-').map(Number); return new Date(y, m - 1, d); };
+export function isOffNow(t, now = Date.now()) { return !!t && validDateStr(t.offUntil) && localDateStr(new Date(now)) <= t.offUntil; }
+
 // Away mode (#176): per-member awayUntil (YYYY-MM-DD, inclusive). Armed from applySnapshot.
 let _away = {};
 export function setAwayMembers(members) {
@@ -283,6 +288,7 @@ export function awayNames(now = Date.now()) { return Object.keys(_away).filter(n
 
 export function dueStatus(t, now = Date.now()) {
   if (!t.done && isPausedNow(now)) return 'ok'; // holiday pause: nothing is due
+  if (!t.done && isOffNow(t, now)) return 'ok'; // switched off for the season (#300)
   if (!t.done && isAwayNow(t.person, now)) return 'ok'; // assignee is away
   if (!t.done && t.checkPending) return 'ok'; // waiting for a parent check (#238)
   const s = rawDueStatus(t, now);
