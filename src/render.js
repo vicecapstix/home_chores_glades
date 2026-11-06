@@ -383,7 +383,7 @@ export function cardHTML(t) {
   const pc  = t.person ? pColor(t.person) : null;
   const personTag = t.person
     ? (pc ? '<span class="tag" style="background:' + pc.bg + ';color:' + pc.text + ';">' + esc(t.person) + '</span>' : '')
-    : selectMode || t.done ? '<span class="tag tag-freq">Anyone</span>'
+    : selectMode || t.done || READONLY ? '<span class="tag tag-freq">Anyone</span>'
     : '<button class="btn-claim" onclick="window.claimTask(\'' + jsq(t.id) + '\')">Claim</button>';
   const skipped = isSkipped(t);
   const waiting = !t.done && t.checkPending;
@@ -444,7 +444,10 @@ export function cardHTML(t) {
   const isSelected = selectMode && selectedIds.has(t.id);
   const cardClass  = 'task-card ' + s + (isSelected ? ' selected' : '');
   const cardClick  = selectMode ? ' onclick="window.toggleSelect(\'' + jsq(t.id) + '\')"' : '';
-  const checkEl    = selectMode
+  const tickSvg    = '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><polyline points="2,6 5,9 10,3" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  const checkEl    = READONLY
+    ? '<span role="img" aria-label="' + esc(t.name) + (t.done ? ' (done)' : ' (not done)') + '" class="check' + (t.done ? ' checked' : '') + '">' + tickSvg + '</span>'
+    : selectMode
     ? '<button type="button" role="checkbox" aria-checked="' + isSelected + '" aria-label="Select ' + esc(t.name) + '" class="sel-box" onclick="event.stopPropagation();window.toggleSelect(\'' + jsq(t.id) + '\')"><svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true" style="display:' + (isSelected ? 'block' : 'none') + '"><polyline points="2,6 5,9 10,3" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>'
     : '<button type="button" role="checkbox" aria-checked="' + !!t.done + '" aria-label="' + esc(t.name) + '" class="check' + (t.done ? ' checked' : '') + '" onclick="window.toggleTask(\'' + jsq(t.id) + '\')">' +
         '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><polyline points="2,6 5,9 10,3" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>' +

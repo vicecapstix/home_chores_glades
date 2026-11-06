@@ -76,6 +76,7 @@ body[data-role="member"] .del { display: none !important; }
 /* READ-ONLY MODE */
 body[data-readonly] .chip-del,
 body[data-readonly] .chip-role { display: none !important; }
+body[data-readonly] .check { cursor: default; }
 #readonly-banner { position: fixed; top: 0; left: 0; right: 0; z-index: 1000; background: var(--surface); color: var(--muted); font-size: 0.8rem; text-align: center; padding: 6px var(--space-md); border-bottom: 1px solid var(--border); pointer-events: none; }
 #readonly-banner.hidden { display: none; }
 body[data-readonly] #readonly-banner { position: static; }
