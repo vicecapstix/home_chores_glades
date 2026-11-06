@@ -21,6 +21,10 @@ export const AVATARS = ['🦁', '🐯', '🐼', '🦊', '🐸', '🐵', '🐧', 
 
 // Fixed list of chore icons (#257); anything else stored in the DB is never rendered.
 export const CHORE_ICONS = ['🧺', '🍽️', '🗑️', '🛏️', '🐶', '🌱', '🧹', '🚗', '🛁', '🍳', '📚', '🪴'];
+// Time of day for a chore (#297): the stored value is whitelisted and the label comes from this map.
+export const TIMES_OF_DAY = [{ id: 'morning', label: 'Morning' }, { id: 'afternoon', label: 'After school' }, { id: 'evening', label: 'Evening' }];
+export const validTimeOfDay = v => (TIMES_OF_DAY.some(x => x.id === v) ? v : '');
+export const timeOfDayLabel = v => (TIMES_OF_DAY.find(x => x.id === v) || {}).label || '';
 export const iconPrefix = t => (t && CHORE_ICONS.includes(t.icon) ? t.icon + ' ' : '');
 
 // '<emoji> ' for a member with a valid avatar, else '' (tampered DB values are never rendered).

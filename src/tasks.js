@@ -5,7 +5,7 @@ import { showToast } from './ui.js';
 import { pushUndo } from './undo.js';
 import { dropRetry } from './pending.js';
 import { activeMultiplier } from './doublepoints.js';
-import { esc, jsq, validTime, validInterval, INTERVAL_MIN, INTERVAL_MAX, freqDays, cycleDays, daysSince, dueStatus, taskPoints, getWeekStart, localDateStr, prevScheduledStart, isStaleDoneOnce, initialLastDone, CHORE_ICONS, isOffNow, validDateStr, nextRotationPerson, awayNames, DAY_NAMES, nextStreak, isPausedNow, freezeCount } from './utils.js';
+import { esc, jsq, validTime, validInterval, INTERVAL_MIN, INTERVAL_MAX, freqDays, cycleDays, daysSince, dueStatus, taskPoints, getWeekStart, localDateStr, prevScheduledStart, isStaleDoneOnce, initialLastDone, CHORE_ICONS, TIMES_OF_DAY, validTimeOfDay, isOffNow, validDateStr, nextRotationPerson, awayNames, DAY_NAMES, nextStreak, isPausedNow, freezeCount } from './utils.js';
 
 // Re-export for other modules
 export { dueStatus, taskPoints, freqDays };
@@ -79,6 +79,7 @@ export async function addTask(isAdminFn) {
   const diff    = document.getElementById('new-diff').value;
   const cat     = document.getElementById('new-cat').value;
   const icon    = CHORE_ICONS.includes(document.getElementById('new-icon')?.value) ? document.getElementById('new-icon').value : '';
+  const tod     = validTimeOfDay(document.getElementById('new-timeofday')?.value);
   const dueDate = freq === 'once' ? document.getElementById('new-duedate').value : '';
   const days    = freq === 'weekdays' ? readDays(document.getElementById('new-days')) : [];
   if (freq === 'weekdays' && !days.length) { showToast('Pick at least one day'); return; }
@@ -96,6 +97,7 @@ export async function addTask(isAdminFn) {
     ...(interval ? { intervalDays: interval } : {}),
     ...(needsCheck ? { needsCheck: true } : {}),
     ...(icon ? { icon } : {}),
+    ...(tod ? { timeOfDay: tod } : {}),
     notes: notes || '', difficulty: diff, category: cat || '',
     dueDate: dueDate || '', ...(dueTime ? { dueTime } : {}), subtasks: {}, order: Date.now(),
   };
@@ -113,6 +115,7 @@ export async function addTask(isAdminFn) {
   notesEl.style.display = 'none';
   if (document.getElementById('new-needscheck')) document.getElementById('new-needscheck').checked = false;
   if (document.getElementById('new-icon')) document.getElementById('new-icon').value = '';
+  if (document.getElementById('new-timeofday')) document.getElementById('new-timeofday').value = '';
   try { await patchPaths({ ['tasks/' + id]: state.tasks[id], nextId: state.nextId }); } catch (err) { showToast('Save failed: ' + (err.code || err.message)); }
 }
 
@@ -136,6 +139,8 @@ export function editTask(id, isAdminFn) {
   ).join('');
   const iconOpts = '<option value="">No icon</option>' +
     CHORE_ICONS.map(i => '<option' + (t.icon === i ? ' selected' : '') + '>' + i + '</option>').join('');
+  const todOpts = '<option value="">Any time of day</option>' +
+    TIMES_OF_DAY.map(x => '<option value="' + x.id + '"' + (t.timeOfDay === x.id ? ' selected' : '') + '>' + x.label + '</option>').join('');
   const personOpts = '<option value="">Anyone</option>' +
     members.map(m => '<option value="' + esc(m) + '"' + (t.person === m ? ' selected' : '') + '>' + esc(m) + '</option>').join('');
   card.className = 'task-card editing';
@@ -148,6 +153,7 @@ export function editTask(id, isAdminFn) {
       '<input type="time" class="edit-duetime" aria-label="Due time" value="' + esc(validTime(t.dueTime)) + '" />' +
       '<select class="edit-diff">' + diffOpts + '</select>' +
       '<select class="edit-icon" aria-label="Icon">' + iconOpts + '</select>' +
+      '<select class="edit-timeofday" aria-label="Time of day">' + todOpts + '</select>' +
       '<select class="edit-cat">' + catOpts + '</select>' +
       '<select class="edit-person">' + personOpts + '</select>' +
     '</div>' +
@@ -192,6 +198,8 @@ export async function saveTask(id, isAdminFn) {
   if (CHORE_ICONS.includes(ic)) state.tasks[id].icon = ic; else delete state.tasks[id].icon;
   const off = card.querySelector('.edit-offuntil')?.value;
   if (validDateStr(off) && off >= localDateStr()) state.tasks[id].offUntil = off; else delete state.tasks[id].offUntil;
+  const tod = validTimeOfDay(card.querySelector('.edit-timeofday')?.value);
+  if (tod) state.tasks[id].timeOfDay = tod; else delete state.tasks[id].timeOfDay;
   state.tasks[id].person     = card.querySelector('.edit-person').value;
   state.tasks[id].notes      = card.querySelector('.edit-notes').value.trim();
   if (card.querySelector('.edit-needscheck')?.checked) state.tasks[id].needsCheck = true; else { delete state.tasks[id].needsCheck; delete state.tasks[id].checkPending; }
@@ -202,7 +210,7 @@ export async function saveTask(id, isAdminFn) {
     [p + 'difficulty']: t.difficulty, [p + 'category']: t.category,
     [p + 'person']: t.person, [p + 'notes']: t.notes, [p + 'rotation']: t.rotation || null,
     [p + 'lastDone']: t.lastDone, [p + 'intervalDays']: t.intervalDays || null,
-    [p + 'needsCheck']: t.needsCheck || null, [p + 'icon']: t.icon || null, [p + 'offUntil']: t.offUntil || null,
+    [p + 'needsCheck']: t.needsCheck || null, [p + 'icon']: t.icon || null, [p + 'offUntil']: t.offUntil || null, [p + 'timeOfDay']: t.timeOfDay || null,
   };
   // Never write checkPending back from the local copy: another device may have just taken it (two parents must not both pay).
   if (!t.needsCheck) paths[p + 'checkPending'] = null;

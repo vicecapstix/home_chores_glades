@@ -357,6 +357,11 @@
       <option>🧺</option><option>🍽️</option><option>🗑️</option><option>🛏️</option><option>🐶</option><option>🌱</option>
       <option>🧹</option><option>🚗</option><option>🛁</option><option>🍳</option><option>📚</option><option>🪴</option>
     </select>
+    <label for="new-timeofday" class="sr-only">Time of day</label>
+    <select id="new-timeofday">
+      <option value="">Any time of day</option>
+      <option value="morning">Morning</option><option value="afternoon">After school</option><option value="evening">Evening</option>
+    </select>
     <label for="new-cat" class="sr-only">Category</label>
     <select id="new-cat">
       <option value="">No category</option>
@@ -481,7 +486,7 @@
 <!-- TOASTS -->
 <div class="toast" id="toast" role="status" aria-live="polite">Saved</div>
 <div class="toast" id="undo-toast" role="status" aria-live="polite">
-  <span id="undo-label">Deleted</span> — <button type="button" id="undo-btn" class="undo-btn" aria-label="Undo" onclick="window.popUndo()">Undo</button>
+  <span id="undo-label">Deleted</span> — <button type="button" id="undo-btn" class="undo-btn" disabled aria-label="Undo" onclick="window.popUndo()">Undo</button>
 </div>
 
 <div id="print-chart" aria-hidden="true"></div>
