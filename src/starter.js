@@ -4,7 +4,7 @@ import { READONLY, CATEGORIES } from './config.js';
 import { patchPaths } from './firebase.js';
 import { showToast } from './ui.js';
 import { openModal, closeModal } from './modals.js';
-import { CHORE_ICONS, esc, jsq, taskPoints, freqLabel, initialLastDone } from './utils.js';
+import { CHORE_ICONS, validTimeOfDay, esc, jsq, taskPoints, freqLabel, initialLastDone } from './utils.js';
 
 const c = (name, freq, difficulty, category, extra = {}) => ({ name, freq, difficulty, category, ...extra });
 const CHK = { needsCheck: true }; // a parent checks these before points are given (#240)
@@ -37,6 +37,7 @@ export function makeTask(s, id, base, n) {
     lastDone: initialLastDone(s.freq === 'interval' ? { freq: s.freq, intervalDays: s.intervalDays } : s.freq, base),
     ...(s.freq === 'weekdays' ? { days: s.days } : {}), ...(s.freq === 'interval' ? { intervalDays: s.intervalDays } : {}),
     ...(s.dueTime ? { dueTime: s.dueTime } : {}), ...(s.needsCheck === true ? { needsCheck: true } : {}), ...(CHORE_ICONS.includes(s.icon) ? { icon: s.icon } : {}),
+    ...(validTimeOfDay(s.timeOfDay) ? { timeOfDay: s.timeOfDay } : {}),
     notes: s.notes || '', difficulty: s.difficulty, category: s.category, dueDate: s.dueDate || '', subtasks, order: base + n };
 }
 const existing = () => new Set(Object.values(state.tasks || {}).map(t => key(t.name)));
