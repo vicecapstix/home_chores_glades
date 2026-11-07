@@ -1,6 +1,5 @@
 // "This week" planner modal (#143) — display only, no Firebase access.
-import { state, getMembers } from './state.js';
-import { PCOLS } from './config.js';
+import { state, memberColor } from './state.js';
 import { openModal } from './modals.js';
 import { esc, avatarPrefix, weekPlan, DAY_NAMES } from './utils.js';
 
@@ -10,11 +9,9 @@ function dayLabel(date) {
 }
 
 export function weekHTML(tasks = state.tasks, now = Date.now()) {
-  const names = getMembers();
   return weekPlan(tasks, now).map(day => {
     const rows = day.items.map(it => {
-      const i = names.indexOf(it.person);
-      const c = i >= 0 ? PCOLS[i % PCOLS.length] : { bg: 'var(--bg)', text: 'var(--muted)' };
+      const c = memberColor(it.person) || { bg: 'var(--bg)', text: 'var(--muted)' };
       const who = it.person ? avatarPrefix(state.members[it.person]) + it.person : 'Anyone';
       return '<li class="wk-item' + (it.done ? ' wk-done' : '') + '">' +
         (it.dueTime ? '<span class="wk-time">' + esc(it.dueTime) + '</span>' : '') +
