@@ -22,6 +22,8 @@ A real-time chore tracker for families — assign tasks, track progress, earn po
 - **My chores** — filter to the chores assigned to you; reorder with the move up/down buttons
 - **Theme** — Auto (follows the device), Light or Dark, from the header button
 - **Chore frequencies** — daily, specific weekdays, weekly, fortnightly, monthly, **Every N days**, or a one-off task with a due date; optional due time
+- **Time of day** — an optional Morning, After school or Evening label on a chore, shown as a tag on its card
+- **Switch off until** — admins can switch a chore off for the season: it is never due and does not reset until the date passes, then it switches back on by itself
 - **Rotate assignee** — a chore can rotate between two or more members each time it resets
 - **Skip this time** — admins can skip one occurrence of a recurring chore (no points, no streak change)
 - **Pause** — admins can pause the whole house until a date (holidays): nothing goes overdue and streaks survive
