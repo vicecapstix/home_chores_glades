@@ -11,6 +11,10 @@ A real-time chore tracker for families — assign tasks, track progress, earn po
 - **TV / readonly view** — append `?readonly=1` to the URL for a display-only TV dashboard (no writes, no login)
 - **TV auto-cycle** — use `?readonly=1&cycle=1` to rotate the TV between chores, the leaderboard and rewards every 30 s
 - **Installable (PWA)** — add to your home screen; an offline indicator shows when the connection drops
+- **Parent check** — a chore can be set to need a parent check: a tick waits for a parent's **Looks good** (points are given then) or **Not yet** with a reason; admins see the waiting jobs in the ✅ To check list
+- **Extra jobs** — a member logs an unlisted job with the points they think it deserves (1–20); a parent approves it before the points are added
+- **Double-points day** — admins pick one date and a ×2 or ×3 multiplier; a banner shows while it runs
+- **Fairness report** — admins see points and completions per member over the last 4 weeks
 - **Rewards** — admins define a rewards catalog; members spend points on requests, admins approve or deny them
 - **Reward limits** — an optional cap of N requests per week per member, shown as "n/N this week"
 - **To give** — approved rewards wait in a To give list until an admin taps Given ✓
