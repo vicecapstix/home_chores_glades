@@ -55,7 +55,11 @@ export function initialLastDone(freq, now = Date.now()) {
     return s.getTime() - 1;
   }
   const d = new Date(now);
-  if (kind === 'monthly') return addMonthClamped(d, -1).getTime(); // due today
+  if (kind === 'monthly') { // due today; on the 29th-31st the clamped month is shorter, so move the anchor on until the cycle reaches today (#307)
+    const a = addMonthClamped(d, -1);
+    while (daysSince(a.getTime(), now) > cycleDays('monthly', a.getTime())) a.setDate(a.getDate() + 1);
+    return a.getTime();
+  }
   d.setDate(d.getDate() - freqDays(freq));
   return d.getTime();
 }
@@ -295,7 +299,8 @@ export function dueStatus(t, now = Date.now()) {
   if (!t.done && isOffNow(t, now)) return 'ok'; // switched off for the season (#300)
   if (!t.done && isAwayNow(t.person, now)) return 'ok'; // assignee is away
   if (!t.done && t.checkPending) return 'ok'; // waiting for a parent check (#238)
-  const s = rawDueStatus(t, now);
+  // Off date passed but the switch-back isn't written yet (readonly TV): show it as due that day (#308).
+  const s = rawDueStatus(!t.done && t.freq !== 'once' && validDateStr(t.offUntil) && !isOffNow(t, now) ? { ...t, lastDone: initialLastDone(t, now) } : t, now);
   // A skipped occurrence counts as on track until it would be overdue again.
   return isSkipped(t) && s !== 'overdue' ? 'ok' : s;
 }

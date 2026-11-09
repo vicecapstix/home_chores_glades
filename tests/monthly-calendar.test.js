@@ -101,9 +101,8 @@ describe('helpers and pause', () => {
   it('initialLastDone(monthly) makes a new chore due today (not before)', () => {
     const now = L(2026, 3, 31, 10);
     const t = task(initialLastDone('monthly', now), { done: false });
-    expect(localDateStr(new Date(t.lastDone))).toBe('2026-02-28');
-    expect(dueStatus(t, now)).toBe('overdue'); // new monthly chore starts due, like other frequencies
-    expect(dueStatus(t, L(2026, 3, 27, 10))).toBe('soon');
+    expect(localDateStr(new Date(t.lastDone))).toBe('2026-03-01'); // #307: not 28 Feb, which made it overdue at once
+    expect(dueStatus(t, now)).toBe('soon'); // new monthly chore starts due, never overdue
   });
   it('resume shifts monthly lastDone by the pause length; due follows the shifted anchor', () => {
     const lastDone = L(2026, 3, 5, 9), since = L(2026, 3, 20, 9), end = L(2026, 3, 27, 9);
