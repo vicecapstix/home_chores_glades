@@ -40,7 +40,7 @@ import {
 import { setAway, clearAway, checkAwayExpiry, awayAdminHTML } from './away.js';
 import { setTeamGoal, clearTeamGoal, teamGoalAdminHTML } from './teamgoal.js';
 import { setDoublePoints, clearDoublePoints, doublePointsAdminHTML } from './doublepoints.js';
-import { checkOffExpiry } from './seasonal.js';
+import { checkOffExpiry, switchOnNow } from './seasonal.js';
 import { checkPauseExpiry, renderPauseBanner, setPause, clearPause, pauseAdminHTML } from './pause.js';
 import { addMember, backfillColors, removeMember, toggleRole, toggleRoleInPanel, setAvatar, renameMember } from './members.js';
 
@@ -235,6 +235,7 @@ window.toggleTask    = id         => toggleTask(id, _currentMember, _isAdmin);
 window.deleteTask    = id         => deleteTask(id, _isAdmin);
 window.moveTask      = (id, dir)  => moveTask(id, dir, _isAdmin);
 window.clearDoneOnes = ()         => clearDoneOnes(_isAdmin);
+window.switchOnNow  = id         => switchOnNow(id, _isAdmin);
 window.skipTask      = id         => skipTask(id, _isAdmin);
 window.toggleReorder = ()         => {
   const on = document.body.toggleAttribute('data-reorder');

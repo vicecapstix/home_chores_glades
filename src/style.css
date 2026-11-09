@@ -602,6 +602,12 @@ details.done-once > summary::after { content: '\25B8'; margin-left: auto; }
 details.done-once[open] > summary::after { content: '\25BE'; }
 details.done-once > .btn-sm { margin-bottom: var(--space-sm); }
 body[data-readonly] details.done-once { display: none; }
+details.off-chores > summary { cursor: pointer; list-style: none; }
+details.off-chores > summary::-webkit-details-marker { display: none; }
+details.off-chores > summary::after { content: '\25B8'; margin-left: auto; }
+details.off-chores[open] > summary::after { content: '\25BE'; }
+.off-item > .btn-sm { margin: 0 0 var(--space-sm) var(--space-md); }
+.off-item .check:disabled { opacity: 0.45; cursor: not-allowed; }
 
 /* Printable weekly chart (#182): hidden on screen, the only thing shown when printing */
 #print-chart { display: none; }

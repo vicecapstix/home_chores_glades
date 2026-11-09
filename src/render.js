@@ -249,7 +249,7 @@ function _statusPass(k, t) {
 function _renderFilters() {
   const container = document.getElementById('filters');
   if (!container) return;
-  const tasks = _visibleTasks();
+  const tasks = _visibleTasks().filter(t => !isOffNow(t)); // switched-off chores aren't counted (#301)
   // Status pill counts respect the active category; category counts respect the active status.
   const inCat = filterCat ? tasks.filter(t => t.category === filterCat) : tasks;
   const counts = {};
@@ -281,11 +281,16 @@ function _renderFilters() {
 // ── Tasks list ────────────────────────────────────────────────────────────────
 
 export function renderTasks() { _renderTasks(); }
+export function renderFilters() { _renderFilters(); }
 
 function _renderTasks() {
   let tasks = _visibleTasks();
   tasks = tasks.filter(t => _statusPass(filter, t));
   if (filterCat) tasks = tasks.filter(t => t.category === filterCat);
+
+  // Switched-off chores (#300) live in a collapsed Off section, shown on the TV too (#301).
+  const offs = tasks.filter(t => isOffNow(t)).sort((a, b) => (a.order || 0) - (b.order || 0));
+  tasks = tasks.filter(t => !isOffNow(t));
 
   // Done one-offs from earlier days go to a collapsed section (hidden on the TV view) (#142).
   const stale = tasks.filter(t => isStaleDoneOnce(t)).sort((a, b) => (b.lastDone || 0) - (a.lastDone || 0));
@@ -318,7 +323,7 @@ function _renderTasks() {
     html += '</div>';
   }
   const showStale = !READONLY && stale.length;
-  if (!html && !showStale) {
+  if (!html && !showStale && !offs.length) {
     const noChores = !READONLY && _isAdmin() && !Object.keys(state.tasks || {}).length;
     html = noChores ? '<div class="empty">No chores yet — <button class="empty-link" onclick="window.openStarter()">Add from list</button></div>'
       : '<div class="empty">Nothing here — all clear!</div>';
@@ -326,10 +331,16 @@ function _renderTasks() {
   const taskList = document.getElementById('task-list');
   const kept = _captureInProgress(taskList);
   const staleOpen = !!taskList.querySelector('details.done-once[open]');
+  const offOpen = !!taskList.querySelector('details.off-chores[open]');
   if (showStale) {
     html += '<details class="section done-once"' + (staleOpen ? ' open' : '') + '><summary class="section-head"><span class="section-dot dot-done"></span>Done (' + stale.length + ')</summary>' +
       (_isAdmin() ? '<button class="btn-sm" onclick="window.clearDoneOnes()">Clear done one-offs</button>' : '') +
       stale.map(cardHTML).join('') + '</details>';
+  }
+  if (offs.length) {
+    html += '<details class="section off-chores"' + (offOpen ? ' open' : '') + '><summary class="section-head"><span class="section-dot dot-ok"></span>💤 Off (' + offs.length + ')</summary>' +
+      offs.map(t => '<div class="off-item">' + cardHTML(t) +
+        (!READONLY && _isAdmin() ? '<button type="button" class="btn-sm" onclick="window.switchOnNow(\'' + jsq(t.id) + '\')">Switch on now</button>' : '') + '</div>').join('') + '</details>';
   }
   taskList.innerHTML = html;
   _restoreInProgress(taskList, kept);
@@ -450,7 +461,8 @@ export function cardHTML(t) {
     ? '<span role="img" aria-label="' + esc(t.name) + (t.done ? ' (done)' : ' (not done)') + '" class="check' + (t.done ? ' checked' : '') + '">' + tickSvg + '</span>'
     : selectMode
     ? '<button type="button" role="checkbox" aria-checked="' + isSelected + '" aria-label="Select ' + esc(t.name) + '" class="sel-box" onclick="event.stopPropagation();window.toggleSelect(\'' + jsq(t.id) + '\')"><svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true" style="display:' + (isSelected ? 'block' : 'none') + '"><polyline points="2,6 5,9 10,3" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>'
-    : '<button type="button" role="checkbox" aria-checked="' + !!t.done + '" aria-label="' + esc(t.name) + '" class="check' + (t.done ? ' checked' : '') + '" onclick="window.toggleTask(\'' + jsq(t.id) + '\')">' +
+    : '<button type="button" role="checkbox" aria-checked="' + !!t.done + '" aria-label="' + esc(t.name) + '" class="check' + (t.done ? ' checked' : '') + '"' +
+      (isOffNow(t) && !t.done ? ' disabled title="Switched off"' : ' onclick="window.toggleTask(\'' + jsq(t.id) + '\')"') + '>' +
         '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><polyline points="2,6 5,9 10,3" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
       '</button>';
 
