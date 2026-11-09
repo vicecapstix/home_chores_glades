@@ -10,13 +10,13 @@ import { initialLastDone, isOffNow, localDateStr, validDateStr } from './utils.j
 let _busy = false;
 
 export function checkOffExpiry(now = Date.now()) {
-  if (READONLY || _busy) return;
+  if (READONLY || _busy || state.pause) return; // paused: wait for the resume (#308)
   const today = localDateStr(new Date(now));
   const paths = {};
   Object.values(state.tasks || {}).forEach(t => {
     if (!validDateStr(t.offUntil) || today <= t.offUntil) return;
     paths['tasks/' + t.id + '/offUntil'] = null;
-    if (t.freq !== 'once') paths['tasks/' + t.id + '/lastDone'] = t.lastDone = initialLastDone(t, now); // due that day
+    if (t.freq !== 'once' && !t.done) paths['tasks/' + t.id + '/lastDone'] = t.lastDone = initialLastDone(t, now); // due that day; a done chore keeps its lastDone so uncheck/history stay right (#308)
     delete t.offUntil;
   });
   if (!Object.keys(paths).length) return;

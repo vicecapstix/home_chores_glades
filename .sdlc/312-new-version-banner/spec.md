@@ -1,0 +1,6 @@
+# Spec — #312 new version: banner on phones, auto-reload on TV
+**Behaviour:** `watchForUpdates` (src/pwa.js) runs only when the service worker can register (https/localhost, production). It reports a new version when (a) `controllerchange` fires on a page that already had a controller, or (b) hourly: `registration.update()` plus a HEAD of the page; a changed ETag/Last-Modified vs the first value seen. Each version is reported once.
+**UI states:** admin/member: hidden `#update-banner` ("New version available — Tap to refresh") appears, nothing reloads by itself, so no mid-edit loss. Readonly TV: `reloadWhenIdle` reloads once per version when no modal is open (retries every 30 s while one is open); a sessionStorage marker stops a reload loop if the update does not take. SW unsupported/dev/http: feature off.
+**Data shape:** none; no /state or Firebase access. **RBAC:** no write path.
+**Cost:** one HEAD request per hour per device to GitHub Pages; no Firebase reads, no new services.
+**Concerns:** `src/public/sw.js` untouched. `modals.js` gains read-only `anyModalOpen()`. `main-bootstrap` test pwa mock extended with the new exports. A TV that never closes its cycling modal waits until it is closed (retry only).

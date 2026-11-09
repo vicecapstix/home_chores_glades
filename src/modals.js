@@ -36,6 +36,8 @@ function _closeTopFromPop() {
   if (_stack.length) _hide(_stack[_stack.length - 1]);
 }
 
+export function anyModalOpen() { return _stack.length > 0; }
+
 export function closeTopModal() {
   if (_stack.length) closeModal(_stack[_stack.length - 1]);
 }
