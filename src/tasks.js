@@ -280,6 +280,7 @@ export async function toggleTask(id, currentMemberFn, isAdminFn) {
 async function runToggle(id, currentMemberFn, isAdminFn) {
   const t = state.tasks[id];
   if (!t) return;
+  if (!t.done && isOffNow(t)) { showToast('This chore is switched off'); return; } // #301
   const me = currentMemberFn();
   const blocked = ownershipBlock(t, me, isAdminFn);
   if (blocked) { showToast(blocked); return; }

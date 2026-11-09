@@ -376,6 +376,7 @@ export function todayProgress(tasks, now = Date.now()) {
   const today = localDateStr(new Date(now));
   let done = 0, total = 0;
   for (const t of tasks || []) {
+    if (isOffNow(t, now)) continue; // switched off for the season (#301)
     if (t.done) {
       if (t.lastDone && localDateStr(new Date(t.lastDone)) === today) { done++; total++; }
       continue;
@@ -440,7 +441,7 @@ export function weekPlan(tasks, now = Date.now()) {
     days.push({ date, dow: dt.getDay(), isToday: date === todayStr, paused: !!_pausedUntil && date >= todayStr && date <= _pausedUntil, items: [] });
   }
   for (const t of Object.values(tasks || {})) {
-    if (!t || !t.name) continue;
+    if (!t || !t.name || isOffNow(t, now)) continue; // switched off chores aren't planned (#301)
     const doneOn = t.done && t.lastDone ? localDateStr(new Date(t.lastDone)) : '';
     const item = day => ({ id: t.id, name: t.name, icon: iconPrefix(t), person: t.person || '', dueTime: validTime(t.dueTime), done: !!t.done && doneOn === day.date });
     if (t.freq === 'once') {

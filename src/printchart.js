@@ -2,7 +2,7 @@
 // Browser print only; computed from local state, no Firebase access.
 import { state, getMembers } from './state.js';
 import { READONLY } from './config.js';
-import { esc, getWeekStart, localDateStr } from './utils.js';
+import { esc, getWeekStart, localDateStr, isOffNow } from './utils.js';
 
 export const CHART_DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
@@ -36,7 +36,7 @@ export function chartRows(tasks, members, weekStart) {
   const dates = weekDates(weekStart);
   const groups = members.concat(['']).map(person => {
     const rows = Object.values(tasks || {})
-      .filter(t => t && (t.person || '') === person)
+      .filter(t => t && !isOffNow(t) && (t.person || '') === person) // switched off chores aren't printed (#301)
       .map(t => ({ task: t, ...dueDays(t, dates) }))
       .filter(r => r.anyDay || r.days.some(Boolean))
       .sort((a, b) => (a.task.order || 0) - (b.task.order || 0) || String(a.task.name).localeCompare(String(b.task.name)));
