@@ -55,7 +55,11 @@ export function initialLastDone(freq, now = Date.now()) {
     return s.getTime() - 1;
   }
   const d = new Date(now);
-  if (kind === 'monthly') return addMonthClamped(d, -1).getTime(); // due today
+  if (kind === 'monthly') { // due today; on the 29th-31st the clamped month is shorter, so move the anchor on until the cycle reaches today (#307)
+    const a = addMonthClamped(d, -1);
+    while (daysSince(a.getTime(), now) > cycleDays('monthly', a.getTime())) a.setDate(a.getDate() + 1);
+    return a.getTime();
+  }
   d.setDate(d.getDate() - freqDays(freq));
   return d.getTime();
 }
