@@ -101,6 +101,8 @@ body[data-readonly] #btn-install, body[data-readonly] #ios-install-hint { displa
 #ios-install-hint.hidden { display: none; }
 #cache-banner { background: var(--warn-light); color: var(--warn); font-size: 0.85rem; text-align: center; padding: 6px var(--space-md); border-bottom: 1px solid var(--warn); }
 #cache-banner.hidden { display: none; }
+#update-banner { background: var(--accent-light); color: var(--text); font-size: 0.85rem; text-align: center; padding: 6px var(--space-md); border-bottom: 1px solid var(--border); }
+#update-banner.hidden { display: none; }
 .live-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); animation: pulse 2s infinite; flex-shrink: 0; }
 @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
 .header-stats { display: flex; gap: var(--space-lg); margin-left: auto; flex-wrap: wrap; }

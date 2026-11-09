@@ -33,7 +33,7 @@ vi.mock('../src/cache.js', async orig => ({
   setCacheBanner: on => h.calls.push('cacheBanner:' + on),
 }));
 vi.mock('../src/auth.js', async orig => ({ ...(await orig()), handleFirstLoad: () => h.calls.push('handleFirstLoad') }));
-vi.mock('../src/pwa.js', () => ({ registerServiceWorker: () => {} }));
+vi.mock('../src/pwa.js', () => ({ registerServiceWorker: () => Promise.resolve(null), watchForUpdates: () => null, reloadWhenIdle: () => false }));
 vi.mock('../src/connection.js', async orig => ({ ...(await orig()), watchConnection: () => {}, markSynced: () => h.calls.push('markSynced') }));
 
 const flush = () => new Promise(r => setTimeout(r, 0));
