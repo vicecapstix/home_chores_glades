@@ -9,7 +9,7 @@ import { FB_URL, READONLY } from './config.js';
 import { state, getMembers, applySnapshot, migrateLegacyMembers } from './state.js';
 import { esc, jsq, avatarPrefix, AVATARS } from './utils.js';
 import { initFirebase, initAuth, describeAuthFailure, setWritesEnabled, setAuthChangeHandler, parentSignIn, parentSignOut } from './firebase.js';
-import { initModalBackButton, openModal, closeModal } from './modals.js';
+import { initModalBackButton, openModal, closeModal, anyModalOpen } from './modals.js';
 import { initDialogA11y, initCardArrowNav } from './a11y.js';
 import { popUndo } from './undo.js';
 import { openStarter, closeStarter, toggleStarterCat, addSelectedStarter } from './starter.js';
@@ -72,7 +72,7 @@ if (READONLY) {
 import { initTvMode, initTvCycle, refreshTvCycle } from './tv.js';
 import { leaderboardHTML } from './ui.js';
 import { startRollover } from './rollover.js';
-import { registerServiceWorker } from './pwa.js';
+import { registerServiceWorker, watchForUpdates, reloadWhenIdle } from './pwa.js';
 import { initInstall, installApp, dismissIosHint } from './install.js';
 import { downloadBackup } from './backup.js';
 import { downloadChores, prepareChoreUpload, cancelChoreUpload, confirmChoreUpload } from './chorefile.js';
@@ -87,7 +87,13 @@ import { openToCheck } from './tocheck.js';
 import { requestReward, decideRequest, markGiven } from './redemptions.js';
 import { submitClaim, decideClaim } from './claims.js';
 import { rewardsHTML, openRewards, saveReward, editReward, deleteReward, cancelRewardEdit, refreshRewards, setGoalFor, pickGoalTarget } from './rewards.js';
-registerServiceWorker();
+registerServiceWorker().then(reg => watchForUpdates({ // new version (#312): TV reloads itself when idle, phones get a banner
+  reg,
+  onUpdate: tag => READONLY
+    ? reloadWhenIdle(tag, { busy: anyModalOpen, reload: () => location.reload() })
+    : document.getElementById('update-banner')?.classList.remove('hidden'),
+}));
+window.refreshApp = function() { location.reload(); };
 initInstall();
 initTvMode();
 initTvCycle(name => name === 'leaderboard'
