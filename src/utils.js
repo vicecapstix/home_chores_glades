@@ -299,7 +299,8 @@ export function dueStatus(t, now = Date.now()) {
   if (!t.done && isOffNow(t, now)) return 'ok'; // switched off for the season (#300)
   if (!t.done && isAwayNow(t.person, now)) return 'ok'; // assignee is away
   if (!t.done && t.checkPending) return 'ok'; // waiting for a parent check (#238)
-  const s = rawDueStatus(t, now);
+  // Off date passed but the switch-back isn't written yet (readonly TV): show it as due that day (#308).
+  const s = rawDueStatus(!t.done && t.freq !== 'once' && validDateStr(t.offUntil) && !isOffNow(t, now) ? { ...t, lastDone: initialLastDone(t, now) } : t, now);
   // A skipped occurrence counts as on track until it would be overdue again.
   return isSkipped(t) && s !== 'overdue' ? 'ok' : s;
 }

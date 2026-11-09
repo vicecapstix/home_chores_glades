@@ -35,7 +35,7 @@ describe('off chores are not due (#300)', () => {
     expect(dueStatus(lawn, NOW)).toBe('overdue');
     expect(dueStatus({ ...lawn, offUntil: day(0) }, NOW)).toBe('ok');
     expect(dueStatus({ ...lawn, offUntil: day(30) }, NOW)).toBe('ok');
-    expect(dueStatus({ ...lawn, offUntil: day(-1) }, NOW)).toBe('overdue');
+    expect(dueStatus({ ...lawn, offUntil: day(-1) }, NOW)).toBe('soon'); // expired: shown as due that day, not overdue (#308)
   });
   it('a malformed offUntil is ignored', () => {
     expect(dueStatus({ ...lawn, offUntil: 'soon' }, NOW)).toBe('overdue');
@@ -76,7 +76,7 @@ describe('switch off from the edit form (#300)', () => {
 
 describe('automatic switch-back (#300)', () => {
   it('after the date, one patch clears offUntil and makes it due that day', () => {
-    state.tasks = { lawn: { ...lawn, done: true, offUntil: day(-1) }, ok: { ...lawn, id: 'ok', offUntil: day(4) } };
+    state.tasks = { lawn: { ...lawn, done: false, offUntil: day(-1) }, ok: { ...lawn, id: 'ok', offUntil: day(4) } };
     checkOffExpiry(NOW);
     expect(patchPaths).toHaveBeenCalledOnce();
     const p = patchPaths.mock.calls[0][0];
