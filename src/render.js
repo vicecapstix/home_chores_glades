@@ -182,7 +182,7 @@ export function render() {
 // ── Header ────────────────────────────────────────────────────────────────────
 
 function _renderHeader() {
-  const tasks = _visibleTasks();
+  const tasks = _visibleTasks().filter(t => !isOffNow(t)); // switched-off chores aren't counted (#301)
   const total = tasks.length;
   const done  = tasks.filter(t => t.done).length;
   const over  = tasks.filter(t => dueStatus(t) === 'overdue').length;
@@ -282,6 +282,7 @@ function _renderFilters() {
 
 export function renderTasks() { _renderTasks(); }
 export function renderFilters() { _renderFilters(); }
+export function renderHeader() { _renderHeader(); }
 
 function _renderTasks() {
   let tasks = _visibleTasks();

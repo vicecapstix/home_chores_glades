@@ -12,7 +12,7 @@ vi.mock('../src/ui.js', () => ({ showToast: vi.fn(), pColor: vi.fn(() => null) }
 vi.mock('../src/undo.js', () => ({ pushUndo: vi.fn() }));
 import { patchPaths, patchTask, patchRoot } from '../src/firebase.js';
 import { showToast } from '../src/ui.js';
-import { initRender, renderTasks, renderFilters } from '../src/render.js';
+import { initRender, renderTasks, renderFilters, renderHeader } from '../src/render.js';
 import { toggleTask } from '../src/tasks.js';
 import { switchOnNow } from '../src/seasonal.js';
 import { todayProgress, weekPlan } from '../src/utils.js';
@@ -70,6 +70,14 @@ describe('Off section (#301)', () => {
     renderTasks();
     expect(document.querySelector('details.off-chores summary').textContent).toContain('Off (1)');
     expect(document.querySelector('details.off-chores button[onclick*="switchOnNow"]')).toBeNull();
+  });
+  it('header total, done and percent leave off chores out', () => {
+    state.tasks = { a: mk('a', { done: true }), b: mk('b'), pool: off('pool'), pool2: off('pool2', { done: true }) };
+    document.body.innerHTML = '<b id="h-total"></b><b id="h-done"></b><b id="h-overdue"></b><b id="h-pct"></b><i id="prog"></i>';
+    renderHeader();
+    expect(document.getElementById('h-total').textContent).toBe('2');
+    expect(document.getElementById('h-done').textContent).toBe('1');
+    expect(document.getElementById('h-pct').textContent).toBe('50%');
   });
   it('filter pill counts leave off chores out', () => {
     renderFilters();
