@@ -5,7 +5,7 @@ import { showToast } from './ui.js';
 import { pushUndo } from './undo.js';
 import { dropRetry } from './pending.js';
 import { activeMultiplier } from './doublepoints.js';
-import { esc, jsq, validTime, validInterval, INTERVAL_MIN, INTERVAL_MAX, freqDays, cycleDays, daysSince, dueStatus, taskPoints, getWeekStart, localDateStr, prevScheduledStart, validEveryWeeks, isStaleDoneOnce, initialLastDone, CHORE_ICONS, TIMES_OF_DAY, validTimeOfDay, isOffNow, validDateStr, nextRotationPerson, awayNames, DAY_NAMES, nextStreak, isPausedNow, freezeCount } from './utils.js';
+import { esc, jsq, validTime, validInterval, INTERVAL_MIN, INTERVAL_MAX, freqDays, cycleDays, daysSince, dueStatus, taskPoints, getWeekStart, localDateStr, prevScheduledStart, validEveryWeeks, isStaleDoneOnce, initialLastDone, CHORE_ICONS, TIMES_OF_DAY, validTimeOfDay, isOffNow, validDateStr, nextRotationPerson, awayNames, DAY_NAMES, nextStreak, isPausedNow, freezeCount, validPoints, POINTS_MIN, POINTS_MAX } from './utils.js';
 
 // Re-export for other modules
 export { dueStatus, taskPoints, freqDays };
@@ -88,6 +88,7 @@ export async function addTask(isAdminFn) {
   if (freq === 'interval' && !interval) { showToast('Enter a whole number of days from ' + INTERVAL_MIN + ' to ' + INTERVAL_MAX); return; }
   const dueTime = validTime(document.getElementById('new-duetime')?.value);
   const needsCheck = !!document.getElementById('new-needscheck')?.checked;
+  const pts = validPoints(document.getElementById('new-points')?.value);
   const notesEl = document.getElementById('new-notes');
   const notes   = notesEl.value.trim();
   const id      = 't' + Date.now();
@@ -99,6 +100,7 @@ export async function addTask(isAdminFn) {
     ...(interval ? { intervalDays: interval } : {}),
     ...(needsCheck ? { needsCheck: true } : {}),
     ...(icon ? { icon } : {}),
+    ...(pts ? { pointsOverride: pts } : {}),
     ...(tod ? { timeOfDay: tod } : {}),
     notes: notes || '', difficulty: diff, category: cat || '',
     dueDate: dueDate || '', ...(dueTime ? { dueTime } : {}), subtasks: {}, order: Date.now(),
@@ -119,6 +121,7 @@ export async function addTask(isAdminFn) {
   notesEl.style.display = 'none';
   if (document.getElementById('new-needscheck')) document.getElementById('new-needscheck').checked = false;
   if (document.getElementById('new-icon')) document.getElementById('new-icon').value = '';
+  if (document.getElementById('new-points')) document.getElementById('new-points').value = '';
   if (document.getElementById('new-timeofday')) document.getElementById('new-timeofday').value = '';
   try { await patchPaths({ ['tasks/' + id]: state.tasks[id], nextId: state.nextId }); } catch (err) { showToast('Save failed: ' + (err.code || err.message)); }
 }
@@ -156,6 +159,7 @@ export function editTask(id, isAdminFn) {
       '<input type="date" class="edit-duedate" value="' + esc(t.dueDate || '') + '" style="flex:1;padding:6px 8px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:0.85rem;font-family:inherit;background:var(--bg);color:var(--text);display:' + (t.freq === 'once' ? '' : 'none') + '" />' +
       '<input type="time" class="edit-duetime" aria-label="Due time" value="' + esc(validTime(t.dueTime)) + '" />' +
       '<select class="edit-diff">' + diffOpts + '</select>' +
+      '<input type="number" class="edit-points" aria-label="Points override (blank = automatic)" min="' + POINTS_MIN + '" max="' + POINTS_MAX + '" step="1" inputmode="numeric" placeholder="Pts" value="' + esc(String(validPoints(t.pointsOverride) || '')) + '" />' +
       '<select class="edit-icon" aria-label="Icon">' + iconOpts + '</select>' +
       '<select class="edit-timeofday" aria-label="Time of day">' + todOpts + '</select>' +
       '<select class="edit-cat">' + catOpts + '</select>' +
@@ -208,6 +212,8 @@ export async function saveTask(id, isAdminFn) {
   state.tasks[id].category   = card.querySelector('.edit-cat').value;
   const ic = card.querySelector('.edit-icon')?.value;
   if (CHORE_ICONS.includes(ic)) state.tasks[id].icon = ic; else delete state.tasks[id].icon;
+  const pv = validPoints(card.querySelector('.edit-points')?.value);
+  if (pv) state.tasks[id].pointsOverride = pv; else delete state.tasks[id].pointsOverride;
   const off = card.querySelector('.edit-offuntil')?.value;
   if (validDateStr(off) && off >= localDateStr()) state.tasks[id].offUntil = off; else delete state.tasks[id].offUntil;
   const tod = validTimeOfDay(card.querySelector('.edit-timeofday')?.value);
@@ -222,7 +228,7 @@ export async function saveTask(id, isAdminFn) {
     [p + 'difficulty']: t.difficulty, [p + 'category']: t.category,
     [p + 'person']: t.person, [p + 'notes']: t.notes, [p + 'rotation']: t.rotation || null,
     [p + 'lastDone']: t.lastDone, [p + 'intervalDays']: t.intervalDays || null,
-    [p + 'needsCheck']: t.needsCheck || null, [p + 'icon']: t.icon || null, [p + 'offUntil']: t.offUntil || null, [p + 'timeOfDay']: t.timeOfDay || null,
+    [p + 'needsCheck']: t.needsCheck || null, [p + 'icon']: t.icon || null, [p + 'pointsOverride']: t.pointsOverride || null, [p + 'offUntil']: t.offUntil || null, [p + 'timeOfDay']: t.timeOfDay || null,
   };
   // Never write checkPending back from the local copy: another device may have just taken it (two parents must not both pay).
   if (!t.needsCheck) paths[p + 'checkPending'] = null;
@@ -526,8 +532,15 @@ export async function skipTask(id, isAdminFn) {
   pushUndo({
     label: 'Skipped "' + t.name + '"',
     undo: async () => {
+      // Only undo while the chore is still exactly as the skip left it (#309);
+      // a tick from another device inside the undo window must not be wiped.
+      const live = state.tasks[id];
+      if (!live || live.done || live.lastDone !== now || live.skippedAt !== now) {
+        // throw so undo.js shows "Restore failed" rather than a false "Restored"
+        throw new Error('the chore has changed');
+      }
       await patchTask(id, prev);
-      if (state.tasks[id]) { state.tasks[id].lastDone = prev.lastDone; state.tasks[id].skippedAt = prev.skippedAt; }
+      live.lastDone = prev.lastDone; live.skippedAt = prev.skippedAt;
     },
   });
   showToast('Skipped "' + t.name + '"');

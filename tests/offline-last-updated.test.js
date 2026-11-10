@@ -59,7 +59,7 @@ describe('cached start (AC3)', () => {
     expect(document.getElementById('cache-banner').textContent).toBe('Showing saved data from ' + formatUpdated(saved) + ' — connecting…');
     setConnection(true); setConnection(false);
     expect(banner().textContent).toContain('Last updated yesterday');
-    markSynced(new Date()); setConnection(true); setConnection(false);
+    setConnection(true); markSynced(new Date()); setConnection(false); // a server snapshot arrives while online (#310)
     expect(banner().textContent).toContain('Last updated ' + formatUpdated(Date.now()));
     expect(banner().textContent).not.toContain('yesterday');
   });

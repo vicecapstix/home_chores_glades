@@ -2,7 +2,7 @@ import { adjustBonus, BONUS_MAX, BONUS_REASON_MAX } from './bonus.js';
 import './style.css';
 
 import { onValue, ref } from 'firebase/database';
-import { watchConnection, markSynced, setPendingCount, setLastUpdated } from './connection.js';
+import { watchConnection, markSynced, isDisconnected, setPendingCount, setLastUpdated } from './connection.js';
 import { setPendingHandler, retrySync } from './pending.js';
 
 import { FB_URL, READONLY } from './config.js';
@@ -150,7 +150,8 @@ initCardArrowNav();
 
     setWritesEnabled(true);
     setCacheBanner(false);
-    saveSnapshot(state);
+    // Local-write echoes while offline are not server data: keep the cache savedAt (#310).
+    if (!isDisconnected()) saveSnapshot(state);
     checkPauseExpiry();
     checkAwayExpiry();
     checkOffExpiry();
