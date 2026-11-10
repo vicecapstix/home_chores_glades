@@ -41,7 +41,7 @@ describe('offline local events (#310)', () => {
   });
 
   it('main.js skips saveSnapshot while disconnected so the cache savedAt does not move', () => {
-    const src = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8');
+    const src = readFileSync('src/main.js', 'utf8');
     expect(src).toMatch(/if \(!isDisconnected\(\)\) saveSnapshot\(state\);/);
   });
 });

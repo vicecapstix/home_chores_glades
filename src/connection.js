@@ -5,6 +5,7 @@ let graceOver = false;
 let timer = null;
 let pendingN = 0;
 let isOffline = false;
+let connectedNow = null; // last .info/connected value; null until Firebase reports (#310)
 let lastUpdated = 0; // ms of the last live snapshot, or the cache time on a cached start (#258)
 const BANNER_DEFAULT = 'Offline — changes will sync when you reconnect';
 
@@ -29,6 +30,7 @@ export function setLastUpdated(ms, doc = document) { lastUpdated = ms > 0 ? ms :
 // Shows "offline" only after we have been connected once, or the first connect took > GRACE_MS,
 // so the banner doesn't flash on every page load.
 export function setConnection(connected, doc = document) {
+  connectedNow = connected;
   if (connected) everConnected = true;
   const offline = !connected && (everConnected || graceOver);
   const dot = doc.querySelector('.live-dot');
@@ -57,7 +59,11 @@ function paintBanner(doc) {
 // Unsynced task writes (#144): shown in the offline banner while offline.
 export function setPendingCount(n, doc = document) { pendingN = n; paintBanner(doc); }
 
+// True only once Firebase has said it is disconnected: local-write echoes then are not server data (#310).
+export function isDisconnected() { return connectedNow === false; }
+
 export function markSynced(now = new Date(), doc = document) {
+  if (isDisconnected()) return;
   lastUpdated = now.getTime();
   const el = doc.getElementById('tv-synced');
   if (el) el.textContent = 'Last synced ' + formatTime(now);
@@ -70,4 +76,4 @@ export function watchConnection(db, { onValue, ref }, doc = document) {
   return onValue(ref(db, '.info/connected'), snap => setConnection(snap.val() === true, doc));
 }
 
-export function _resetForTests() { pendingN = 0; lastUpdated = 0; isOffline = false; everConnected = false; graceOver = false; clearTimeout(timer); timer = null; }
+export function _resetForTests() { connectedNow = null; pendingN = 0; lastUpdated = 0; isOffline = false; everConnected = false; graceOver = false; clearTimeout(timer); timer = null; }
