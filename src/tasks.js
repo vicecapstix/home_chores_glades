@@ -514,8 +514,14 @@ export async function skipTask(id, isAdminFn) {
   pushUndo({
     label: 'Skipped "' + t.name + '"',
     undo: async () => {
+      // Only undo while the chore is still exactly as the skip left it (#309);
+      // a tick from another device inside the undo window must not be wiped.
+      const live = state.tasks[id];
+      if (!live || live.done || live.lastDone !== now || live.skippedAt !== now) {
+        showToast('Can\'t undo the skip: the chore has changed'); return;
+      }
       await patchTask(id, prev);
-      if (state.tasks[id]) { state.tasks[id].lastDone = prev.lastDone; state.tasks[id].skippedAt = prev.skippedAt; }
+      live.lastDone = prev.lastDone; live.skippedAt = prev.skippedAt;
     },
   });
   showToast('Skipped "' + t.name + '"');
