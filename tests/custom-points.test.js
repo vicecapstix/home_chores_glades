@@ -29,7 +29,7 @@ import { taskPoints, validPoints } from '../src/utils.js';
 import { addTask, saveTask, toggleTask } from '../src/tasks.js';
 import { cardHTML } from '../src/render.js';
 import { templateTask, applyTemplate } from '../src/ui.js';
-import { buildChoreFile, validateChoreFile } from '../src/chorefile.js';
+import { buildChoreFile, validateChoreFile, addPayload } from '../src/chorefile.js';
 
 const NOW = new Date('2026-05-13T12:00:00').getTime();
 const base = { id: 't1', name: 'Wash car', freq: 'weekly', difficulty: 'easy', person: 'Al', done: false, lastDone: NOW - 9 * 86400000, subtasks: {} };
@@ -138,5 +138,11 @@ describe('templates and chore files keep it (AC4)', () => {
     expect(v.ok).toBe(true);
     expect(v.chores.find(c => c.name === 'N1').pointsOverride).toBe(5);
     expect(v.chores.find(c => c.name === 'N2')).not.toHaveProperty('pointsOverride');
+  });
+  it('an uploaded chore with an override becomes a task that keeps it', () => {
+    const { paths } = addPayload([{ name: 'N1', freq: 'daily', difficulty: 'easy', category: '', notes: '', subtasks: [], pointsOverride: 5 }, { name: 'N2', freq: 'daily', difficulty: 'easy', category: '', notes: '', subtasks: [] }], 1, NOW);
+    const ts = Object.entries(paths).filter(([k]) => k.startsWith('tasks/')).map(([, t]) => t);
+    expect(ts.find(t => t.name === 'N1').pointsOverride).toBe(5);
+    expect(ts.find(t => t.name === 'N2')).not.toHaveProperty('pointsOverride');
   });
 });
