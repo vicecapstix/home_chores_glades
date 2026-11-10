@@ -5,7 +5,7 @@ import { showToast } from './ui.js';
 import { pushUndo } from './undo.js';
 import { dropRetry } from './pending.js';
 import { activeMultiplier } from './doublepoints.js';
-import { esc, jsq, validTime, validInterval, INTERVAL_MIN, INTERVAL_MAX, freqDays, cycleDays, daysSince, dueStatus, taskPoints, getWeekStart, localDateStr, prevScheduledStart, isStaleDoneOnce, initialLastDone, CHORE_ICONS, TIMES_OF_DAY, validTimeOfDay, isOffNow, validDateStr, nextRotationPerson, awayNames, DAY_NAMES, nextStreak, isPausedNow, freezeCount } from './utils.js';
+import { esc, jsq, validTime, validInterval, INTERVAL_MIN, INTERVAL_MAX, freqDays, cycleDays, daysSince, dueStatus, taskPoints, getWeekStart, localDateStr, prevScheduledStart, validEveryWeeks, isStaleDoneOnce, initialLastDone, CHORE_ICONS, TIMES_OF_DAY, validTimeOfDay, isOffNow, validDateStr, nextRotationPerson, awayNames, DAY_NAMES, nextStreak, isPausedNow, freezeCount } from './utils.js';
 
 // Re-export for other modules
 export { dueStatus, taskPoints, freqDays };
@@ -19,7 +19,7 @@ export function checkTaskResets() {
   Object.values(state.tasks).forEach(t => {
     if (t.freq === 'once' || isOffNow(t, now)) return;
     const due = t.freq === 'weekdays'
-      ? (prevScheduledStart(t.days, now) !== null && prevScheduledStart(t.days, now) > (t.lastDone || 0))
+      ? (prevScheduledStart(t.days, now, t) !== null && prevScheduledStart(t.days, now, t) > (t.lastDone || 0))
       : daysSince(t.lastDone || 0, now) >= cycleDays(t, t.lastDone);
     if (t.done && due) {
       t.done = false;
@@ -83,6 +83,7 @@ export async function addTask(isAdminFn) {
   const dueDate = freq === 'once' ? document.getElementById('new-duedate').value : '';
   const days    = freq === 'weekdays' ? readDays(document.getElementById('new-days')) : [];
   if (freq === 'weekdays' && !days.length) { showToast('Pick at least one day'); return; }
+  const everyWeeks = freq === 'weekdays' ? validEveryWeeks(document.getElementById('new-everyweeks')?.value) : 1;
   const interval = freq === 'interval' ? validInterval(document.getElementById('new-interval')?.value) : 0;
   if (freq === 'interval' && !interval) { showToast('Enter a whole number of days from ' + INTERVAL_MIN + ' to ' + INTERVAL_MAX); return; }
   const dueTime = validTime(document.getElementById('new-duetime')?.value);
@@ -94,6 +95,7 @@ export async function addTask(isAdminFn) {
     id, name, freq, person,
     done: false, lastDone: initialLastDone(freq === 'interval' ? { freq, intervalDays: interval } : freq),
     ...(freq === 'weekdays' ? { days } : {}),
+    ...(everyWeeks > 1 ? { everyWeeks, weekAnchor: getWeekStart() } : {}),
     ...(interval ? { intervalDays: interval } : {}),
     ...(needsCheck ? { needsCheck: true } : {}),
     ...(icon ? { icon } : {}),
@@ -108,6 +110,8 @@ export async function addTask(isAdminFn) {
   document.getElementById('new-duedate').style.display = 'none';
   document.getElementById('new-freq').value = 'weekly';
   document.getElementById('new-days').classList.add('hidden');
+  document.getElementById('new-everyweeks')?.classList.add('hidden');
+  if (document.getElementById('new-everyweeks')) document.getElementById('new-everyweeks').value = '1';
   document.getElementById('new-interval')?.classList.add('hidden');
   if (document.getElementById('new-interval')) document.getElementById('new-interval').value = '';
   document.querySelectorAll('#new-days input').forEach(i => { i.checked = false; });
@@ -147,7 +151,7 @@ export function editTask(id, isAdminFn) {
   card.innerHTML =
     '<input class="edit-name" value="' + esc(t.name) + '" maxlength="60" />' +
     '<div class="edit-row">' +
-      '<select class="edit-freq" onchange="this.closest(\'.task-card\').querySelector(\'.edit-duedate\').style.display=this.value===\'once\'?\'\':\'none\';this.closest(\'.task-card\').querySelector(\'.edit-days\').classList.toggle(\'hidden\',this.value!==\'weekdays\');this.closest(\'.task-card\').querySelector(\'.edit-interval\').classList.toggle(\'hidden\',this.value!==\'interval\')">' + freqOpts + '</select>' +
+      '<select class="edit-freq" onchange="this.closest(\'.task-card\').querySelector(\'.edit-duedate\').style.display=this.value===\'once\'?\'\':\'none\';this.closest(\'.task-card\').querySelector(\'.edit-days\').classList.toggle(\'hidden\',this.value!==\'weekdays\');this.closest(\'.task-card\').querySelector(\'.edit-everyweeks\').classList.toggle(\'hidden\',this.value!==\'weekdays\');this.closest(\'.task-card\').querySelector(\'.edit-interval\').classList.toggle(\'hidden\',this.value!==\'interval\')">' + freqOpts + '</select>' +
       '<input type="number" class="edit-interval' + (t.freq === 'interval' ? '' : ' hidden') + '" aria-label="Repeat every N days" min="' + INTERVAL_MIN + '" max="' + INTERVAL_MAX + '" step="1" inputmode="numeric" placeholder="Days" value="' + esc(String(validInterval(t.intervalDays) || '')) + '" />' +
       '<input type="date" class="edit-duedate" value="' + esc(t.dueDate || '') + '" style="flex:1;padding:6px 8px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:0.85rem;font-family:inherit;background:var(--bg);color:var(--text);display:' + (t.freq === 'once' ? '' : 'none') + '" />' +
       '<input type="time" class="edit-duetime" aria-label="Due time" value="' + esc(validTime(t.dueTime)) + '" />' +
@@ -158,6 +162,8 @@ export function editTask(id, isAdminFn) {
       '<select class="edit-person">' + personOpts + '</select>' +
     '</div>' +
     dayChipsHTML(t.days, 'day-chips edit-days' + (t.freq === 'weekdays' ? '' : ' hidden')) +
+    '<select class="edit-everyweeks' + (t.freq === 'weekdays' ? '' : ' hidden') + '" aria-label="Repeat every N weeks">' +
+      [1, 2, 3, 4].map(n => '<option value="' + n + '"' + (validEveryWeeks(t.everyWeeks) === n ? ' selected' : '') + '>' + (n === 1 ? 'Every week' : 'Every ' + n + ' weeks') + '</option>').join('') + '</select>' +
     rotationChipsHTML(t, members) +
     '<label class="edit-check">Switch off until <input type="date" class="edit-offuntil" min="' + localDateStr() + '" value="' + esc(isOffNow(t) ? t.offUntil : '') + '" /></label>' +
     '<label class="edit-check"><input type="checkbox" class="edit-needscheck"' + (t.needsCheck ? ' checked' : '') + ' /> Needs parent check</label>' +
@@ -178,6 +184,7 @@ export async function saveTask(id, isAdminFn) {
   const newFreq = card.querySelector('.edit-freq').value;
   const days = newFreq === 'weekdays' ? readDays(card.querySelector('.edit-days')) : [];
   if (newFreq === 'weekdays' && !days.length) { showToast('Pick at least one day'); return; }
+  const everyWeeks = newFreq === 'weekdays' ? validEveryWeeks(card.querySelector('.edit-everyweeks')?.value) : 1;
   const interval = newFreq === 'interval' ? validInterval(card.querySelector('.edit-interval').value) : 0;
   if (newFreq === 'interval' && !interval) { showToast('Enter a whole number of days from ' + INTERVAL_MIN + ' to ' + INTERVAL_MAX); return; }
   card.classList.remove('editing');
@@ -189,6 +196,11 @@ export async function saveTask(id, isAdminFn) {
   state.tasks[id].freq       = newFreq;
   if (newFreq === 'weekdays') state.tasks[id].days = days; else delete state.tasks[id].days;
   if (interval) state.tasks[id].intervalDays = interval; else delete state.tasks[id].intervalDays;
+  if (everyWeeks > 1) { // keep the phase when only the days change; re-anchor to this week when N changes (#314)
+    const same = validEveryWeeks(state.tasks[id].everyWeeks) === everyWeeks && validDateStr(state.tasks[id].weekAnchor);
+    state.tasks[id].everyWeeks = everyWeeks;
+    if (!same) state.tasks[id].weekAnchor = getWeekStart();
+  } else { delete state.tasks[id].everyWeeks; delete state.tasks[id].weekAnchor; }
   state.tasks[id].dueDate    = card.querySelector('.edit-freq').value === 'once' ? (card.querySelector('.edit-duedate').value || '') : '';
   const dt = validTime(card.querySelector('.edit-duetime')?.value);
   if (dt) state.tasks[id].dueTime = dt; else delete state.tasks[id].dueTime;
@@ -205,7 +217,7 @@ export async function saveTask(id, isAdminFn) {
   if (card.querySelector('.edit-needscheck')?.checked) state.tasks[id].needsCheck = true; else { delete state.tasks[id].needsCheck; delete state.tasks[id].checkPending; }
   const t = state.tasks[id], p = 'tasks/' + id + '/';
   const paths = {
-    [p + 'name']: t.name, [p + 'freq']: t.freq, [p + 'days']: t.days || null,
+    [p + 'name']: t.name, [p + 'freq']: t.freq, [p + 'days']: t.days || null, [p + 'everyWeeks']: t.everyWeeks || null, [p + 'weekAnchor']: t.weekAnchor || null,
     [p + 'dueDate']: t.dueDate, [p + 'dueTime']: t.dueTime || null,
     [p + 'difficulty']: t.difficulty, [p + 'category']: t.category,
     [p + 'person']: t.person, [p + 'notes']: t.notes, [p + 'rotation']: t.rotation || null,

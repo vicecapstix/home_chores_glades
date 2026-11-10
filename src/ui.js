@@ -2,7 +2,7 @@ import { state, getMembers, memberColor } from './state.js';
 import { PCOLS, BADGES, CATEGORIES, READONLY } from './config.js';
 import { openModal, closeModal } from './modals.js';
 import { patchPaths } from './firebase.js';
-import { CHORE_ICONS, validTimeOfDay, esc, num, jsq, avatarPrefix, sha256, initialLastDone, validInterval, validTime, dueStatus, localDateStr, currentStreak, currentWeekPoints, weekRecap, lastWeekChampion, freezeTag } from './utils.js';
+import { CHORE_ICONS, validTimeOfDay, validEveryWeeks, getWeekStart, esc, num, jsq, avatarPrefix, sha256, initialLastDone, validInterval, validTime, dueStatus, localDateStr, currentStreak, currentWeekPoints, weekRecap, lastWeekChampion, freezeTag } from './utils.js';
 import { cycleTheme, initTheme } from './theme.js';
 import { isAdmin } from './auth.js';
 
@@ -226,6 +226,7 @@ export function templateTask(t) {
   return {
     name: t.name, freq: t.freq, difficulty: t.difficulty || 'easy',
     ...(t.freq === 'weekdays' ? { days: t.days || [] } : {}),
+    ...(t.freq === 'weekdays' && validEveryWeeks(t.everyWeeks) > 1 ? { everyWeeks: validEveryWeeks(t.everyWeeks) } : {}),
     ...(t.freq === 'interval' ? { intervalDays: validInterval(t.intervalDays) || 7 } : {}),
     ...(CATEGORIES.includes(t.category) && t.category ? { category: t.category } : {}),
     ...(t.notes ? { notes: String(t.notes).slice(0, 300) } : {}),
@@ -271,6 +272,7 @@ export function applyTemplate(id) {
     state.tasks[taskId] = {
       id: taskId, name: t.name, freq: t.freq, difficulty: t.difficulty || 'easy',
       ...(t.freq === 'weekdays' ? { days: t.days || [] } : {}),
+      ...(t.freq === 'weekdays' && validEveryWeeks(t.everyWeeks) > 1 ? { everyWeeks: validEveryWeeks(t.everyWeeks), weekAnchor: getWeekStart() } : {}),
       ...(t.freq === 'interval' ? { intervalDays: validInterval(t.intervalDays) || 7 } : {}),
       done: false, lastDone: initialLastDone(t),
       person: '', order: Date.now() + added,

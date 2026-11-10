@@ -41,13 +41,13 @@ describe('week on/off (AC2)', () => {
   it('every 2 weeks from the anchor week, any day of the week', () => {
     const on = d => weekIsOn(bins(), at(d)), t = bins();
     expect([on('2026-10-26T00:30:00'), on('2026-11-01T23:30:00'), on('2026-11-02T08:00:00'), on('2026-11-09T08:00:00'), on('2026-11-15T23:00:00'), on('2026-11-16T08:00:00'), on('2026-11-23T08:00:00'), on('2026-10-19T08:00:00'), on('2026-10-12T08:00:00')])
-      .toEqual([true, false, false, true, false, false, true, false, true]);
+      .toEqual([true, true, false, true, true, false, true, false, true]); // Sundays belong to the week they end
     expect(t.everyWeeks).toBe(2);
   });
   it('every 3 and 4 weeks', () => {
     const w = (n, d) => weekIsOn(bins({ everyWeeks: n }), at(d));
-    expect([w(3, '2026-11-02T08:00:00'), w(3, '2026-11-16T08:00:00'), w(3, '2026-11-09T08:00:00'), w(4, '2026-11-23T08:00:00'), w(4, '2026-12-14T08:00:00'), w(4, '2026-11-30T08:00:00')])
-      .toEqual([false, true, false, false, true, false]);
+    expect([w(3, '2026-11-02T08:00:00'), w(3, '2026-11-16T08:00:00'), w(3, '2026-11-09T08:00:00'), w(4, '2026-11-23T08:00:00'), w(4, '2026-12-14T08:00:00'), w(4, '2026-12-21T08:00:00')])
+      .toEqual([false, true, false, true, false, true]);
   });
   it('is on every week when unset, 1, invalid or without a valid anchor', () => {
     for (const o of [{ everyWeeks: undefined }, { everyWeeks: 1 }, { everyWeeks: 9 }, { weekAnchor: '' }, { weekAnchor: 'bad' }]) expect(weekIsOn(bins(o), at('2026-11-03T08:00:00'))).toBe(true);
