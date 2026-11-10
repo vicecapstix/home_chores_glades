@@ -66,8 +66,8 @@ describe('add and edit (AC1, AC5)', () => {
       '<input id="new-points" value="' + v + '">';
   }
   it('admin add saves a valid override; blank or invalid omits it', async () => {
-    form('10'); await addTask(admin);
-    form(''); await addTask(admin);
+    form('10'); await addTask(admin); vi.advanceTimersByTime(5); // distinct task ids
+    form(''); await addTask(admin); vi.advanceTimersByTime(5);
     form('99'); await addTask(admin);
     const ts = Object.values(state.tasks).filter(t => t.name === 'Feed cat');
     expect(ts[0].pointsOverride).toBe(10);
