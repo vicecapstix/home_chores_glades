@@ -9,7 +9,6 @@ vi.mock('../src/firebase.js', () => ({
 vi.mock('../src/ui.js', () => ({ showToast: vi.fn(), pColor: vi.fn(() => null) }));
 vi.mock('../src/undo.js', () => ({ pushUndo: vi.fn() }));
 import * as fb from '../src/firebase.js';
-import { showToast } from '../src/ui.js';
 import { pushUndo } from '../src/undo.js';
 import { skipTask } from '../src/tasks.js';
 
@@ -34,11 +33,10 @@ describe('undo of a Skip is guarded against live state (#309)', () => {
     // another device ticks the chore inside the undo window
     state.tasks.t1 = { ...state.tasks.t1, done: true, lastDone: NOW + 1000, skippedAt: null, lastDoneBy: 'Bo' };
     fb.patchTask.mockClear();
-    await undo();
+    await expect(undo()).rejects.toThrow('the chore has changed');
     expect(fb.patchTask).not.toHaveBeenCalled();
     expect(state.tasks.t1.done).toBe(true);
     expect(state.tasks.t1.lastDone).toBe(NOW + 1000);
-    expect(showToast).toHaveBeenCalled();
   });
 
   it('does nothing if lastDone no longer equals the skip time', async () => {
@@ -46,9 +44,22 @@ describe('undo of a Skip is guarded against live state (#309)', () => {
     const undo = pushUndo.mock.calls[0][0].undo;
     state.tasks.t1 = { ...state.tasks.t1, lastDone: NOW + 5000 };
     fb.patchTask.mockClear();
-    await undo();
+    await expect(undo()).rejects.toThrow();
     expect(fb.patchTask).not.toHaveBeenCalled();
     expect(state.tasks.t1.lastDone).toBe(NOW + 5000);
+  });
+
+  it('through the real undo.js a blocked undo reports failure, not "Restored"', async () => {
+    const real = await vi.importActual('../src/undo.js');
+    document.body.innerHTML = '<div id="undo-toast"></div><span id="undo-label"></span><button id="undo-btn"></button>';
+    await skipTask('t1', admin);
+    real.pushUndo(pushUndo.mock.calls[0][0]);
+    state.tasks.t1 = { ...state.tasks.t1, done: true, lastDone: NOW + 1000, skippedAt: null };
+    await real.popUndo();
+    const { showToast } = await import('../src/ui.js');
+    const msgs = showToast.mock.calls.map(c => c[0]);
+    expect(msgs.some(m => /^Restore failed/.test(m))).toBe(true);
+    expect(msgs).not.toContain('Restored');
   });
 
   it('undo straight after a skip still restores lastDone and skippedAt', async () => {

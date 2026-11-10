@@ -518,7 +518,8 @@ export async function skipTask(id, isAdminFn) {
       // a tick from another device inside the undo window must not be wiped.
       const live = state.tasks[id];
       if (!live || live.done || live.lastDone !== now || live.skippedAt !== now) {
-        showToast('Can\'t undo the skip: the chore has changed'); return;
+        // throw so undo.js shows "Restore failed" rather than a false "Restored"
+        throw new Error('the chore has changed');
       }
       await patchTask(id, prev);
       live.lastDone = prev.lastDone; live.skippedAt = prev.skippedAt;
