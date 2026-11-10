@@ -252,7 +252,16 @@ export function currentWeekPoints(m) {
   return m && m.weekStart === getWeekStart() ? num(m.weekPoints) : 0;
 }
 
+// Optional per-chore points override (#313): a whole number from 1 to 50, else 0 (ignored).
+export const POINTS_MIN = 1, POINTS_MAX = 50;
+export function validPoints(n) {
+  const v = typeof n === 'string' && n.trim() !== '' ? Number(n) : n;
+  return Number.isInteger(v) && v >= POINTS_MIN && v <= POINTS_MAX ? v : 0;
+}
+
 export function taskPoints(t) {
+  const o = typeof t.pointsOverride === 'number' ? validPoints(t.pointsOverride) : 0; // stored value must be a number
+  if (o) return o;
   const base = t.freq === 'interval'
     ? (n => n <= 2 ? 1 : n <= 7 ? 3 : n <= 14 ? 5 : 8)(freqDays(t))
     : { daily: 1, weekly: 3, weekdays: 3, fortnightly: 5, monthly: 8, once: 8 }[t.freq] || 1;

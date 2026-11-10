@@ -233,6 +233,7 @@ Every piece of user-supplied data injected into `innerHTML` or an `onclick` stri
   icon,          // optional emoji from CHORE_ICONS (src/utils.js); anything else is ignored (omitted when unset)
   subtasks,      // { 's<timestamp>': { id, name, done } }
   offUntil,      // YYYY-MM-DD inclusive: chore switched off for the season (never due, no resets); removed by checkOffExpiry (omitted when unset)
+  pointsOverride,// whole number 1-50 replacing the freq x difficulty points (omitted when unset); validPoints()/taskPoints() in src/utils.js
   timeOfDay,     // 'morning'|'afternoon'|'evening' (After school) — optional label; anything else is ignored (omitted when unset)
   order,         // number used for move up/down ordering
   rotation,      // string[] of 2+ member names; person advances on each reset (omitted when off)
