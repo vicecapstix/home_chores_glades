@@ -6,7 +6,7 @@ import { patchPaths } from './firebase.js';
 import { showToast } from './ui.js';
 import { openModal, closeModal } from './modals.js';
 import { makeTask } from './starter.js';
-import { CHORE_ICONS, validTimeOfDay, validPoints, esc, localDateStr, validInterval, validTime } from './utils.js';
+import { CHORE_ICONS, validTimeOfDay, validEveryWeeks, esc, localDateStr, validInterval, validTime, validPoints } from './utils.js';
 
 export const CHORE_FILE_KIND = 'familyflow-chores';
 export const MAX_CHORES = 200, MAX_FILE_BYTES = 200 * 1024;
@@ -24,6 +24,7 @@ export function buildChoreFile(tasks = state.tasks, now = new Date()) {
     return {
       name: t.name, freq: t.freq, difficulty: t.difficulty || 'easy', category: t.category || '', notes: t.notes || '',
       ...(t.freq === 'weekdays' ? { days: (t.days || []).map(Number) } : {}),
+      ...(t.freq === 'weekdays' && validEveryWeeks(t.everyWeeks) > 1 ? { everyWeeks: validEveryWeeks(t.everyWeeks) } : {}),
       ...(t.freq === 'interval' ? { intervalDays: t.intervalDays } : {}),
       ...(t.freq === 'once' && t.dueDate ? { dueDate: t.dueDate } : {}),
       ...(t.dueTime ? { dueTime: t.dueTime } : {}),
@@ -69,6 +70,7 @@ function checkChore(c, out) {
     const days = Array.isArray(c.days) ? [...new Set(c.days)] : [];
     if (!days.length || !days.every(d => Number.isInteger(d) && d >= 0 && d <= 6)) return 'Pick days 0-6';
     out.days = days;
+    if (Number.isInteger(c.everyWeeks) && validEveryWeeks(c.everyWeeks) > 1) out.everyWeeks = c.everyWeeks; // 2-4 only; other values ignored (#314)
   }
   if (c.freq === 'interval') { if (!validInterval(c.intervalDays)) return 'Interval must be a whole number of days from 2 to 60'; out.intervalDays = c.intervalDays; }
   if (c.freq === 'once' && c.dueDate) { if (!/^\d{4}-\d{2}-\d{2}$/.test(String(c.dueDate))) return 'Due date must be YYYY-MM-DD'; out.dueDate = c.dueDate; }

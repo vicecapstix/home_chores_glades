@@ -216,6 +216,8 @@ Every piece of user-supplied data injected into `innerHTML` or an `onclick` stri
   freq,          // 'daily'|'weekdays'|'weekly'|'fortnightly'|'monthly'|'once'|'interval'
   intervalDays,  // whole days between resets, only used when freq === 'interval' ("Every N days")
   days,          // number[] 0-6 (Sun=0), only used when freq === 'weekdays'
+  everyWeeks,    // 2-4: weekdays chore repeats every N weeks (omitted = every week); off-weeks are never due and don't reset (weekIsOn() in src/utils.js)
+  weekAnchor,    // Monday YYYY-MM-DD of an "on" week, set when saved with everyWeeks >= 2 (omitted otherwise)
   dueDate,       // YYYY-MM-DD string, only used when freq === 'once'
   dueTime,       // 'HH:MM' optional due time (omitted when unset)
   person,        // member name string, or '' for "Anyone"

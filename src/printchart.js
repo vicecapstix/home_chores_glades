@@ -2,7 +2,7 @@
 // Browser print only; computed from local state, no Firebase access.
 import { state, getMembers } from './state.js';
 import { READONLY } from './config.js';
-import { esc, getWeekStart, localDateStr, isOffNow } from './utils.js';
+import { esc, getWeekStart, localDateStr, isOffNow, weekIsOn, parseLocalDate } from './utils.js';
 
 export const CHART_DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
@@ -20,6 +20,7 @@ export function dueDays(t, dates) {
   if (!t) return { days, anyDay: false };
   if (t.freq === 'daily') return { days: days.map(() => true), anyDay: false };
   if (t.freq === 'weekdays') {
+    if (!weekIsOn(t, parseLocalDate(dates[0]).getTime())) return { days, anyDay: false }; // off-week of an every-N-weeks chore (#314)
     (t.days || []).map(Number).forEach(d => { if (d >= 0 && d <= 6) days[(d + 6) % 7] = true; });
     return { days, anyDay: false };
   }

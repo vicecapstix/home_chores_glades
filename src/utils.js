@@ -35,16 +35,33 @@ export function avatarPrefix(m) {
 export const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 // Start (local midnight, ms) of the most recent selected weekday that has begun (today or earlier), or null.
-export function prevScheduledStart(days, now = Date.now()) {
+export function prevScheduledStart(days, now = Date.now(), sched = null) {
   const sel = (days || []).map(Number).filter(d => d >= 0 && d <= 6);
   if (!sel.length) return null;
   const d = new Date(now);
   d.setHours(0, 0, 0, 0);
-  for (let i = 0; i < 7; i++) {
-    if (sel.includes(d.getDay())) return d.getTime();
+  for (let i = 0, n = 7 * validEveryWeeks(sched && sched.everyWeeks); i < n; i++) { // off-weeks of "every N weeks" chores are skipped (#314)
+    if (sel.includes(d.getDay()) && weekIsOn(sched, d.getTime())) return d.getTime();
     d.setDate(d.getDate() - 1);
   }
   return null;
+}
+
+// "Every N weeks" for Specific-days chores (#314): 2-4, else 1 (every week).
+export const WEEKS_MIN = 2, WEEKS_MAX = 4;
+export function validEveryWeeks(n) {
+  const v = typeof n === 'string' && n.trim() !== '' ? Number(n) : n;
+  return Number.isInteger(v) && v >= WEEKS_MIN && v <= WEEKS_MAX ? v : 1;
+}
+
+// Is the (Mon-Sun, local) week containing `ms` an "on" week for this chore? Whole weeks from the anchor week
+// are counted from the local Y-M-D via Date.UTC, so a DST change cannot shift it. True when unset or invalid.
+export function weekIsOn(t, ms = Date.now()) {
+  const n = validEveryWeeks(t && t.everyWeeks);
+  if (n === 1 || !t || !validDateStr(t.weekAnchor)) return true;
+  const mon = s => { const [y, m, d] = s.split('-').map(Number); return Date.UTC(y, m - 1, d); };
+  const weeks = Math.round((mon(getWeekStart(ms)) - mon(getWeekStart(parseLocalDate(t.weekAnchor)))) / 604800000);
+  return ((weeks % n) + n) % n === 0;
 }
 
 // lastDone value for a brand-new task so it is not instantly overdue.
@@ -108,7 +125,7 @@ export function rotationTag(t, memberNames) {
 
 export function freqLabel(t) {
   return t.freq === 'weekdays'
-    ? (t.days || []).map(Number).sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7)).map(d => DAY_NAMES[d]).join(', ') || 'No days'
+    ? ((t.days || []).map(Number).sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7)).map(d => DAY_NAMES[d]).join(', ') || 'No days') + (validEveryWeeks(t.everyWeeks) > 1 ? ' · every ' + validEveryWeeks(t.everyWeeks) + ' wks' : '')
     : t.freq === 'interval' ? 'Every ' + (validInterval(t.intervalDays) || 7) + ' days'
     : t.freq;
 }
@@ -320,7 +337,7 @@ export function dueTimePassedToday(t, now = Date.now()) {
   if (!t || t.done || !validTime(t.dueTime) || dueStatus(t, now) !== 'overdue') return false;
   const today = localDateStr(new Date(now));
   if (t.freq === 'once') return t.dueDate === today;
-  if (t.freq === 'weekdays') return (t.days || []).map(Number).includes(new Date(now).getDay());
+  if (t.freq === 'weekdays') return (t.days || []).map(Number).includes(new Date(now).getDay()) && weekIsOn(t, now);
   const d = new Date(t.lastDone || 0);
   d.setDate(d.getDate() + cycleDays(t, t.lastDone));
   return localDateStr(d) === today;
@@ -369,7 +386,7 @@ function baseStatus(t, now = Date.now()) {
     return 'ok';
   }
   if (t.freq === 'weekdays') {
-    const p = prevScheduledStart(t.days, now);
+    const p = prevScheduledStart(t.days, now, t);
     if (p === null || (t.lastDone || 0) >= p) return 'ok';
     const today = new Date(now); today.setHours(0, 0, 0, 0);
     return p === today.getTime() ? 'soon' : 'overdue';
@@ -459,7 +476,7 @@ export function weekPlan(tasks, now = Date.now()) {
       if (day) day.items.push(item(day));
     } else if (t.freq === 'weekdays') {
       const sel = (t.days || []).map(Number);
-      days.forEach(day => { if (sel.includes(day.dow)) day.items.push(item(day)); });
+      days.forEach(day => { if (sel.includes(day.dow) && weekIsOn(t, parseLocalDate(day.date).getTime())) day.items.push(item(day)); });
     } else if (t.freq === 'daily') {
       days.forEach(day => day.items.push(item(day)));
     } else {
