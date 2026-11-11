@@ -25,6 +25,12 @@ export const CHORE_ICONS = ['🧺', '🍽️', '🗑️', '🛏️', '🐶', '�
 export const TIMES_OF_DAY = [{ id: 'morning', label: 'Morning' }, { id: 'afternoon', label: 'After school' }, { id: 'evening', label: 'Evening' }];
 export const validTimeOfDay = v => (TIMES_OF_DAY.some(x => x.id === v) ? v : '');
 export const timeOfDayLabel = v => (TIMES_OF_DAY.find(x => x.id === v) || {}).label || '';
+// Time-of-day slots (#298), local time: Morning before 12:00, After school 12:00-16:59, Evening from 17:00.
+export function currentSlot(now = Date.now()) { const h = new Date(now).getHours(); return h < 12 ? 'morning' : h < 17 ? 'afternoon' : 'evening'; }
+// Sort rank: Morning, After school, Evening, then chores with no time of day.
+export const todRank = t => { const i = TIMES_OF_DAY.findIndex(x => x.id === (t && t.timeOfDay)); return i < 0 ? TIMES_OF_DAY.length : i; };
+// The "Now" filter: the current slot's chores plus chores with no time of day.
+export const inNowSlot = (t, now = Date.now()) => { const v = validTimeOfDay(t && t.timeOfDay); return !v || v === currentSlot(now); };
 export const iconPrefix = t => (t && CHORE_ICONS.includes(t.icon) ? t.icon + ' ' : '');
 
 // '<emoji> ' for a member with a valid avatar, else '' (tampered DB values are never rendered).
