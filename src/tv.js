@@ -51,7 +51,7 @@ export const CYCLE_MS = 30000, KEY_PAUSE_MS = 120000;
 export const PANELS = ['chores', 'leaderboard', 'rewards'];
 const PANEL_TITLES = { leaderboard: '🏆 Leaderboard', rewards: '🎁 Rewards' };
 
-export function createTvCycle({ panelHTML, body = document.body, now = () => Date.now() }) {
+export function createTvCycle({ panelHTML, body = document.body, now = () => Date.now(), paused = () => false }) {
   let idx = 0, pausedUntil = 0, timer = null;
   const el = () => document.getElementById('tv-panel');
   function show() {
@@ -69,7 +69,10 @@ export function createTvCycle({ panelHTML, body = document.body, now = () => Dat
     if (e.key === 'ArrowRight') go(idx + 1);
     else if (e.key === 'ArrowLeft') go(idx - 1);
   }
-  function tick() { if (now() >= pausedUntil) go(idx + 1); }
+  function tick() {
+    if (paused()) { if (idx !== 0) go(0); return; } // night mode (#315): rest on the chores screen
+    if (now() >= pausedUntil) go(idx + 1);
+  }
   return {
     start() { show(); timer = setInterval(tick, CYCLE_MS); document.addEventListener('keydown', onKey); },
     stop() { clearInterval(timer); document.removeEventListener('keydown', onKey); },
@@ -78,10 +81,31 @@ export function createTvCycle({ panelHTML, body = document.body, now = () => Dat
   };
 }
 
+// ── TV night mode (#315): dim the screen 21:00-06:30 local and pause the auto-cycle ─────────────
+// Display only: a body class, a local timer and a key/tap wake. No Firebase access, nothing stored.
+export const NIGHT_START = 21 * 60, NIGHT_END = 6 * 60 + 30, WAKE_MS = 5 * 60000;
+export function isNightTime(now = Date.now()) {
+  const d = new Date(now), m = d.getHours() * 60 + d.getMinutes();
+  return m >= NIGHT_START || m < NIGHT_END;
+}
+let _wakeUntil = 0, _dim = false;
+export const isTvDim = () => _dim;
+export function wakeTv(now = Date.now()) { _wakeUntil = now + WAKE_MS; updateTvNight(now); }
+export function updateTvNight(now = Date.now(), body = document.body, readonly = READONLY) {
+  _dim = !!readonly && isNightTime(now) && now >= _wakeUntil;
+  body.classList.toggle('tv-night', _dim);
+  return _dim;
+}
+export function initTvNight() {
+  if (!READONLY) return;
+  updateTvNight();
+  ['keydown', 'pointerdown'].forEach(ev => document.addEventListener(ev, () => wakeTv()));
+}
+
 let _cycle = null;
 export function initTvCycle(panelHTML) {
   if (!READONLY || !TV_CYCLE) return null;
-  _cycle = createTvCycle({ panelHTML });
+  _cycle = createTvCycle({ panelHTML, paused: isTvDim });
   _cycle.start();
   return _cycle;
 }
@@ -101,6 +125,7 @@ export async function requestWakeLock(nav = globalThis.navigator) {
 export function initTvMode() {
   if (!applyTvMode(READONLY)) return;
   updateClock();
+  initTvNight();
   setInterval(updateClock, 15000);
   requestWakeLock();
   document.addEventListener('visibilitychange', () => {

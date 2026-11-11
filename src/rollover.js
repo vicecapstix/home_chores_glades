@@ -5,6 +5,7 @@ import { checkPauseExpiry } from './pause.js';
 import { checkOffExpiry } from './seasonal.js';
 import { checkAwayExpiry } from './away.js';
 import { runDueTimeCheck } from './notifications.js';
+import { updateTvNight } from './tv.js';
 
 // Local rollover: screens left open keep recomputing resets and due status
 // without waiting for a Firebase snapshot (#88). No reads, no listeners.
@@ -25,6 +26,7 @@ export function startRollover(render, intervalMs = 60000) {
     checkOffExpiry(); // switch seasonal chores back on (#300)
     checkTaskResets(); // writes via patchRoot unless READONLY
     runDueTimeCheck(); // local due-time reminder (#150); no-op on the TV
+    updateTvNight(); // TV night mode boundaries (#315); a no-op class toggle off the TV
     const sig = signature();
     if (sig !== last) { last = sig; render(); }
   };
