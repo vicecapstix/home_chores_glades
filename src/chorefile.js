@@ -6,7 +6,7 @@ import { patchPaths } from './firebase.js';
 import { showToast } from './ui.js';
 import { openModal, closeModal } from './modals.js';
 import { makeTask } from './starter.js';
-import { CHORE_ICONS, validTimeOfDay, validEveryWeeks, esc, localDateStr, validInterval, validTime, validPoints } from './utils.js';
+import { CHORE_ICONS, validTimeOfDay, validEveryWeeks, esc, localDateStr, validInterval, validTime, validPoints, validDateStr, parseLocalDate } from './utils.js';
 
 export const CHORE_FILE_KIND = 'familyflow-chores';
 export const MAX_CHORES = 200, MAX_FILE_BYTES = 200 * 1024;
@@ -14,6 +14,7 @@ const MAX_NAME = 100, MAX_NOTES = 300, MAX_SUBTASKS = 20, MAX_SUB_NAME = 60;
 const FREQS = ['daily', 'weekdays', 'weekly', 'fortnightly', 'monthly', 'once', 'interval'];
 const DIFFS = ['easy', 'medium', 'hard'];
 const isObj = v => !!v && typeof v === 'object' && !Array.isArray(v);
+const isRealDate = v => validDateStr(v) && localDateStr(parseLocalDate(v)) === v; // rejects 2026-02-30 (#326)
 const key = n => String(n).trim().toLowerCase();
 const existingNames = () => new Set(Object.values(state.tasks || {}).map(t => key(t.name)));
 
@@ -72,8 +73,8 @@ function checkChore(c, out) {
     out.days = days;
     if (Number.isInteger(c.everyWeeks) && validEveryWeeks(c.everyWeeks) > 1) out.everyWeeks = c.everyWeeks; // 2-4 only; other values ignored (#314)
   }
-  if (c.freq === 'interval') { if (!validInterval(c.intervalDays)) return 'Interval must be a whole number of days from 2 to 60'; out.intervalDays = c.intervalDays; }
-  if (c.freq === 'once' && c.dueDate) { if (!/^\d{4}-\d{2}-\d{2}$/.test(String(c.dueDate))) return 'Due date must be YYYY-MM-DD'; out.dueDate = c.dueDate; }
+  if (c.freq === 'interval') { if (!validInterval(c.intervalDays)) return 'Interval must be a whole number of days from 2 to 60'; out.intervalDays = validInterval(c.intervalDays); }
+  if (c.freq === 'once' && c.dueDate) { if (!isRealDate(c.dueDate)) return 'Due date must be a real date (YYYY-MM-DD)'; out.dueDate = c.dueDate; }
   if (CHORE_ICONS.includes(c.icon)) out.icon = c.icon; // fixed list only (#257)
   if (Number.isInteger(c.pointsOverride) && validPoints(c.pointsOverride)) out.pointsOverride = c.pointsOverride; // 1-50 only (#313)
   if (validTimeOfDay(c.timeOfDay)) out.timeOfDay = c.timeOfDay; // fixed list only (#297)
