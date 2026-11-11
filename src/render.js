@@ -4,7 +4,7 @@ import { renderTvStrip } from './tv.js';
 import { renderGoal } from './goal.js';
 import { renderTeamGoal } from './teamgoal.js';
 import { renderDoublePointsBanner, activeMultiplier } from './doublepoints.js';
-import { awayText, esc, num, jsq, taskPoints, avatarPrefix, validTime, dueStatus, freqLabel, rotationTag, isMine, isSkipped, localDateStr, doneAgoLabel, currentStreak, iconPrefix, timeOfDayLabel, isOffNow, parseLocalDate, goalHTML, isStaleDoneOnce, viewFromSearch, freezeTag } from './utils.js';
+import { awayText, esc, num, jsq, taskPoints, avatarPrefix, validTime, dueStatus, freqLabel, rotationTag, isMine, isSkipped, localDateStr, doneAgoLabel, currentStreak, iconPrefix, timeOfDayLabel, inNowSlot, todRank, isOffNow, parseLocalDate, goalHTML, isStaleDoneOnce, viewFromSearch, freezeTag } from './utils.js';
 import { pColor } from './ui.js';
 import { syncTagHTML } from './pending.js';
 import { refreshToCheck } from './tocheck.js';
@@ -243,6 +243,7 @@ function _statusPass(k, t) {
   if (k === 'pending') return !t.done;
   if (k === 'overdue') return dueStatus(t) === 'overdue';
   if (k === 'done') return !!t.done;
+  if (k === 'now') return inNowSlot(t);
   return true;
 }
 
@@ -253,7 +254,7 @@ function _renderFilters() {
   // Status pill counts respect the active category; category counts respect the active status.
   const inCat = filterCat ? tasks.filter(t => t.category === filterCat) : tasks;
   const counts = {};
-  for (const k of ['all', 'pending', 'overdue', 'done', 'mine']) counts[k] = inCat.filter(t => _statusPass(k, t)).length;
+  for (const k of ['all', 'pending', 'overdue', 'done', 'mine', 'now']) counts[k] = inCat.filter(t => _statusPass(k, t)).length;
   const me = !READONLY && _currentMember();
   const defs = [
     ...(me ? [{ k: 'mine', label: 'Mine' }] : []),
@@ -266,6 +267,8 @@ function _renderFilters() {
     '<button class="filter-pill' + (filter === d.k ? ' active' : '') + '" aria-pressed="' + (filter === d.k) + '" onclick="window.setFilter(\'' + d.k + '\')">' +
     d.label + '<span class="count">' + counts[d.k] + '</span></button>'
   ).join('');
+  // "Now" (#298): this part of the day's chores plus those with no time of day; shown on the TV too (display only).
+  html += '<button class="filter-pill' + (filter === 'now' ? ' active' : '') + '" aria-pressed="' + (filter === 'now') + '" onclick="window.setFilter(\'now\')">Now<span class="count">' + counts.now + '</span></button>';
   if (me) html += '<button class="filter-pill" aria-label="My progress" onclick="window.openProgress()">📈 My progress</button>';
   const cats = [...new Set(tasks.map(t => t.category).filter(Boolean))].sort();
   if (cats.length) {
@@ -297,12 +300,12 @@ function _renderTasks() {
   const stale = tasks.filter(t => isStaleDoneOnce(t)).sort((a, b) => (b.lastDone || 0) - (a.lastDone || 0));
   tasks = tasks.filter(t => !isStaleDoneOnce(t));
 
-  const available = tasks.filter(t => !t.done && !t.person).sort((a, b) => (a.order || 0) - (b.order || 0));
+  const available = tasks.filter(t => !t.done && !t.person).sort((a, b) => todRank(a) - todRank(b) || (a.order || 0) - (b.order || 0));
   const rest      = tasks.filter(t => t.done || t.person);
   const statusOrder = { overdue: 0, soon: 1, ok: 2, done: 3 };
   rest.sort((a, b) => {
     const sd = (statusOrder[dueStatus(a)] || 2) - (statusOrder[dueStatus(b)] || 2);
-    return sd !== 0 ? sd : (a.order || 0) - (b.order || 0);
+    return sd !== 0 ? sd : todRank(a) - todRank(b) || (a.order || 0) - (b.order || 0);
   });
 
   const sections = { available, overdue: [], soon: [], ok: [], done: [] };

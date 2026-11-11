@@ -1,5 +1,5 @@
 import { state } from './state.js';
-import { dueStatus } from './utils.js';
+import { dueStatus, currentSlot } from './utils.js';
 import { checkTaskResets } from './tasks.js';
 import { checkPauseExpiry } from './pause.js';
 import { checkOffExpiry } from './seasonal.js';
@@ -10,7 +10,7 @@ import { runDueTimeCheck } from './notifications.js';
 // without waiting for a Firebase snapshot (#88). No reads, no listeners.
 
 function signature() {
-  return Object.values(state.tasks || {})
+  return currentSlot() + '|' + Object.values(state.tasks || {}) // slot change re-renders the "Now" filter (#298)
     .map(t => t.id + ':' + (t.done ? 1 : 0) + ':' + dueStatus(t))
     .join('|');
 }

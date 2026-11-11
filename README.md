@@ -118,7 +118,7 @@ Each member can have an optional 4-digit PIN. An admin sets or changes it in the
 | Mark done | Click the checkbox on the left |
 | Uncheck a task | Click the checkbox again — points are reversed automatically |
 | Delete a chore | Tap/hover the card → click **×** (admin only) |
-| Filter tasks | Use the pill buttons (Mine / All / Pending / Overdue / Done; Mine only when signed in) and the category pills — they combine |
+| Filter tasks | Use the pill buttons (Mine / All / Pending / Overdue / Done; Mine only when signed in) and "Now" (this part of the day's chores plus those with no time of day) and the category pills — they combine |
 | Bulk actions | Click **Select** in the header, pick tasks, then assign or delete |
 | Leaderboard | Click **🏆** in the header |
 | Stats & export | Click **📊** in the header |
