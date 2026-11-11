@@ -26,7 +26,7 @@ export function teamGoalProgress(history, goal, now = Date.now()) {
   const total = weekRecap(history, getWeekStart(now)).reduce((s, r) => s + r.points, 0);
   const target = goal && goal.points > 0 ? goal.points : 0;
   const earned = Math.max(0, total);
-  return { earned, target, reached: target > 0 && earned >= target, pct: target ? Math.min(100, Math.floor(earned / target * 100)) : 0 };
+  return { earned, target, reached: target > 0 && earned >= target, pct: target ? Math.min(100, Math.floor(earned * 100 / target)) : 0 };
 }
 
 export function shouldCelebrateTeam(now = Date.now()) {

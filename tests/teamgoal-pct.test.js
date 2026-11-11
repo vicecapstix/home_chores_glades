@@ -14,6 +14,11 @@ describe('team goal percentage (#327)', () => {
     expect(teamGoalProgress(hist(200), { points: 200 }, NOW).pct).toBe(100);
     expect(teamGoalProgress(hist(250), { points: 200 }, NOW).pct).toBe(100);
   });
+  it('is exact for values that are inexact in floating point (29/100 is 29)', () => {
+    expect(teamGoalProgress(hist(29), { points: 100 }, NOW).pct).toBe(29);
+    expect(teamGoalProgress(hist(57), { points: 100 }, NOW).pct).toBe(57);
+    expect(teamGoalProgress(hist(87), { points: 150 }, NOW).pct).toBe(58);
+  });
   it('is 0 with no goal set', () => {
     expect(teamGoalProgress(hist(50), null, NOW).pct).toBe(0);
   });
