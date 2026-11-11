@@ -430,6 +430,8 @@ body[data-role="admin"] #btn-admin { display: flex; }
 #tv-panel { display: block; max-width: 1100px; margin: 0 auto; padding: var(--space-xl) 3rem; font-size: 1.4rem; }
 #tv-panel.hidden { display: none; }
 body.tv-panel-on #main-content { display: none; }
+/* TV night mode (#315): dark overlay that lets key/tap events through to wake it */
+body.tv-night::after { content: ''; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 9999; pointer-events: none; }
 .tv-panel-title { font-family: 'DM Serif Display', serif; font-size: 2.4rem; margin-bottom: var(--space-md); }
 #tv-panel h3 { font-size: 1.5rem; margin: var(--space-lg) 0 var(--space-sm); }
 #tv-panel .lb-row, #tv-panel .reward-row { padding: 14px 0; }
