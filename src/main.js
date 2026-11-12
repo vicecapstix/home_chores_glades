@@ -39,6 +39,7 @@ import {
 
 import { setAway, clearAway, checkAwayExpiry, awayAdminHTML } from './away.js';
 import { setTeamGoal, clearTeamGoal, teamGoalAdminHTML } from './teamgoal.js';
+import { setPocketMoney, clearPocketMoney, markPaid, pocketMoneyAdminHTML, markPaidButtonHTML } from './pocketmoney.js';
 import { setDoublePoints, clearDoublePoints, doublePointsAdminHTML } from './doublepoints.js';
 import { checkOffExpiry, switchOnNow } from './seasonal.js';
 import { checkPauseExpiry, renderPauseBanner, setPause, clearPause, pauseAdminHTML } from './pause.js';
@@ -146,6 +147,7 @@ initCardArrowNav();
       pause: val.pause || null,
       teamGoal: val.teamGoal || null,
       doublePoints: val.doublePoints || null,
+      pocketMoney: val.pocketMoney || null,
     });
 
     setWritesEnabled(true);
@@ -298,9 +300,9 @@ window.openAdminPanel = function() {
       '<button class="btn-sm" aria-label="Rename ' + esc(m) + '" onclick="window.renameMember(\'' + jsq(m) + '\')">Rename</button>' +
       '<button class="btn-sm" onclick="window.closeAdminPanel();window.openSetPin(\'' + jsq(m) + '\')">Set PIN</button>' +
       '<button class="btn-sm" aria-label="Progress for ' + esc(m) + '" onclick="window.closeAdminPanel();window.openProgress(\'' + jsq(m) + '\')">Progress</button>' +
-      '<button class="btn-sm" aria-label="Adjust points for ' + esc(m) + '" onclick="window.adjustBonus(\'' + jsq(m) + '\')">± Points</button>' +
+      '<button class="btn-sm" aria-label="Adjust points for ' + esc(m) + '" onclick="window.adjustBonus(\'' + jsq(m) + '\')">± Points</button>' + markPaidButtonHTML(m) +
       '</div>';
-  }).join('') + pauseAdminHTML() + awayAdminHTML() + teamGoalAdminHTML() + doublePointsAdminHTML();
+  }).join('') + pauseAdminHTML() + awayAdminHTML() + teamGoalAdminHTML() + doublePointsAdminHTML() + pocketMoneyAdminHTML();
   document.getElementById('admin-parent-in').classList.toggle('hidden', !!state.parentEmail);
   document.getElementById('admin-parent-out').classList.toggle('hidden', !state.parentEmail);
   openModal('admin-panel-modal');
@@ -311,6 +313,9 @@ window.clearAway = name => clearAway(name, _isAdmin).then(ok => ok && window.ope
 window.setTeamGoal = () => setTeamGoal(document.getElementById('tg-points')?.value, document.getElementById('tg-reward')?.value, _isAdmin).then(ok => ok && window.openAdminPanel());
 window.clearTeamGoal = () => clearTeamGoal(_isAdmin).then(ok => ok && window.openAdminPanel());
 window.setDoublePoints = () => setDoublePoints(document.getElementById('dp-date')?.value, document.getElementById('dp-mult')?.value, _isAdmin).then(ok => ok && window.openAdminPanel());
+window.setPocketMoney = () => setPocketMoney(document.getElementById('pm-pts')?.value, document.getElementById('pm-amount')?.value, _isAdmin).then(ok => ok && window.openAdminPanel());
+window.clearPocketMoney = () => clearPocketMoney(_isAdmin).then(ok => ok && window.openAdminPanel());
+window.markPaid = name => markPaid(name, _isAdmin, _currentMember).then(ok => ok && window.openAdminPanel());
 window.clearDoublePoints = () => clearDoublePoints(_isAdmin).then(ok => ok && window.openAdminPanel());
 window.clearPause = () => clearPause(_isAdmin).then(() => window.openAdminPanel());
 // Parent sign in (#97)

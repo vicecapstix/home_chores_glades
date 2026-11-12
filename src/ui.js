@@ -2,7 +2,7 @@ import { state, getMembers, memberColor } from './state.js';
 import { PCOLS, BADGES, CATEGORIES, READONLY } from './config.js';
 import { openModal, closeModal } from './modals.js';
 import { patchPaths } from './firebase.js';
-import { CHORE_ICONS, validTimeOfDay, validEveryWeeks, getWeekStart, esc, num, jsq, avatarPrefix, sha256, initialLastDone, validInterval, validTime, dueStatus, localDateStr, currentStreak, currentWeekPoints, weekRecap, lastWeekChampion, freezeTag, validPoints } from './utils.js';
+import { CHORE_ICONS, validTimeOfDay, validEveryWeeks, getWeekStart, esc, num, jsq, avatarPrefix, sha256, initialLastDone, validInterval, validTime, dueStatus, localDateStr, currentStreak, currentWeekPoints, weekRecap, lastWeekChampion, freezeTag, validPoints, payoutList } from './utils.js';
 import { cycleTheme, initTheme } from './theme.js';
 import { isAdmin } from './auth.js';
 
@@ -182,6 +182,18 @@ export function exportCSV(from, to) {
       csvField(e.points || 0),
     ].join(',') + '\n';
   });
+  // Pocket-money payouts (#229): one row per payout, task "Payout", points = member's total at payout.
+  Object.values(state.members || {}).forEach(m => payoutList(m).filter(p => p.at >= fromTs && p.at <= toTs).forEach(p => {
+    const d = new Date(p.at);
+    csv += [
+      csvField(localDateStr(d)),
+      csvField(String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0')),
+      csvField(m.name || ''),
+      csvField('Payout' + (p.by ? ' by ' + p.by : '')),
+      '', '',
+      csvField(num(p.points)),
+    ].join(',') + '\n';
+  }));
   const a = document.createElement('a');
   a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
   a.download = 'chores-export.csv';

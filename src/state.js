@@ -15,6 +15,7 @@ export const state = {
   pause:     null,
   teamGoal:  null, // { points, reward } weekly family goal (#174)
   doublePoints: null, // { date, mult } double-points day (#225)
+  pocketMoney: null, // { pts, amount } display-only cash rate (#229)
   admins:    null, // /admins {uid: memberName}; null until it exists (role fallback)
   uid:       null, // current Firebase Auth UID
   parentEmail: false, // true when signed in with an email account
@@ -59,6 +60,7 @@ export function applySnapshot(val) {
   setAwayMembers(state.members);
   state.teamGoal = val.teamGoal && val.teamGoal.points ? val.teamGoal : null;
   state.doublePoints = val.doublePoints && val.doublePoints.date ? val.doublePoints : null;
+  state.pocketMoney = val.pocketMoney && val.pocketMoney.pts ? val.pocketMoney : null;
   setPauseUntil(state.pause ? state.pause.until : '');
 }
 

@@ -4,6 +4,7 @@ import { renderTvStrip } from './tv.js';
 import { renderGoal } from './goal.js';
 import { renderTeamGoal } from './teamgoal.js';
 import { renderDoublePointsBanner, activeMultiplier } from './doublepoints.js';
+import { owedHTML } from './pocketmoney.js';
 import { awayText, esc, num, jsq, taskPoints, avatarPrefix, validTime, dueStatus, freqLabel, rotationTag, isMine, isSkipped, localDateStr, doneAgoLabel, currentStreak, iconPrefix, timeOfDayLabel, isOffNow, parseLocalDate, goalHTML, isStaleDoneOnce, viewFromSearch, freezeTag } from './utils.js';
 import { pColor } from './ui.js';
 import { syncTagHTML } from './pending.js';
@@ -212,7 +213,7 @@ function _renderMembers() {
       (streak >= 2 ? ' 🔥' + streak + freezeTag(mem) : '') +
       (awayText(mem) ? ' <span class="chip-away">' + esc(awayText(mem)) + '</span>' : '') +
       (badgeIcons ? ' ' + badgeIcons : '') +
-      goalHTML(mem, state.rewards) +
+      goalHTML(mem, state.rewards) + owedHTML(mem) +
       ' <span class="chip-del">×</span></span>';
   }).join('');
 }
