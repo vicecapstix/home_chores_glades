@@ -219,7 +219,7 @@ export function weekRecap(history, weekStart) {
     if (!e || !e.person || !(e.completedAt >= start && e.completedAt < end)) return;
     const r = by[e.person] || (by[e.person] = { name: e.person, points: 0, count: 0 });
     r.points += num(e.points);
-    if (e.type !== 'bonus') r.count++;
+    if (!e.type) r.count++;
   });
   return Object.values(by).filter(r => r.points > 0 || r.count > 0)
     .sort((a, b) => b.points - a.points || a.name.localeCompare(b.name));
@@ -241,7 +241,7 @@ export function memberWeeks(history, member, now = Date.now(), n = 4, cap = 500)
     list.forEach(e => {
       if (!e || e.person !== member || !(e.completedAt >= start && e.completedAt < end)) return;
       points += num(e.points);
-      if (e.type !== 'bonus') count++;
+      if (!e.type) count++;
     });
     weeks.push({ weekStart: localDateStr(new Date(start)), points, count, partial: capped && oldest > start });
   }

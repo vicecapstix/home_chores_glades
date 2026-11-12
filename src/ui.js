@@ -138,7 +138,7 @@ function renderStats() {
   const from = getStatsFromTs();
   const history = (state.history || []).filter(e => e.completedAt >= from);
   const counts = {};
-  history.forEach(e => { if (e.person && e.type !== 'bonus') counts[e.person] = (counts[e.person] || 0) + 1; });
+  history.forEach(e => { if (e.person && !e.type) counts[e.person] = (counts[e.person] || 0) + 1; });
   const max = Math.max(1, ...Object.values(counts).concat([0]));
   const el = document.getElementById('stats-chart');
   const members = getMembers();

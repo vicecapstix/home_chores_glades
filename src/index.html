@@ -139,6 +139,21 @@
   </div>
 </div>
 
+<!-- CHORE SWAP MODAL -->
+<div id="swap-modal" class="hidden" role="dialog" aria-modal="true" aria-labelledby="swap-title" onclick="window.closeModal('swap-modal')">
+  <div class="lb-card" onclick="event.stopPropagation()">
+    <div class="lb-header">
+      <span class="lb-title" id="swap-title">🔄 Offer swap</span>
+      <button class="lb-close" aria-label="Close" onclick="window.closeModal('swap-modal')">×</button>
+    </div>
+    <p>Offer <strong id="swap-chore"></strong> to:</p>
+    <input type="hidden" id="swap-task-id" />
+    <label for="swap-to" class="sr-only">Sibling to swap with</label>
+    <select id="swap-to"></select>
+    <button class="btn-sm btn-accent" onclick="window.submitSwap()">Send offer</button>
+  </div>
+</div>
+
 <!-- WEEK PLANNER MODAL -->
 <div id="week-modal" class="hidden" role="dialog" aria-modal="true" aria-labelledby="week-title" onclick="window.closeModal('week-modal')">
   <div class="lb-card week-card" onclick="event.stopPropagation()">
@@ -389,6 +404,7 @@
   </div>
 
   <div class="filters" id="filters"></div>
+  <div id="swaps-section" aria-live="polite"></div>
   <div id="task-list"></div>
 </main>
 

@@ -87,6 +87,7 @@ import { openWeek } from './week.js';
 import { openToCheck } from './tocheck.js';
 import { requestReward, decideRequest, markGiven } from './redemptions.js';
 import { submitClaim, decideClaim } from './claims.js';
+import { acceptSwap, declineSwap, openSwapPicker, submitSwapPicker } from './swaps.js';
 import { rewardsHTML, openRewards, saveReward, editReward, deleteReward, cancelRewardEdit, refreshRewards, setGoalFor, pickGoalTarget } from './rewards.js';
 registerServiceWorker().then(reg => watchForUpdates({ // new version (#312): TV reloads itself when idle, phones get a banner
   reg,
@@ -144,6 +145,7 @@ initCardArrowNav();
       rewards:   val.rewards   || {},
       redemptions: val.redemptions || {},
       claims: val.claims || {},
+      swaps: val.swaps || {},
       pause: val.pause || null,
       teamGoal: val.teamGoal || null,
       doublePoints: val.doublePoints || null,
@@ -418,6 +420,10 @@ window.openFairness = () => openFairness(_isAdmin);
 window.openProgress = name => openProgress(name || _currentMember(), _isAdmin, _currentMember);
 // Week planner (read-only)
 window.openWeek = () => openWeek();
+window.openSwap = id => openSwapPicker(id, _currentMember);
+window.submitSwap = () => submitSwapPicker(_currentMember);
+window.acceptSwap = id => acceptSwap(id, _currentMember);
+window.declineSwap = id => declineSwap(id, _currentMember);
 window.openToCheck = () => openToCheck(_isAdmin);
 
 // Rewards catalog (everyone can browse; admin-only edits are guarded in rewards.js)

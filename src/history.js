@@ -41,7 +41,7 @@ export function periodRange(period, now) {
 // Distinct chore names present in history (completions only), sorted.
 export function choreNames(history) {
   const set = new Set();
-  (history || []).forEach(e => { if (e && e.completedAt && e.type !== 'bonus' && e.taskName) set.add(e.taskName); });
+  (history || []).forEach(e => { if (e && e.completedAt && !e.type && e.taskName) set.add(e.taskName); });
   return [...set].sort((a, b) => a.localeCompare(b));
 }
 
@@ -53,7 +53,7 @@ export function historyEvents(history, redemptions, member, limit = HISTORY_LIMI
     .map(e => ({ ...e, label: e.type === 'bonus' ? 'Bonus: ' + (e.reason || '') : (e.taskName || '') }));
   return done.concat(redemptionEvents(redemptions))
     .filter(e => !member || e.person === member)
-    .filter(e => !opts.chore || (e.type !== 'bonus' && e.taskName === opts.chore))
+    .filter(e => !opts.chore || (!e.type && e.taskName === opts.chore))
     .filter(e => !range || (e.completedAt >= range[0] && e.completedAt < range[1]))
     .sort((a, b) => b.completedAt - a.completedAt)
     .slice(0, limit);
