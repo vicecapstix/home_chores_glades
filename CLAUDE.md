@@ -57,6 +57,7 @@ src/
   theme.js         — Auto/Light/Dark theme setting (follows prefers-color-scheme)
   teamgoal.js      — family weekly points goal (state/teamGoal), bar + admin form
   doublepoints.js  — double-points day (state/doublePoints {date, mult}), banner + admin form
+  pocketmoney.js   — pocket money: display-only rate (state/pocketMoney {pts, amount}), owed on chips/TV, admin Mark paid + undo
   tv.js            — TV dashboard helpers for ?readonly=1
   starter.js       — built-in starter chore list + "Add from list" modal (static code, survives a wipe)
   public/          — sw.js, manifest.webmanifest, icons (copied to dist/ by Vite)
@@ -111,6 +112,7 @@ Database path: `/state`
   redemptions: { "<id>": { id, rewardId, rewardName, cost, member, requestedAt, status, …, givenAt?, givenBy? } }
   pause:     { until, by, since }  ← house pause (holiday mode); absent when not paused
   doublePoints: { date, mult }  ← double-points day (x2/x3 on one local date); absent when off
+  pocketMoney: { pts, amount }  ← display-only points-to-cash rate (pts 1-1000, amount 0.01-1000); absent when off
 ```
 
 Required rules (Firebase Console → Realtime Database → Rules):
@@ -270,6 +272,7 @@ Every piece of user-supplied data injected into `innerHTML` or an `onclick` stri
   awayUntil,      // YYYY-MM-DD inclusive, only while away (away mode)
   awaySince,      // timestamp ms the away period started
   goalRewardId,   // reward id the member is saving towards (saving goal)
+  payouts,        // { 'p<at>': { at, by, points } } pocket-money payouts, newest 52; points = all-time points at payout
 }
 ```
 

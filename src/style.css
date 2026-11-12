@@ -582,6 +582,8 @@ body.tv .double-banner { font-size: 2rem; padding: 10px 16px; }
 #pause-banner.hidden { display: none; }
 body[data-readonly] #pause-banner { font-size: 1.4rem; padding: 12px var(--space-lg); }
 .pause-admin { margin: 0.75rem 0; padding-top: 0.75rem; border-top: 1px solid var(--border); font-size: 0.9rem; }
+.chip-owed { font-size: 0.75em; font-weight: 600; white-space: nowrap; }
+body[data-readonly] .chip-owed { font-size: 0.9rem; }
 .chip-away { font-size: 0.75em; font-weight: 600; white-space: nowrap; }
 body[data-readonly] .chip-away { font-size: 0.9rem; }
 .pause-admin input[type=date] { margin: 0 6px; }

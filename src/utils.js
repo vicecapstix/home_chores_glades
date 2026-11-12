@@ -494,3 +494,10 @@ export function weekPlan(tasks, now = Date.now()) {
   }
   return days;
 }
+
+// Pure: payouts as a list, oldest first (stored as an object keyed p<at>).
+export function payoutList(member) {
+  const p = member && member.payouts;
+  const list = Array.isArray(p) ? p : (p && typeof p === 'object' ? Object.values(p) : []);
+  return list.filter(x => x && Number.isFinite(Number(x.at))).sort((a, b) => a.at - b.at);
+}

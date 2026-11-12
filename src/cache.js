@@ -19,6 +19,7 @@ export function trimSnapshot(s) {
     rewards: s.rewards || {},
     pause: s.pause || null,
     doublePoints: s.doublePoints || null,
+    pocketMoney: s.pocketMoney || null,
     history: (s.history || []).slice(-HISTORY_LIMIT),
     nextId: s.nextId || 1,
     savedAt: Date.now(),
