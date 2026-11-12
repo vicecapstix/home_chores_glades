@@ -13,6 +13,7 @@ export const CLAIM_NAME_MAX = 60;
 export const CLAIM_POINTS_MAX = 20;
 export const MAX_PENDING_PER_MEMBER = 20;
 const deciding = new Set();
+let submitting = false; // one send at a time: a double tap must not file two claims (#333)
 
 // Returns { claim: { name, points } } or { error }.
 export function validateClaim(name, points) {
@@ -38,10 +39,13 @@ export async function submitClaim(name, points, currentMemberFn) {
   const v = validateClaim(name, points);
   if (v.error) { showToast(v.error); return false; }
   if (pendingClaims(me).length >= MAX_PENDING_PER_MEMBER) { showToast('Too many waiting requests (max ' + MAX_PENDING_PER_MEMBER + ')'); return false; }
+  if (submitting) return false;
+  submitting = true;
   const id = 'cl' + Date.now();
   const entry = { id, member: me, name: v.claim.name, points: v.claim.points, requestedAt: Date.now() };
   try { await patchRoot({ ['claims/' + id]: entry }); }
   catch (err) { showToast('Request failed: ' + (err.code || err.message)); return false; }
+  finally { submitting = false; }
   if (!state.claims) state.claims = {};
   state.claims[id] = entry;
   showToast('Sent to a parent for approval');
