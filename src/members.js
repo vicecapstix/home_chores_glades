@@ -74,6 +74,7 @@ export async function removeMember(name, isAdminFn, currentMemberFn, onSelfRemov
   const paths = { ['members/' + name]: null };
   Object.values(state.tasks).forEach(t => {
     if (t.person === name) { t.person = ''; paths['tasks/' + t.id + '/person'] = ''; }
+    if (t.checkPending && t.checkPending.by === name) { delete t.checkPending; paths['tasks/' + t.id + '/checkPending'] = null; } // a gone member's waiting parent check (#332)
     if (t.rotation) {
       const left = Object.values(t.rotation).filter(n => n !== name);
       if (left.length === Object.values(t.rotation).length) return;
