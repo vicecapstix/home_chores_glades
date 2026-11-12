@@ -94,6 +94,7 @@ export async function writeState() {
       rewards:   Object.keys(state.rewards   || {}).length ? state.rewards   : null,
       redemptions: Object.keys(state.redemptions || {}).length ? state.redemptions : null,
       claims:    Object.keys(state.claims || {}).length ? state.claims : null,
+      swaps:     Object.keys(state.swaps || {}).length ? state.swaps : null,
       pause:     state.pause || null,
     });
   } catch (err) {

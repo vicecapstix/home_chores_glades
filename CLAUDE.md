@@ -48,6 +48,7 @@ src/
   tocheck.js       — admin "To check" list + header count for parent checks; daily local notification (#239)
   redemptions.js   — reward requests: request, approve/deny, refund
   claims.js        — extra job claims: member logs an unlisted job, admin approves points (state/claims)
+  swaps.js         — chore swaps: offer own pending chore to a sibling, accept/decline, 24 h expiry (state/swaps)
   rewards.js       — rewards catalog UI
   rollover.js      — local timer so open screens roll over resets/due status
   seasonal.js      — chore "Switch off until" (task.offUntil): checkOffExpiry switches it back on
@@ -106,6 +107,7 @@ Database path: `/state`
   rewards:   { "<id>": { id, name, cost, icon } }
   teamGoal:  { points, reward }  ← weekly family goal; progress computed from history
   claims:    { "cl<timestamp>": { id, member, name, points, requestedAt } }  ← pending only, max 20 per member
+  swaps:     { "sw<timestamp>": { id, taskId, taskName, from, to, offeredAt, lastDone } }  ← open chore-swap offers, max 50; expire after 24 h or when the chore is done/reset/reassigned
   redemptions: { "<id>": { id, rewardId, rewardName, cost, member, requestedAt, status, …, givenAt?, givenBy? } }
   pause:     { until, by, since }  ← house pause (holiday mode); absent when not paused
   doublePoints: { date, mult }  ← double-points day (x2/x3 on one local date); absent when off
