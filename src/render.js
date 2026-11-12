@@ -6,6 +6,7 @@ import { renderTeamGoal } from './teamgoal.js';
 import { renderDoublePointsBanner, activeMultiplier } from './doublepoints.js';
 import { awayText, esc, num, jsq, taskPoints, avatarPrefix, validTime, dueStatus, freqLabel, rotationTag, isMine, isSkipped, localDateStr, doneAgoLabel, currentStreak, iconPrefix, timeOfDayLabel, isOffNow, parseLocalDate, goalHTML, isStaleDoneOnce, viewFromSearch, freezeTag } from './utils.js';
 import { pColor } from './ui.js';
+import { renderSwaps, canOfferSwap } from './swaps.js';
 import { syncTagHTML } from './pending.js';
 import { refreshToCheck } from './tocheck.js';
 
@@ -171,6 +172,7 @@ export function render() {
   _renderFilters();
   _renderTasks();
   renderTvStrip();
+  renderSwaps(_currentMember());
   renderGoal(Object.values(state.tasks || {}));
   renderTeamGoal();
   renderDoublePointsBanner();
@@ -485,6 +487,7 @@ export function cardHTML(t) {
       (t.freq !== 'once' && !t.done
         ? '<button class="edit-btn skip-btn" aria-label="Skip ' + esc(t.name) + ' this time" title="Skip this time" onclick="event.stopPropagation();window.skipTask(\'' + jsq(t.id) + '\')">⏭</button>'
         : '') +
+      (canOfferSwap(t, _currentMember()) ? '<button class="edit-btn" aria-label="Offer ' + esc(t.name) + ' to a sibling" title="Offer swap" onclick="event.stopPropagation();window.openSwap(\'' + jsq(t.id) + '\')">🔄</button>' : '') +
       '<button class="edit-btn" onclick="window.editTask(\'' + jsq(t.id) + '\')" title="Edit">✎</button>' +
       '<button class="del" onclick="window.deleteTask(\'' + jsq(t.id) + '\')" title="Remove">×</button>'
       ) +
