@@ -2,6 +2,7 @@ import { state, getMembers } from './state.js';
 import { PCOLS, BADGES, READONLY } from './config.js';
 import { renderTvStrip } from './tv.js';
 import { renderGoal } from './goal.js';
+import { renderMyDone } from './mydone.js';
 import { renderTeamGoal } from './teamgoal.js';
 import { renderDoublePointsBanner, activeMultiplier } from './doublepoints.js';
 import { owedHTML } from './pocketmoney.js';
@@ -175,6 +176,7 @@ export function render() {
   renderTvStrip();
   renderSwaps(_currentMember());
   renderGoal(Object.values(state.tasks || {}));
+  renderMyDone(state.tasks, _currentMember(), _isAdmin);
   renderTeamGoal();
   renderDoublePointsBanner();
   if (!READONLY) {

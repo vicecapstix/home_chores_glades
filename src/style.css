@@ -635,3 +635,10 @@ details.off-chores[open] > summary::after { content: '\25BE'; }
   .pc-table tbody { break-inside: avoid; }
   .pc-box { display: inline-block; width: 5mm; height: 5mm; border: 1.5px solid #000; }
 }
+
+/* Member's own "all done" celebration (#317): a dismissable banner, never covers the Undo toast */
+.my-done { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 8px 0; padding: 10px 14px; border-radius: 12px; background: var(--accent); color: #fff; font-weight: 600; animation: my-done-pop 0.5s ease-out; }
+.my-done.hidden { display: none; }
+body[data-readonly] .my-done { display: none !important; }
+@keyframes my-done-pop { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .my-done { animation: none; } }
