@@ -161,6 +161,10 @@
       <span class="lb-title" id="week-title">🗓 This week</span>
       <button class="lb-close" aria-label="Close" onclick="window.closeModal('week-modal')">×</button>
     </div>
+    <div class="week-ics">
+      <select id="week-ics-who" aria-label="Chores for"></select>
+      <button class="btn-sm" onclick="window.downloadWeekIcs()">Download calendar (.ics)</button>
+    </div>
     <div id="week-list"></div>
   </div>
 </div>

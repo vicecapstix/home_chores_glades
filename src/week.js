@@ -2,6 +2,7 @@
 import { state, memberColor } from './state.js';
 import { openModal } from './modals.js';
 import { esc, avatarPrefix, weekPlan, DAY_NAMES } from './utils.js';
+import { ANYONE } from './weekics.js';
 
 function dayLabel(date) {
   const [y, m, d] = date.split('-').map(Number);
@@ -30,7 +31,17 @@ export function renderWeek() {
   if (el) el.innerHTML = weekHTML();
 }
 
+function renderIcsWho() {
+  const sel = document.getElementById('week-ics-who');
+  if (!sel) return;
+  const keep = sel.value;
+  sel.innerHTML = '<option value="">Everyone</option><option value="' + ANYONE + '">Anyone (unassigned)</option>' +
+    Object.keys(state.members || {}).map(n => '<option value="' + esc(n) + '">' + esc(n) + '</option>').join('');
+  sel.value = [...sel.options].some(o => o.value === keep) ? keep : '';
+}
+
 export function openWeek() {
+  renderIcsWho();
   renderWeek();
   openModal('week-modal');
 }
