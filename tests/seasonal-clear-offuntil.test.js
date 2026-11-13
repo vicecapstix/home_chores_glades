@@ -33,6 +33,7 @@ beforeEach(() => {
 describe('clearing "Switch off until" in the edit form', () => {
   it('keeps lastDone for a once chore', async () => {
     state.tasks.lawn.freq = 'once';
+    document.querySelector('.edit-freq').innerHTML = '<option value="once" selected></option>'; // the form's frequency is what saveTask reads
     await saveTask('lawn', admin);
     expect(state.tasks.lawn.lastDone).toBe(NOW - 30 * DAY);
   });
