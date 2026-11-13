@@ -313,6 +313,8 @@ body[data-reorder] .move-btns { display: flex; }
 /* WEEK PLANNER — stacked on phones, 7 columns on wide screens */
 .week-card { width: min(560px, 94vw); max-height: 85vh; overflow-y: auto; }
 #week-list { display: grid; gap: 10px; }
+.week-ics { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+body[data-readonly] .week-ics { display: none !important; }
 .wk-day { border: 1px solid var(--border); border-radius: 10px; padding: 8px 10px; }
 .wk-day h3 { font-size: 0.95rem; margin-bottom: 4px; }
 .wk-today { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }

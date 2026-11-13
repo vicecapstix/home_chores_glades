@@ -46,6 +46,7 @@ src/
   printchart.js    — admin printable Mon–Sun weekly chart (browser print)
   pwa.js           — service worker registration
   week.js          — "This week" planner modal (display only)
+  weekics.js       — "Download calendar (.ics)" for the This week planner: built in the browser, no network, no writes
   tocheck.js       — admin "To check" list + header count for parent checks; daily local notification (#239)
   redemptions.js   — reward requests: request, approve/deny, refund
   claims.js        — extra job claims: member logs an unlisted job, admin approves points (state/claims)
@@ -103,9 +104,12 @@ Database path: `/state`
   members:   { "Alice": { name, role, pinHash, points, weekPoints, weekStart,
                            streak, lastStreakDate, completedCount, badges }, … }
   tasks:     { "t<timestamp>": { id, name, freq, person, done, lastDone, … } }
-  history:   [ { taskId, taskName, person, completedAt, points }, … ]  ← max 500
+  history:   [ { taskId, taskName, person, completedAt, points, checkedBy? }, … ]  ← max 500; chore completions
+             also: { type:'bonus', taskName:'Bonus: <reason>', person, points (±), reason, by, completedAt } (admin ± Points, claims)
+             and:  { type:'swap', taskId, taskName:'Swap: …', person (taker), from, points:0, completedAt }
   nextId:    <number>
-  templates: { "tpl<timestamp>": { id, name, tasks: [{name,freq,difficulty}] } }
+  templates: { "tpl<timestamp>": { id, name, tasks: [{name,freq,difficulty, days?, everyWeeks?, intervalDays?, category?, notes?,
+                                                     dueTime?, needsCheck?, icon?, pointsOverride?, timeOfDay?, subtasks?: [names]}] } }
   rewards:   { "<id>": { id, name, cost, icon } }
   teamGoal:  { points, reward }  ← weekly family goal; progress computed from history
   claims:    { "cl<timestamp>": { id, member, name, points, requestedAt } }  ← pending only, max 20 per member
@@ -141,6 +145,8 @@ Firebase Anonymous Auth is initialized in `src/firebase.js:initAuth()` and grace
 4. The shared `state` object in `src/state.js` is mutated in place — all modules import and read it directly
 
 ### Module dependency graph (simplified)
+Core modules only — the file-structure list above is the complete module list. Later feature modules (savings, bonus, redemptions, claims, swaps, week, away, …) follow the same pattern: they import `state`, `config`, `firebase`, `ui` and `utils` as needed and are wired up through `window.*` handlers in `main.js`.
+
 ```
 main.js
  ├── config.js         (no local imports)

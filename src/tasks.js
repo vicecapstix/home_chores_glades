@@ -215,7 +215,9 @@ export async function saveTask(id, isAdminFn) {
   const pv = validPoints(card.querySelector('.edit-points')?.value);
   if (pv) state.tasks[id].pointsOverride = pv; else delete state.tasks[id].pointsOverride;
   const off = card.querySelector('.edit-offuntil')?.value;
+  const wasOff = isOffNow(state.tasks[id]);
   if (validDateStr(off) && off >= localDateStr()) state.tasks[id].offUntil = off; else delete state.tasks[id].offUntil;
+  if (wasOff && !state.tasks[id].offUntil && state.tasks[id].freq !== 'once' && !state.tasks[id].done) state.tasks[id].lastDone = initialLastDone(state.tasks[id]); // switched back on here: due today, like switchOnNow (#338)
   const tod = validTimeOfDay(card.querySelector('.edit-timeofday')?.value);
   if (tod) state.tasks[id].timeOfDay = tod; else delete state.tasks[id].timeOfDay;
   state.tasks[id].person     = card.querySelector('.edit-person').value;

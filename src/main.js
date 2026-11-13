@@ -85,6 +85,7 @@ import { openProgress } from './progress.js';
 import { openFairness } from './fairness.js';
 import { openWeek } from './week.js';
 import { hideMyDone } from './mydone.js';
+import { downloadWeekIcs } from './weekics.js';
 import { openToCheck } from './tocheck.js';
 import { requestReward, decideRequest, markGiven } from './redemptions.js';
 import { submitClaim, decideClaim } from './claims.js';
@@ -422,6 +423,7 @@ window.openProgress = name => openProgress(name || _currentMember(), _isAdmin, _
 // Week planner (read-only)
 window.openWeek = () => openWeek();
 window.hideMyDone = () => hideMyDone();
+window.downloadWeekIcs = () => downloadWeekIcs();
 window.openSwap = id => openSwapPicker(id, _currentMember);
 window.submitSwap = () => submitSwapPicker(_currentMember);
 window.acceptSwap = id => acceptSwap(id, _currentMember);
