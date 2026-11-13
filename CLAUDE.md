@@ -37,6 +37,7 @@ src/
   cache.js         — device-local snapshot cache (localStorage) for offline start
   connection.js    — online/offline indicator (Firebase .info/connected)
   goal.js          — family daily goal bar + celebration (display only)
+  mydone.js        — member's own "All done for today" banner, once per day per device (display only)
   install.js       — "Install app" button + iOS Add-to-Home-Screen hint
   history.js       — activity history modal
   pause.js         — holiday/pause mode
