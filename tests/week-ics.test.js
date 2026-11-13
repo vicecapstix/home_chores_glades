@@ -40,10 +40,12 @@ describe('This week .ics export (#316)', () => {
     expect(anyone).not.toContain('Dishes');
   });
   it('escapes commas, semicolons, backslashes and newlines', () => {
-    expect(icsEscape('a,b;c\\d\ne')).toBe('a\\,b\;c\\\\d\\ne');
+    expect(icsEscape('a,b;c\\d\ne')).toBe('a\\,b\\;c\\\\d\\ne');
+    expect(icsEscape('x\ry')).toBe('x\\ny'); // a bare CR must not start a new content line
+    expect(icsEscape('x\r\ny')).toBe('x\\ny');
     state.tasks = { z: { ...base, id: 'z', name: 'Sort, wash; fold\nlaundry', freq: 'daily', person: '' } };
     const ics = unfold(buildWeekIcs(state.tasks, '', NOW));
-    expect(ics).toContain('SUMMARY:Sort\\, wash\; fold\\nlaundry');
+    expect(ics).toContain('SUMMARY:Sort\\, wash\\; fold\\nlaundry');
     expect(ics).not.toMatch(/SUMMARY:[^\r]*\n[^\r]/); // no raw line break inside a value
   });
   it('folds long lines to 75 characters', () => {

@@ -8,7 +8,7 @@ import { showToast } from './ui.js';
 export const ANYONE = '__anyone';
 
 // RFC 5545 TEXT escaping: backslash, semicolon, comma, newline.
-export const icsEscape = s => String(s == null ? '' : s).replace(/\\/g, '\\\\').replace(/;/g, '\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n');
+export const icsEscape = s => String(s == null ? '' : s).replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r\n|\r|\n/g, '\\n');
 
 // Fold long lines at 75 characters (continuation lines start with one space).
 export function icsFold(line) {
