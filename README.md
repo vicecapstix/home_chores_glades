@@ -39,6 +39,9 @@ A real-time chore tracker for families — assign tasks, track progress, earn po
 - **Saving goal** — a member pins a reward to save towards; a progress bar shows on their chip and the TV
 - **Family goal** — a shared weekly points target with a reward, shown as a progress bar
 - **This week / My progress** — a Mon–Sun planner of what's due, and each member's last 4 weeks of points
+- **Calendar download** — the This week planner can download a member's chores as an `.ics` calendar file (built in the browser, nothing is sent anywhere)
+- **Pocket money** — admins can set a points-to-cash rate; the amount owed shows on member chips and the TV, and admins can mark it paid (undoable). Display only, points never change
+- **Chore swaps** — a member can offer one of their pending chores to a sibling, who accepts or declines; offers expire after 24 hours
 - **Avatars & rename** — admins can give members an emoji avatar or rename them (points and PIN are kept)
 - **Chore icons** — admins can pick an optional emoji for a chore (fixed list); it shows on cards, the TV and the This week planner, and is kept in templates and chore files
 - **Streak freezes** — a member earns 1 freeze per 7-day streak (max 2); one is spent automatically to bridge a single missed day (not during a house pause). Shown as ❄️N next to the streak
