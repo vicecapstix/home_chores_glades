@@ -143,7 +143,14 @@ export async function spendPoints(name, cost) {
   if (READONLY || !_db || !_live) return false;
   const res = await runTransaction(ref(_db, 'state/members/' + name + '/points'),
     cur => ((cur || 0) >= cost ? (cur || 0) - cost : undefined));
+  // Net points spent on rewards, so pocket money can tell a spend from a deduction (#347).
+  if (res.committed) await adjustSpent(name, cost);
   return !!res.committed;
+}
+
+async function adjustSpent(name, delta) {
+  try { await runTransaction(ref(_db, 'state/members/' + name + '/spent'), cur => Math.max(0, (cur || 0) + delta)); }
+  catch { /* display-only bookkeeping; the spend itself already succeeded */ }
 }
 
 // Parent check (#238): atomically take (and clear) a task's pending check request. Returns the
@@ -238,6 +245,7 @@ export async function removeHistoryEntry(match) {
 export async function refundPoints(name, cost) {
   if (READONLY || !_db || !_live) return;
   await runTransaction(ref(_db, 'state/members/' + name + '/points'), cur => (cur || 0) + cost);
+  await adjustSpent(name, -cost);
 }
 
 export { onValue, ref };

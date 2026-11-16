@@ -1,6 +1,6 @@
 // Pocket money (#229): display-only conversion of points to cash plus a payout log.
 // state/pocketMoney = {pts, amount}; absent = feature off. Never changes points.
-// Payouts live at members/<name>/payouts/p<at> = {at, by, points}, newest 52 kept.
+// Payouts live at members/<name>/payouts/p<at> = {at, by, points, earned?}, newest 52 kept.
 import { state } from './state.js';
 import { READONLY } from './config.js';
 import { patchRoot, patchPaths } from './firebase.js';
@@ -21,11 +21,16 @@ export function validRate(pts, amount) {
   return { pts: p, amount: a };
 }
 
+// Points earned all-time: balance plus net points spent on rewards (member.spent, #347).
+const earned = member => num(member && member.points) + num(member && member.spent);
+
 // Pure: points since the last payout, and the amount owed in cents (floored, never negative).
+// Reward spends/refunds don't change it; payouts made before `earned` existed fall back to their balance.
 export function owed(member, rate = state.pocketMoney) {
   const list = payoutList(member);
-  const last = list.length ? num(list[list.length - 1].points) : 0;
-  const pts = Math.max(0, num(member && member.points) - last);
+  const lastP = list.length ? list[list.length - 1] : null;
+  const last = lastP ? num(lastP.earned != null ? lastP.earned : lastP.points) : 0;
+  const pts = Math.max(0, earned(member) - last);
   const r = rate && validRate(rate.pts, rate.amount);
   const cents = r ? Math.floor(pts * Math.round(r.amount * 100) / r.pts) : 0;
   return { pts, cents };
@@ -64,7 +69,7 @@ export async function markPaid(name, isAdminFn, currentMemberFn) {
   _busy = true;
   try {
     const at = Date.now();
-    const entry = { at, by: currentMemberFn() || '', points: num(m.points) };
+    const entry = { at, by: currentMemberFn() || '', points: num(m.points), earned: earned(m) };
     const base = 'members/' + name + '/payouts/';
     const list = payoutList(m);
     const dropped = list.slice(0, Math.max(0, list.length + 1 - PAYOUT_CAP));
