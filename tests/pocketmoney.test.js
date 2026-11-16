@@ -66,13 +66,13 @@ describe('owed calculation (criterion 2)', () => {
 });
 
 describe('Mark paid (criterion 3)', () => {
-  it('records {at, by, points} touching only that member payouts', async () => {
+  it('records {at, by, points, earned} touching only that member payouts', async () => {
     expect(await markPaid('Kid', admin, me)).toBe(true);
     const paths = patchPaths.mock.calls[0][0];
     const keys = Object.keys(paths);
     expect(keys).toHaveLength(1);
     expect(keys[0]).toMatch(/^members\/Kid\/payouts\/p\d+$/);
-    expect(paths[keys[0]]).toEqual({ at: expect.any(Number), by: 'Mum', points: 37 });
+    expect(paths[keys[0]]).toEqual({ at: expect.any(Number), by: 'Mum', points: 37, earned: 37 });
     expect(owed(state.members.Kid).pts).toBe(0);
   });
   it('caps at 52 per member, dropping the oldest', async () => {

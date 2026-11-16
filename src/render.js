@@ -519,7 +519,7 @@ export function cardHTML(t) {
       (t.freq !== 'once' && !t.done
         ? '<button class="edit-btn skip-btn" aria-label="Skip ' + esc(t.name) + ' this time" title="Skip this time" onclick="event.stopPropagation();window.skipTask(\'' + jsq(t.id) + '\')">⏭</button>'
         : '') +
-      (canOfferSwap(t, _currentMember()) ? '<button class="edit-btn" aria-label="Offer ' + esc(t.name) + ' to a sibling" title="Offer swap" onclick="event.stopPropagation();window.openSwap(\'' + jsq(t.id) + '\')">🔄</button>' : '') +
+      (canOfferSwap(t, _currentMember()) ? '<button class="swap-btn" aria-label="Offer ' + esc(t.name) + ' to a sibling" title="Offer swap" onclick="event.stopPropagation();window.openSwap(\'' + jsq(t.id) + '\')">🔄</button>' : '') +
       '<button class="edit-btn" onclick="window.editTask(\'' + jsq(t.id) + '\')" title="Edit">✎</button>' +
       '<button class="del" onclick="window.deleteTask(\'' + jsq(t.id) + '\')" title="Remove">×</button>'
       ) +
