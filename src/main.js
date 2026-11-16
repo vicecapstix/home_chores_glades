@@ -47,7 +47,7 @@ import { addMember, backfillColors, removeMember, toggleRole, toggleRoleInPanel,
 
 import {
   initRender, render, cardHTML,
-  setFilter, setCatFilter, syncViewToMember,
+  setFilter, setCatFilter, setSearch, clearSearch, syncViewToMember,
   toggleSelectMode, toggleSelect,
   bulkAssign, bulkDelete,
   initMemberChipClicks,
@@ -266,6 +266,8 @@ window.popUndo        = ()        => popUndo();
 // Filters
 window.setFilter     = f          => setFilter(f);
 window.setCatFilter  = c          => setCatFilter(c);
+window.setSearch     = q          => setSearch(q);
+window.clearSearch   = ()         => clearSearch();
 
 // Select / Bulk
 window.toggleSelectMode = ()      => toggleSelectMode();

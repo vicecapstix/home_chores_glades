@@ -82,7 +82,8 @@ body[data-readonly] .check { cursor: default; }
 body[data-readonly] #readonly-banner { position: static; }
 body[data-readonly] .add-bar, body[data-readonly] .member-add, body[data-readonly] #btn-select,
 body[data-readonly] #btn-admin, body[data-readonly] #btn-switch-user, body[data-readonly] #bulk-bar,
-body[data-readonly] #filters { display: none !important; }
+body[data-readonly] #filters,
+body[data-readonly] #chore-search { display: none !important; }
 #tv-clock, #tv-strip { display: none; }
 
 /* HEADER */
@@ -485,6 +486,11 @@ body.tv-night::after { content: ''; position: fixed; inset: 0; background: rgba(
 @media (hover: none) {
   .del, .edit-btn { opacity: 0.45; }
 }
+
+.chore-search { position: relative; display: flex; align-items: center; margin-bottom: var(--space-sm); }
+.chore-search-input { flex: 1; width: 100%; min-height: 44px; padding: 8px 40px 8px 12px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); font-size: var(--font-md); font-family: inherit; background: var(--bg); color: var(--text); }
+.chore-search-clear { position: absolute; right: 2px; min-width: 44px; min-height: 44px; border: none; background: none; color: var(--muted); font-size: 1.2rem; cursor: pointer; }
+.chore-search-clear.hidden { display: none; }
 
 /* WEEKDAY CHIPS */
 .day-chips { display: flex; gap: 4px; flex-wrap: wrap; width: 100%; }
