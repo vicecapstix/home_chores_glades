@@ -184,6 +184,9 @@ button.tag-sync-fail { border: 1px solid var(--warn); cursor: pointer; font-fami
 .edit-btn { width: 28px; height: 28px; min-width: 40px; min-height: 40px; border: none; background: none; cursor: pointer; color: var(--muted); font-size: 1rem; border-radius: 6px; display: flex; align-items: center; justify-content: center; opacity: 0; flex-shrink: 0; }
 .task-card:hover .edit-btn { opacity: 0.5; }
 .edit-btn:hover { opacity: 1 !important; background: var(--bg); }
+.swap-btn { width: 28px; height: 28px; min-width: 44px; min-height: 44px; border: none; background: none; cursor: pointer; color: var(--muted); font-size: 1rem; border-radius: 6px; display: flex; align-items: center; justify-content: center; opacity: 0; flex-shrink: 0; }
+.task-card:hover .swap-btn { opacity: 0.5; }
+.swap-btn:hover { opacity: 1 !important; background: var(--bg); }
 .edit-name { flex: 1; padding: 6px 10px; border: 1.5px solid var(--accent); border-radius: var(--radius-sm); font-size: var(--font-md); font-family: inherit; color: var(--text); background: var(--bg); width: 100%; }
 .edit-row { display: flex; gap: var(--space-sm); margin-top: 6px; flex-wrap: wrap; }
 .edit-row select { flex: 1; padding: 6px 8px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); font-size: 0.85rem; font-family: inherit; background: var(--bg); color: var(--text); }
@@ -483,7 +486,7 @@ body.tv-night::after { content: ''; position: fixed; inset: 0; background: rgba(
 
 /* Touch devices: always show edit/delete buttons */
 @media (hover: none) {
-  .del, .edit-btn { opacity: 0.45; }
+  .del, .edit-btn, .swap-btn { opacity: 0.45; }
 }
 
 /* WEEKDAY CHIPS */
