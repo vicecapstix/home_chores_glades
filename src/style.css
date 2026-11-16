@@ -267,6 +267,7 @@ body[data-reorder] .move-btns { display: flex; }
 #history-modal,
 #progress-modal,
 #fairness-modal,
+#datasize-modal,
 #week-modal,
 #swap-modal,
 #tocheck-modal,
@@ -281,6 +282,7 @@ body[data-reorder] .move-btns { display: flex; }
 #history-modal.hidden,
 #progress-modal.hidden,
 #fairness-modal.hidden,
+#datasize-modal.hidden,
 #week-modal.hidden,
 #swap-modal.hidden,
 #tocheck-modal.hidden,
@@ -488,6 +490,8 @@ body.tv-night::after { content: ''; position: fixed; inset: 0; background: rgba(
 @media (hover: none) {
   .del, .edit-btn, .swap-btn { opacity: 0.45; }
 }
+
+.datasize-warn { background: var(--warn-light); color: var(--warn); border-radius: var(--radius-sm); padding: 6px 10px; }
 
 /* WEEKDAY CHIPS */
 .day-chips { display: flex; gap: 4px; flex-wrap: wrap; width: 100%; }

@@ -83,6 +83,7 @@ import { saveSnapshot, loadSnapshot, clearSnapshot, setCacheBanner } from './cac
 import { openHistory, setHistoryFilter, historyFilterClick, historyOptChange } from './history.js';
 import { openProgress } from './progress.js';
 import { openFairness } from './fairness.js';
+import { openDataSize } from './datasize.js';
 import { openWeek } from './week.js';
 import { hideMyDone } from './mydone.js';
 import { downloadWeekIcs } from './weekics.js';
@@ -419,6 +420,7 @@ window.historyOptChange = el     => historyOptChange(el);
 
 // My progress (read-only; members see their own, admins anyone's — enforced in progress.js)
 window.openFairness = () => openFairness(_isAdmin);
+window.openDataSize = () => openDataSize(_isAdmin);
 window.openProgress = name => openProgress(name || _currentMember(), _isAdmin, _currentMember);
 // Week planner (read-only)
 window.openWeek = () => openWeek();

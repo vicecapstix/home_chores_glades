@@ -446,6 +446,7 @@
     <label for="chores-file" class="sr-only">Chore list file (.json)</label>
     <input type="file" id="chores-file" class="sr-only" tabindex="-1" accept=".json,application/json" onchange="window.onChoresFile(this)" />
     <button class="btn-lg" style="width:100%;margin-top:0.5rem;" onclick="window.closeAdminPanel();window.openFairness()" title="Who did how much over the last 4 weeks">Fairness report</button>
+    <button class="btn-lg" style="width:100%;margin-top:0.5rem;" onclick="window.closeAdminPanel();window.openDataSize()" title="How big the family data is, and a rough monthly download estimate">Data size</button>
     <button class="btn-lg" style="width:100%;margin-top:0.5rem;" onclick="window.printChart()" title="Opens a printable Mon–Sun chart of the week's chores">Print chart</button>
     <button id="admin-parent-in" class="btn-lg" style="width:100%;margin-top:0.5rem;" onclick="window.openParentSignIn()">Parent sign in</button>
     <button id="admin-parent-out" class="btn-lg hidden" style="width:100%;margin-top:0.5rem;" onclick="window.parentSignOut()">Parent sign out</button>
@@ -462,6 +463,17 @@
       <button class="lb-close" aria-label="Close" onclick="window.closeModal('fairness-modal')">×</button>
     </div>
     <div id="fairness-list"></div>
+  </div>
+</div>
+
+<!-- DATA SIZE (admin) -->
+<div id="datasize-modal" class="hidden" role="dialog" aria-modal="true" aria-labelledby="datasize-title" onclick="window.closeModal('datasize-modal')">
+  <div class="lb-card prog-card" onclick="event.stopPropagation()">
+    <div class="lb-header">
+      <span class="lb-title" id="datasize-title">📦 Data size</span>
+      <button class="lb-close" aria-label="Close" onclick="window.closeModal('datasize-modal')">×</button>
+    </div>
+    <div id="datasize-list"></div>
   </div>
 </div>
 
