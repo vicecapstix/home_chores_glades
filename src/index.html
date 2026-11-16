@@ -411,6 +411,11 @@
     <textarea id="new-notes" class="note-input" placeholder="Add a note..." maxlength="300" style="display:none"></textarea>
   </div>
 
+  <div class="chore-search" id="chore-search">
+    <label for="chore-search-input" class="sr-only">Search chores</label>
+    <input id="chore-search-input" type="text" class="chore-search-input" placeholder="Search chores…" autocomplete="off" maxlength="60" oninput="window.setSearch(this.value)" onkeydown="if(event.key==='Escape')window.clearSearch()" />
+    <button type="button" id="chore-search-clear" class="chore-search-clear hidden" aria-label="Clear search" onclick="window.clearSearch()">×</button>
+  </div>
   <div class="filters" id="filters"></div>
   <div id="swaps-section" aria-live="polite"></div>
   <div id="task-list"></div>

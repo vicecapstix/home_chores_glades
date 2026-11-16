@@ -24,6 +24,7 @@ export function initRender(isAdminFn, currentMemberFn) {
 // ── Filter / select state ─────────────────────────────────────────────────────
 let filter     = 'all';
 let filterCat  = '';
+let searchQ    = ''; // chore search text (#354), render-time only
 let selectMode = false;
 let selectedIds = new Set();
 
@@ -46,6 +47,11 @@ export function syncViewToMember() {
   if (_viewMember !== undefined && me !== _viewMember) {
     filter = 'all';
     filterCat = '';
+    searchQ = '';
+    const si = document.getElementById('chore-search-input');
+    if (si) si.value = '';
+    const sx = document.getElementById('chore-search-clear');
+    if (sx) sx.classList.add('hidden');
     selectMode = false;
     selectedIds = new Set();
     _mineDefaulted = false;
@@ -283,6 +289,27 @@ function _renderFilters() {
   container.innerHTML = html;
 }
 
+// Case-insensitive match on a chore's name or notes (#354). Empty query matches everything.
+export function matchesSearch(t, q) {
+  const needle = String(q || '').trim().toLowerCase();
+  return !needle || (String(t.name || '') + ' ' + String(t.notes || '')).toLowerCase().includes(needle);
+}
+
+export function setSearch(q) {
+  searchQ = String(q || '');
+  const input = document.getElementById('chore-search-input');
+  if (input && input.value !== searchQ) input.value = searchQ;
+  const x = document.getElementById('chore-search-clear');
+  if (x) x.classList.toggle('hidden', !searchQ);
+  _renderTasks();
+}
+
+export function clearSearch() {
+  setSearch('');
+  const input = document.getElementById('chore-search-input');
+  if (input) input.focus();
+}
+
 // ── Tasks list ────────────────────────────────────────────────────────────────
 
 export function renderTasks() { _renderTasks(); }
@@ -293,6 +320,8 @@ function _renderTasks() {
   let tasks = _visibleTasks();
   tasks = tasks.filter(t => _statusPass(filter, t));
   if (filterCat) tasks = tasks.filter(t => t.category === filterCat);
+  const searching = !READONLY && !!searchQ.trim();
+  if (searching) tasks = tasks.filter(t => matchesSearch(t, searchQ));
 
   // Switched-off chores (#300) live in a collapsed Off section, shown on the TV too (#301).
   const offs = tasks.filter(t => isOffNow(t)).sort((a, b) => (a.order || 0) - (b.order || 0));
@@ -332,7 +361,7 @@ function _renderTasks() {
   if (!html && !showStale && !offs.length) {
     const noChores = !READONLY && _isAdmin() && !Object.keys(state.tasks || {}).length;
     html = noChores ? '<div class="empty">No chores yet — <button class="empty-link" onclick="window.openStarter()">Add from list</button></div>'
-      : '<div class="empty">Nothing here — all clear!</div>';
+      : '<div class="empty">' + (searching ? 'No chores match' : 'Nothing here — all clear!') + '</div>';
   }
   const taskList = document.getElementById('task-list');
   const kept = _captureInProgress(taskList);
