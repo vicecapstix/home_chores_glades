@@ -55,7 +55,8 @@ describe('redemptions and atomic points', () => {
     expect(await fb.spendPoints('Al', 20)).toBe(false);
     expect(await fb.spendPoints('Al', 10)).toBe(true);
     let seen;
-    runTransaction.mockImplementation(async (_r, fn) => { seen = fn(10); return { committed: true }; });
+    // only the points transaction (the `spent` bookkeeping runs on its own path, #347)
+    runTransaction.mockImplementation(async (r, fn) => { if (String(r).endsWith('/points')) seen = fn(10); return { committed: true }; });
     await fb.spendPoints('Al', 4);
     expect(seen).toBe(6);
     await fb.refundPoints('Al', 4);
