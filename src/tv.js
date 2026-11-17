@@ -2,7 +2,7 @@
 import { state, getMembers, memberColor } from './state.js';
 import { PCOLS, READONLY, TV_CYCLE } from './config.js';
 import { owedHTML } from './pocketmoney.js';
-import { awayText, esc, avatarPrefix, currentWeekPoints, currentStreak, freezeTag, lastWeekChampion, goalHTML } from './utils.js';
+import { awayText, esc, avatarPrefix, currentWeekPoints, currentStreak, freezeTag, lastWeekChampion, goalHTML, weekPlan, localDateStr, DAY_NAMES } from './utils.js';
 
 export function applyTvMode(readonly, body = document.body) {
   body.classList.toggle('tv', !!readonly);
@@ -44,6 +44,38 @@ export function renderTvStrip() {
   if (!READONLY) return;
   const el = document.getElementById('tv-strip');
   if (el) el.innerHTML = tvStripHTML();
+}
+
+// ── TV "Tomorrow" panel (#355): from 18:00 local, the chores due tomorrow (same weekPlan as This week) ──
+// Display only: built from synced state, no Firebase access, nothing stored. Away members are not
+// filtered, exactly like This week.
+export const TOMORROW_FROM = 18, TOMORROW_MAX = 12;
+export function tomorrowDay(tasks = state.tasks, now = Date.now()) {
+  const d = new Date(now); d.setDate(d.getDate() + 1);
+  // Plan "as of tomorrow": the week containing it (Sunday evening included), with switch-off and
+  // pause judged on tomorrow's date. Chores still overdue tonight are due then too.
+  return weekPlan(tasks, d.getTime()).find(x => x.isToday);
+}
+export function tvTomorrowHTML(tasks = state.tasks, now = Date.now()) {
+  if (new Date(now).getHours() < TOMORROW_FROM) return '';
+  const day = tomorrowDay(tasks, now);
+  if (!day) return '';
+  const shown = day.items.slice(0, TOMORROW_MAX), more = day.items.length - shown.length;
+  const chips = shown.map(it => {
+    const c = memberColor(it.person) || { bg: 'var(--bg)', text: 'var(--muted)' };
+    const who = it.person ? avatarPrefix(state.members[it.person]) + it.person : 'Anyone';
+    return '<li class="tv-tom-item"><span class="tv-tom-name">' + (it.dueTime ? '<b>' + esc(it.dueTime) + '</b> ' : '') + esc(it.icon || '') + esc(it.name) +
+      '</span><span class="lb-name wk-who" style="background:' + c.bg + ';color:' + c.text + '">' + esc(who) + '</span></li>';
+  }).join('');
+  return '<h2 class="tv-tom-title">🌙 Tomorrow, ' + esc(DAY_NAMES[day.dow]) + '</h2>' +
+    (day.paused ? '<div class="empty">⏸ Paused</div>' : chips ? '<ul>' + chips + (more > 0 ? '<li class="tv-tom-more">+' + more + ' more</li>' : '') + '</ul>' : '<div class="empty">Nothing due</div>');
+}
+export function renderTvTomorrow(now = Date.now()) {
+  if (!READONLY) return;
+  const el = document.getElementById('tv-tomorrow');
+  if (!el) return;
+  const html = tvTomorrowHTML(state.tasks, now);
+  if (el.innerHTML !== html) el.innerHTML = html; // the 1-min rollover tick calls this; skip no-op rewrites
 }
 
 // ── TV auto-cycle (#148): ?readonly=1&cycle=1 rotates Chores -> Leaderboard -> Rewards ──────────
