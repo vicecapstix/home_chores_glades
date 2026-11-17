@@ -12,6 +12,7 @@ import { initFirebase, initAuth, describeAuthFailure, setWritesEnabled, setAuthC
 import { initModalBackButton, openModal, closeModal, anyModalOpen } from './modals.js';
 import { initDialogA11y, initCardArrowNav } from './a11y.js';
 import { popUndo } from './undo.js';
+import { initTextSize, cycleTextSize } from './textsize.js';
 import { openStarter, closeStarter, toggleStarterCat, addSelectedStarter } from './starter.js';
 
 import {
@@ -108,6 +109,7 @@ startRollover(render);
 
 // ── Theme sync on load ────────────────────────────────────────────────────────
 syncThemeButton();
+initTextSize();
 
 // ── Modal back-button support ─────────────────────────────────────────────────
 initModalBackButton();
@@ -226,6 +228,7 @@ window.switchUser    = ()    => switchUser(window._fcLoginCallback);
 window.installApp     = ()    => installApp();
 window.dismissIosHint = ()   => dismissIosHint();
 window.toggleTheme   = ()    => toggleTheme();
+window.cycleTextSize = ()    => cycleTextSize();
 window.toggleNewNote = function() {
   const ta = document.getElementById('new-notes');
   ta.style.display = ta.style.display === 'none' ? '' : 'none';
