@@ -58,6 +58,7 @@ src/
   away.js          — per-member away mode (members/<name>/awayUntil), expiry + return patch
   restore.js       — admin restore from JSON backup (validate, caps, keeps PINs)
   theme.js         — Auto/Light/Dark theme setting (follows prefers-color-scheme)
+  textsize.js      — Normal/Large/Extra large text size (html.ts-* class), device-local; ?text=large on the TV
   teamgoal.js      — family weekly points goal (state/teamGoal), bar + admin form
   doublepoints.js  — double-points day (state/doublePoints {date, mult}), banner + admin form
   pocketmoney.js   — pocket money: display-only rate (state/pocketMoney {pts, amount}), owed on chips/TV, admin Mark paid + undo
