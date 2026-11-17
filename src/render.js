@@ -1,6 +1,6 @@
 import { state, getMembers } from './state.js';
 import { PCOLS, BADGES, READONLY } from './config.js';
-import { renderTvStrip } from './tv.js';
+import { renderTvStrip, renderTvTomorrow } from './tv.js';
 import { renderGoal } from './goal.js';
 import { renderMyDone } from './mydone.js';
 import { renderTeamGoal } from './teamgoal.js';
@@ -180,6 +180,7 @@ export function render() {
   _renderFilters();
   _renderTasks();
   renderTvStrip();
+  renderTvTomorrow();
   renderSwaps(_currentMember());
   renderGoal(Object.values(state.tasks || {}));
   renderMyDone(state.tasks, _currentMember(), _isAdmin);

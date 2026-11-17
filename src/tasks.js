@@ -258,7 +258,7 @@ async function undoCompletionRecords(id, t, c) {
   const m = c.by && state.members[c.by];
   if (!m || c.prevStreakDate === undefined || c.prevStreakDate === null) return;
   const day = localDateStr(new Date(c.at));
-  const otherSameDay = rest.some(h => h.person === c.by && localDateStr(new Date(h.completedAt)) === day);
+  const otherSameDay = rest.some(h => !h.type && h.person === c.by && localDateStr(new Date(h.completedAt)) === day);
   if (m.lastStreakDate !== day || otherSameDay || c.prevStreakDate === day) return;
   try { await patchMember(c.by, { streak: c.prevStreak || 0, lastStreakDate: c.prevStreakDate || null, freezes: c.prevFreezes || 0 }); return c.prevStreak || 0; }
   catch (err) { showToast('Member update failed: ' + (err.code || err.message)); }

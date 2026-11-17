@@ -88,7 +88,7 @@ body[data-readonly] .add-bar, body[data-readonly] .member-add, body[data-readonl
 body[data-readonly] #btn-admin, body[data-readonly] #btn-switch-user, body[data-readonly] #bulk-bar,
 body[data-readonly] #filters,
 body[data-readonly] #chore-search { display: none !important; }
-#tv-clock, #tv-strip { display: none; }
+#tv-clock, #tv-strip, #tv-tomorrow { display: none; }
 
 /* HEADER */
 header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 1.25rem var(--space-xl); display: flex; align-items: center; gap: var(--space-lg); flex-wrap: wrap; }
@@ -555,6 +555,11 @@ body.tv-night::after { content: ''; position: fixed; inset: 0; background: rgba(
   body.tv .tv-time { font-family: 'DM Serif Display', serif; font-size: 3rem; line-height: 1; }
   body.tv .tv-date { font-size: 1.1rem; color: var(--muted); }
   body.tv #tv-strip { display: flex; flex-wrap: wrap; gap: var(--space-sm); width: 100%; order: 10; }
+  body.tv #tv-tomorrow:not(:empty) { display: block; width: 100%; order: 11; }
+  body.tv .tv-tom-title { font-size: 1.2rem; margin: 0 0 var(--space-sm); }
+  body.tv #tv-tomorrow ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--space-sm); }
+  body.tv .tv-tom-item { display: flex; align-items: center; gap: var(--space-sm); padding: 4px 12px; border: 1px solid var(--border); border-radius: 20px; font-size: 1.1rem; }
+  body.tv .tv-tom-more { align-self: center; color: var(--muted); font-size: 1.1rem; }
   body.tv .tv-chip { padding: 6px 16px; border-radius: 20px; font-size: 1.1rem; }
   body.tv #task-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-lg); align-items: start; }
   body.tv .task-name { font-size: 1.4rem; overflow-wrap: anywhere; }

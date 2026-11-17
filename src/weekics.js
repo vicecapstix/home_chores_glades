@@ -10,10 +10,18 @@ export const ANYONE = '__anyone';
 // RFC 5545 TEXT escaping: backslash, semicolon, comma, newline.
 export const icsEscape = s => String(s == null ? '' : s).replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r\n|\r|\n/g, '\\n');
 
-// Fold long lines at 75 characters (continuation lines start with one space).
+// Fold long lines at 75 UTF-8 octets (RFC 5545 3.1); continuation lines start with one space (counted in the 75).
+// Walks code points so a fold never splits a surrogate pair or a multi-byte character.
+const enc = new TextEncoder();
 export function icsFold(line) {
   const out = [];
-  for (let i = 0; i < line.length; i += i ? 74 : 75) out.push((i ? ' ' : '') + line.slice(i, i ? i + 74 : i + 75));
+  let cur = '', size = 0;
+  for (const ch of line) {
+    const n = enc.encode(ch).length;
+    if (size + n > (out.length ? 74 : 75)) { out.push((out.length ? ' ' : '') + cur); cur = ''; size = 0; }
+    cur += ch; size += n;
+  }
+  out.push((out.length ? ' ' : '') + cur);
   return out.join('\r\n');
 }
 
