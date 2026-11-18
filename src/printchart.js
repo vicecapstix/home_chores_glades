@@ -2,7 +2,7 @@
 // Browser print only; computed from local state, no Firebase access.
 import { state, getMembers } from './state.js';
 import { READONLY } from './config.js';
-import { esc, getWeekStart, localDateStr, isOffNow, weekIsOn, parseLocalDate } from './utils.js';
+import { esc, getWeekStart, localDateStr, offOnDate, weekIsOn, parseLocalDate } from './utils.js';
 
 export const CHART_DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
@@ -12,24 +12,27 @@ export function weekDates(weekStart) {
   return CHART_DAYS.map((_, i) => localDateStr(new Date(y, m - 1, d + i)));
 }
 
+// Clears the days a switched-off chore is still off on (offUntil is inclusive, #350).
+function maskOff(t, dates, r) { return { ...r, days: r.days.map((on, i) => on && !offOnDate(t, dates[i])) }; }
+
 // Pure due-day logic. Returns { days: boolean[7] (Mon..Sun), anyDay }.
 // daily: every day; weekdays: the chosen days; once: its due date if in this
 // week; weekly/fortnightly/monthly/interval: no fixed day, so "any day".
 export function dueDays(t, dates) {
   const days = [false, false, false, false, false, false, false];
   if (!t) return { days, anyDay: false };
-  if (t.freq === 'daily') return { days: days.map(() => true), anyDay: false };
+  if (t.freq === 'daily') return maskOff(t, dates, { days: days.map(() => true), anyDay: false });
   if (t.freq === 'weekdays') {
     if (!weekIsOn(t, parseLocalDate(dates[0]).getTime())) return { days, anyDay: false }; // off-week of an every-N-weeks chore (#314)
     (t.days || []).map(Number).forEach(d => { if (d >= 0 && d <= 6) days[(d + 6) % 7] = true; });
-    return { days, anyDay: false };
+    return maskOff(t, dates, { days, anyDay: false });
   }
   if (t.freq === 'once') {
     const i = dates.indexOf(t.dueDate);
     if (i >= 0) days[i] = true;
-    return { days, anyDay: false };
+    return maskOff(t, dates, { days, anyDay: false });
   }
-  return { days, anyDay: true };
+  return { days, anyDay: !offOnDate(t, dates[6]) }; // off the whole week -> not listed (#350)
 }
 
 // Groups tasks by member (members first, then "Anyone"); skips groups with no rows.
@@ -37,7 +40,7 @@ export function chartRows(tasks, members, weekStart) {
   const dates = weekDates(weekStart);
   const groups = members.concat(['']).map(person => {
     const rows = Object.values(tasks || {})
-      .filter(t => t && !isOffNow(t) && (t.person || '') === person) // switched off chores aren't printed (#301)
+      .filter(t => t && (t.person || '') === person) 
       .map(t => ({ task: t, ...dueDays(t, dates) }))
       .filter(r => r.anyDay || r.days.some(Boolean))
       .sort((a, b) => (a.task.order || 0) - (b.task.order || 0) || String(a.task.name).localeCompare(String(b.task.name)));
