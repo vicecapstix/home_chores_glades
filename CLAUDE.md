@@ -112,7 +112,7 @@ Database path: `/state`
   nextId:    <number>
   templates: { "tpl<timestamp>": { id, name, tasks: [{name,freq,difficulty, days?, everyWeeks?, intervalDays?, category?, notes?,
                                                      dueTime?, needsCheck?, icon?, pointsOverride?, timeOfDay?, subtasks?: [names]}] } }
-  rewards:   { "<id>": { id, name, cost, icon } }
+  rewards:   { "<id>": { id, name, cost, icon, perWeek?, stock? } }  ← stock optional whole 1-99 = copies left (absent = unlimited); a pending request reserves one (transaction on rewards/<id>/stock), deny/undo returns it
   teamGoal:  { points, reward }  ← weekly family goal; progress computed from history
   claims:    { "cl<timestamp>": { id, member, name, points, requestedAt } }  ← pending only, max 20 per member
   swaps:     { "sw<timestamp>": { id, taskId, taskName, from, to, offeredAt, lastDone } }  ← open chore-swap offers, max 50; expire after 24 h or when the chore is done/reset/reassigned

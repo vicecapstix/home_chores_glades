@@ -1,6 +1,6 @@
 import { state } from './state.js';
 import { READONLY } from './config.js';
-import { patchRoot, spendPoints, refundPoints, decideRedemption } from './firebase.js';
+import { patchRoot, spendPoints, refundPoints, decideRedemption, reserveStock, releaseStock } from './firebase.js';
 import { showToast } from './ui.js';
 import { pushUndo } from './undo.js';
 import { getWeekStart } from './utils.js';
@@ -62,6 +62,7 @@ export async function requestReward(rewardId, currentMemberFn) {
   if (reward.perWeek && usedThisWeek(state.redemptions, rewardId, me) >= reward.perWeek) {
     showToast('Limit reached: ' + reward.perWeek + ' per week'); return;
   }
+  if (reward.stock === 0) { showToast('Sold out'); return; }
   const drops = idsToDrop(state.redemptions);
   if (Object.keys(state.redemptions || {}).length - drops.length >= MAX_REDEMPTIONS) {
     showToast('Too many unfinished requests - ask a parent to give or clear some'); return;
@@ -69,9 +70,13 @@ export async function requestReward(rewardId, currentMemberFn) {
   busy = true;
   try {
     let ok;
-    try { ok = await spendPoints(me, reward.cost); }
+    try { ok = await reserveStock(rewardId); }
     catch (err) { showToast('Request failed: ' + (err.code || err.message)); return; }
-    if (!ok) { showToast('Not enough points'); return; }
+    if (!ok) { showToast('Sold out'); return; }
+    const giveBack = () => releaseStock(rewardId).catch(() => {});
+    try { ok = await spendPoints(me, reward.cost); }
+    catch (err) { await giveBack(); showToast('Request failed: ' + (err.code || err.message)); return; }
+    if (!ok) { await giveBack(); showToast('Not enough points'); return; }
     const id = 'rd' + Date.now();
     const entry = { id, rewardId, rewardName: reward.name, cost: reward.cost, member: me, requestedAt: Date.now(), status: 'pending' };
     const fields = { ['redemptions/' + id]: entry };
@@ -79,6 +84,7 @@ export async function requestReward(rewardId, currentMemberFn) {
     try { await patchRoot(fields); }
     catch (err) {
       if (state.members[me]) await refundPoints(me, reward.cost).catch(() => {});
+      await giveBack();
       showToast('Request failed: ' + (err.code || err.message));
       return;
     }
@@ -92,6 +98,7 @@ export async function requestReward(rewardId, currentMemberFn) {
         if (state.redemptions?.[id]?.status !== 'pending') throw new Error('Already processed');
         await patchRoot({ ['redemptions/' + id]: null });
         if (state.members[me]) await refundPoints(me, reward.cost);
+        await giveBack();
         delete state.redemptions[id];
       },
     });
@@ -111,6 +118,7 @@ export async function decideRequest(id, status, isAdminFn, currentMemberFn) {
     catch (err) { showToast('Update failed: ' + (err.code || err.message)); return; }
     if (!ok) { showToast('Already decided'); return; }
     r.status = status; r.decidedAt = Date.now(); r.decidedBy = currentMemberFn() || 'admin';
+    if (status === 'denied') await releaseStock(r.rewardId).catch(() => {});
     if (status === 'denied' && state.members[r.member]) {
       try { await refundPoints(r.member, r.cost); }
       catch (err) { showToast('Denied, but refund failed for ' + r.member + ' (' + r.cost + ' pts) — add manually'); return; }
