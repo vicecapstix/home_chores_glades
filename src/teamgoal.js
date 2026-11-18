@@ -5,7 +5,7 @@ import { state } from './state.js';
 import { READONLY } from './config.js';
 import { patchRoot } from './firebase.js';
 import { showToast } from './ui.js';
-import { esc, getWeekStart, weekRecap } from './utils.js';
+import { esc, getWeekStart } from './utils.js';
 
 export const TEAM_GOAL_MIN = 10;
 export const TEAM_GOAL_MAX = 2000;
@@ -23,7 +23,16 @@ export function validTeamGoal(points, reward) {
 
 // Pure: points earned by everyone in the local week containing `now`.
 export function teamGoalProgress(history, goal, now = Date.now()) {
-  const total = weekRecap(history, getWeekStart(now)).reduce((s, r) => s + r.points, 0);
+  // Sum every points entry (deductions included) directly: weekRecap drops members whose week total is <= 0.
+  const [y, m, d] = getWeekStart(now).split('-').map(Number);
+  const start = new Date(y, m - 1, d).getTime();
+  const end = new Date(y, m - 1, d + 7).getTime();
+  let total = 0;
+  (history || []).forEach(e => {
+    if (!e || !e.person || !(e.completedAt >= start && e.completedAt < end)) return;
+    const p = Number(e.points);
+    if (Number.isFinite(p)) total += p;
+  });
   const target = goal && goal.points > 0 ? goal.points : 0;
   const earned = Math.max(0, total);
   return { earned, target, reached: target > 0 && earned >= target, pct: target ? Math.min(100, Math.floor(earned * 100 / target)) : 0 };
