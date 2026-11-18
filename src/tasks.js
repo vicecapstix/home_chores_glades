@@ -5,7 +5,7 @@ import { showToast } from './ui.js';
 import { pushUndo } from './undo.js';
 import { dropRetry } from './pending.js';
 import { activeMultiplier } from './doublepoints.js';
-import { esc, jsq, validTime, validInterval, INTERVAL_MIN, INTERVAL_MAX, freqDays, cycleDays, daysSince, dueStatus, taskPoints, getWeekStart, localDateStr, prevScheduledStart, validEveryWeeks, isStaleDoneOnce, initialLastDone, CHORE_ICONS, TIMES_OF_DAY, validTimeOfDay, isOffNow, validDateStr, nextRotationPerson, awayNames, DAY_NAMES, nextStreak, isPausedNow, freezeCount, validPoints, POINTS_MIN, POINTS_MAX } from './utils.js';
+import { esc, jsq, validTime, validInterval, INTERVAL_MIN, INTERVAL_MAX, freqDays, cycleDays, daysSince, dueStatus, taskPoints, getWeekStart, localDateStr, prevScheduledStart, validEveryWeeks, isStaleDoneOnce, initialLastDone, CHORE_ICONS, TIMES_OF_DAY, validTimeOfDay, isOffNow, validDateStr, nextRotationPerson, awayNames, DAY_NAMES, nextStreak, isPausedNow, freezeCount, validPoints, POINTS_MIN, POINTS_MAX, validMinutes, MINUTES_MIN, MINUTES_MAX } from './utils.js';
 
 // Re-export for other modules
 export { dueStatus, taskPoints, freqDays };
@@ -89,6 +89,7 @@ export async function addTask(isAdminFn) {
   const dueTime = validTime(document.getElementById('new-duetime')?.value);
   const needsCheck = !!document.getElementById('new-needscheck')?.checked;
   const pts = validPoints(document.getElementById('new-points')?.value);
+  const mins = validMinutes(document.getElementById('new-minutes')?.value);
   const notesEl = document.getElementById('new-notes');
   const notes   = notesEl.value.trim();
   const id      = 't' + Date.now();
@@ -101,6 +102,7 @@ export async function addTask(isAdminFn) {
     ...(needsCheck ? { needsCheck: true } : {}),
     ...(icon ? { icon } : {}),
     ...(pts ? { pointsOverride: pts } : {}),
+    ...(mins ? { minutes: mins } : {}),
     ...(tod ? { timeOfDay: tod } : {}),
     notes: notes || '', difficulty: diff, category: cat || '',
     dueDate: dueDate || '', ...(dueTime ? { dueTime } : {}), subtasks: {}, order: Date.now(),
@@ -122,6 +124,7 @@ export async function addTask(isAdminFn) {
   if (document.getElementById('new-needscheck')) document.getElementById('new-needscheck').checked = false;
   if (document.getElementById('new-icon')) document.getElementById('new-icon').value = '';
   if (document.getElementById('new-points')) document.getElementById('new-points').value = '';
+  if (document.getElementById('new-minutes')) document.getElementById('new-minutes').value = '';
   if (document.getElementById('new-timeofday')) document.getElementById('new-timeofday').value = '';
   try { await patchPaths({ ['tasks/' + id]: state.tasks[id], nextId: state.nextId }); } catch (err) { showToast('Save failed: ' + (err.code || err.message)); }
 }
@@ -160,6 +163,7 @@ export function editTask(id, isAdminFn) {
       '<input type="time" class="edit-duetime" aria-label="Due time" value="' + esc(validTime(t.dueTime)) + '" />' +
       '<select class="edit-diff">' + diffOpts + '</select>' +
       '<input type="number" class="edit-points" aria-label="Points override (blank = automatic)" min="' + POINTS_MIN + '" max="' + POINTS_MAX + '" step="1" inputmode="numeric" placeholder="Pts" value="' + esc(String(validPoints(t.pointsOverride) || '')) + '" />' +
+      '<input type="number" class="edit-minutes" aria-label="About how many minutes (blank = none)" min="' + MINUTES_MIN + '" max="' + MINUTES_MAX + '" step="1" inputmode="numeric" placeholder="Min" value="' + esc(String(validMinutes(t.minutes) || '')) + '" />' +
       '<select class="edit-icon" aria-label="Icon">' + iconOpts + '</select>' +
       '<select class="edit-timeofday" aria-label="Time of day">' + todOpts + '</select>' +
       '<select class="edit-cat">' + catOpts + '</select>' +
@@ -214,6 +218,8 @@ export async function saveTask(id, isAdminFn) {
   if (CHORE_ICONS.includes(ic)) state.tasks[id].icon = ic; else delete state.tasks[id].icon;
   const pv = validPoints(card.querySelector('.edit-points')?.value);
   if (pv) state.tasks[id].pointsOverride = pv; else delete state.tasks[id].pointsOverride;
+  const mv = validMinutes(card.querySelector('.edit-minutes')?.value);
+  if (mv) state.tasks[id].minutes = mv; else delete state.tasks[id].minutes;
   const off = card.querySelector('.edit-offuntil')?.value;
   const wasOff = isOffNow(state.tasks[id]);
   if (validDateStr(off) && off >= localDateStr()) state.tasks[id].offUntil = off; else delete state.tasks[id].offUntil;
@@ -230,7 +236,7 @@ export async function saveTask(id, isAdminFn) {
     [p + 'difficulty']: t.difficulty, [p + 'category']: t.category,
     [p + 'person']: t.person, [p + 'notes']: t.notes, [p + 'rotation']: t.rotation || null,
     [p + 'lastDone']: t.lastDone, [p + 'intervalDays']: t.intervalDays || null,
-    [p + 'needsCheck']: t.needsCheck || null, [p + 'icon']: t.icon || null, [p + 'pointsOverride']: t.pointsOverride || null, [p + 'offUntil']: t.offUntil || null, [p + 'timeOfDay']: t.timeOfDay || null,
+    [p + 'needsCheck']: t.needsCheck || null, [p + 'icon']: t.icon || null, [p + 'pointsOverride']: t.pointsOverride || null, [p + 'minutes']: t.minutes || null, [p + 'offUntil']: t.offUntil || null, [p + 'timeOfDay']: t.timeOfDay || null,
   };
   // Never write checkPending back from the local copy: another device may have just taken it (two parents must not both pay).
   if (!t.needsCheck) paths[p + 'checkPending'] = null;
