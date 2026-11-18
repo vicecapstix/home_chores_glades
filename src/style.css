@@ -332,6 +332,7 @@ body[data-readonly] .week-ics { display: none !important; }
 .wk-day ul { list-style: none; margin: 0; padding: 0; }
 .wk-item { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; padding: 4px 0; font-size: 0.9rem; }
 .wk-time { font-weight: 600; color: var(--muted); font-size: 0.8rem; }
+.wk-mins { font-size: 0.8rem; color: var(--muted); margin: 2px 0 4px; }
 .wk-name { flex: 1; min-width: 0; overflow-wrap: anywhere; }
 .wk-done .wk-name { text-decoration: line-through; color: var(--muted); }
 .wk-who { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

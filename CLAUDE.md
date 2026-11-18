@@ -111,7 +111,7 @@ Database path: `/state`
              and:  { type:'swap', taskId, taskName:'Swap: …', person (taker), from, points:0, completedAt }
   nextId:    <number>
   templates: { "tpl<timestamp>": { id, name, tasks: [{name,freq,difficulty, days?, everyWeeks?, intervalDays?, category?, notes?,
-                                                     dueTime?, needsCheck?, icon?, pointsOverride?, timeOfDay?, subtasks?: [names]}] } }
+                                                     dueTime?, needsCheck?, icon?, pointsOverride?, minutes?, timeOfDay?, subtasks?: [names]}] } }
   rewards:   { "<id>": { id, name, cost, icon } }
   teamGoal:  { points, reward }  ← weekly family goal; progress computed from history
   claims:    { "cl<timestamp>": { id, member, name, points, requestedAt } }  ← pending only, max 20 per member
@@ -249,6 +249,7 @@ Every piece of user-supplied data injected into `innerHTML` or an `onclick` stri
   subtasks,      // { 's<timestamp>': { id, name, done } }
   offUntil,      // YYYY-MM-DD inclusive: chore switched off for the season (never due, no resets); removed by checkOffExpiry (omitted when unset)
   pointsOverride,// whole number 1-50 replacing the freq x difficulty points (omitted when unset); validPoints()/taskPoints() in src/utils.js
+  minutes,       // whole number 1-180: optional "about N min" estimate, display only (card tag, This week totals); omitted when unset; validMinutes() in src/utils.js
   timeOfDay,     // 'morning'|'afternoon'|'evening' (After school) — optional label; anything else is ignored (omitted when unset)
   order,         // number used for move up/down ordering
   rotation,      // string[] of 2+ member names; person advances on each reset (omitted when off)
