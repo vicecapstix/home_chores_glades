@@ -304,6 +304,8 @@ export function isPausedNow(now = Date.now()) { return !!_pausedUntil && localDa
 // Seasonal chores (#300): task.offUntil (YYYY-MM-DD, inclusive) switches one chore off.
 export const validDateStr = v => /^\d{4}-\d{2}-\d{2}$/.test(String(v || ''));
 export const parseLocalDate = s => { const [y, m, d] = String(s).split('-').map(Number); return new Date(y, m - 1, d); };
+// True when the chore is switched off on the given local date (YYYY-MM-DD), inclusive of offUntil (#350).
+export function offOnDate(t, dateStr) { return !!t && validDateStr(t.offUntil) && dateStr <= t.offUntil; }
 export function isOffNow(t, now = Date.now()) { return !!t && validDateStr(t.offUntil) && localDateStr(new Date(now)) <= t.offUntil; }
 
 // Away mode (#176): per-member awayUntil (YYYY-MM-DD, inclusive). Armed from applySnapshot.
@@ -467,25 +469,26 @@ export function weekPlan(tasks, now = Date.now()) {
     days.push({ date, dow: dt.getDay(), isToday: date === todayStr, paused: !!_pausedUntil && date >= todayStr && date <= _pausedUntil, items: [] });
   }
   for (const t of Object.values(tasks || {})) {
-    if (!t || !t.name || isOffNow(t, now)) continue; // switched off chores aren't planned (#301)
+    if (!t || !t.name) continue;
     const doneOn = t.done && t.lastDone ? localDateStr(new Date(t.lastDone)) : '';
+    const off = day => offOnDate(t, day.date); // switched off per plan day (#301, #350)
     const item = day => ({ id: t.id, name: t.name, icon: iconPrefix(t), person: t.person || '', dueTime: validTime(t.dueTime), done: !!t.done && doneOn === day.date });
     if (t.freq === 'once') {
       if (t.done || !/^\d{4}-\d{2}-\d{2}$/.test(String(t.dueDate || ''))) continue;
       const day = days.find(x => x.date === (t.dueDate < todayStr ? todayStr : t.dueDate)); // overdue one-offs are due now
-      if (day) day.items.push(item(day));
+      if (day && !off(day)) day.items.push(item(day));
     } else if (t.freq === 'weekdays') {
       const sel = (t.days || []).map(Number);
-      days.forEach(day => { if (sel.includes(day.dow) && weekIsOn(t, parseLocalDate(day.date).getTime())) day.items.push(item(day)); });
+      days.forEach(day => { if (sel.includes(day.dow) && weekIsOn(t, parseLocalDate(day.date).getTime()) && !off(day)) day.items.push(item(day)); });
     } else if (t.freq === 'daily') {
-      days.forEach(day => day.items.push(item(day)));
+      days.forEach(day => { if (!off(day)) day.items.push(item(day)); });
     } else {
       const due = new Date(t.lastDone || 0);
       due.setDate(due.getDate() + cycleDays(t, t.lastDone));
       let ds = localDateStr(due);
       if (ds < todayStr) ds = todayStr; // overdue: due now
       const day = days.find(x => x.date === ds);
-      if (day) day.items.push(item(day));
+      if (day && !off(day)) day.items.push(item(day));
     }
   }
   for (const day of days) {
