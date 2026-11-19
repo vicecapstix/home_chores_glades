@@ -251,9 +251,10 @@ export async function removeHistoryEntry(match) {
 }
 
 // Limited-stock rewards (#357). A pending request reserves one; deny/undo/failed request returns it.
-// A reward without `stock` is unlimited: both helpers leave it alone. Returns false only when sold out.
+// A reward without `stock` is unlimited: both helpers leave it alone. Returns false only when sold out
+// (not live: nothing reserved and true, so the points step then reports the cached start as before).
 export async function reserveStock(id) {
-  if (READONLY || !_db || !_live) return false;
+  if (READONLY || !_db || !_live) return true;
   let soldOut = false;
   await runTransaction(ref(_db, 'state/rewards/' + id + '/stock'), cur => {
     if (cur == null) return undefined;
