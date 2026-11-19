@@ -86,7 +86,8 @@ export async function acceptSwap(id, currentMemberFn) {
         const cur = state.tasks[s.taskId];
         if (cur?.person !== me) return;
         // Ticked (or reset) since the swap: handing it back would give a done chore to someone who didn't do it (#352).
-        if (cur.done || (cur.lastDone || 0) !== lastDoneAtSwap) { showToast("Can't undo the swap: the chore has been done"); return; }
+        // Throw so undo.js shows "Restore failed" instead of a false "Restored" (same as skip undo, #309).
+        if (cur.done || (cur.lastDone || 0) !== lastDoneAtSwap) throw new Error('the chore has been done');
         await patchRoot({ ['tasks/' + s.taskId + '/person']: s.from });
         await removeHistoryEntry({ type: 'swap', taskId: s.taskId, person: me, completedAt: at });
       },
