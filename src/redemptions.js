@@ -1,6 +1,6 @@
 import { state } from './state.js';
 import { READONLY } from './config.js';
-import { patchRoot, spendPoints, refundPoints, decideRedemption, reserveStock, releaseStock } from './firebase.js';
+import { patchRoot, spendPoints, refundPoints, decideRedemption, takePendingRedemption, reserveStock, releaseStock } from './firebase.js';
 import { showToast } from './ui.js';
 import { pushUndo } from './undo.js';
 import { getWeekStart } from './utils.js';
@@ -96,10 +96,10 @@ export async function requestReward(rewardId, currentMemberFn) {
       label: reward.name, verb: 'Requested',
       undo: async () => {
         if (state.redemptions?.[id]?.status !== 'pending') throw new Error('Already processed');
-        await patchRoot({ ['redemptions/' + id]: null });
-        if (state.members[me]) await refundPoints(me, reward.cost);
-        await giveBack();
+        if (!(await takePendingRedemption(id))) throw new Error('Already processed');
         delete state.redemptions[id];
+        await releaseStock(rewardId).catch(() => {}); // before the refund, so a failed refund can't strand the copy
+        if (state.members[me]) await refundPoints(me, reward.cost);
       },
     });
   } finally { busy = false; }

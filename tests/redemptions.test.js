@@ -6,11 +6,11 @@ vi.mock('../src/firebase.js', () => ({
   patchRoot: vi.fn().mockResolvedValue(undefined),
   spendPoints: vi.fn(async () => spendOk),
   refundPoints: vi.fn().mockResolvedValue(undefined),
-  reserveStock: vi.fn().mockResolvedValue(true), releaseStock: vi.fn().mockResolvedValue(undefined),
+  takePendingRedemption: vi.fn().mockResolvedValue(true), reserveStock: vi.fn().mockResolvedValue(true), releaseStock: vi.fn().mockResolvedValue(undefined),
 }));
 vi.mock('../src/ui.js', () => ({ showToast: vi.fn() }));
 vi.mock('../src/undo.js', () => ({ pushUndo: vi.fn() }));
-import { patchRoot, spendPoints, refundPoints } from '../src/firebase.js';
+import { patchRoot, spendPoints, refundPoints, takePendingRedemption } from '../src/firebase.js';
 import { showToast } from '../src/ui.js';
 import { pushUndo } from '../src/undo.js';
 import * as D from '../src/redemptions.js';
@@ -75,7 +75,7 @@ describe('requestReward', () => {
     const id = Object.keys(state.redemptions)[0];
     patchRoot.mockClear();
     await undo();
-    expect(patchRoot).toHaveBeenCalledWith({ ['redemptions/' + id]: null });
+    expect(takePendingRedemption).toHaveBeenCalledWith(id);
     expect(refundPoints).toHaveBeenCalledWith('Alice', 20);
     expect(state.redemptions[id]).toBeUndefined();
   });

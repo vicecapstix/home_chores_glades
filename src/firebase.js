@@ -175,6 +175,14 @@ export async function decideRedemption(id, status, by) {
   return !!res.committed;
 }
 
+// Atomically remove a still-pending reward request (undo of a request, #357): true only when
+// this call removed it, so an admin's deny on another device and the undo can't both give a copy back.
+export async function takePendingRedemption(id) {
+  if (READONLY || !_db || !_live) return false;
+  const res = await runTransaction(ref(_db, 'state/redemptions/' + id), cur => (cur && cur.status === 'pending' ? null : undefined));
+  return !!res.committed;
+}
+
 // Atomically remove a pending extra-job claim (#224). Returns true only for the
 // one caller whose transaction removed it, so two parents can't both award it.
 export async function takeClaim(id) {
