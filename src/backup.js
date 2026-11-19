@@ -2,6 +2,7 @@ import { state } from './state.js';
 import { READONLY } from './config.js';
 import { localDateStr } from './utils.js';
 import { showToast } from './ui.js';
+import { markBackupDone } from './backupreminder.js';
 
 export const BACKUP_SCHEMA_VERSION = 1;
 
@@ -45,6 +46,7 @@ export function downloadBackup(isAdminFn) {
     a.click();
     a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
+    markBackupDone(now.getTime());
     showToast('Backup downloaded');
     return true;
   } catch (e) {

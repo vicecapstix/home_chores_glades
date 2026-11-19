@@ -87,6 +87,7 @@ import { openFairness } from './fairness.js';
 import { openDataSize } from './datasize.js';
 import { openWeek } from './week.js';
 import { hideMyDone } from './mydone.js';
+import { dismissBackupReminder } from './backupreminder.js';
 import { downloadWeekIcs } from './weekics.js';
 import { openToCheck } from './tocheck.js';
 import { requestReward, decideRequest, markGiven } from './redemptions.js';
@@ -367,6 +368,7 @@ window.clearSavedData = function() {
   showToast('Saved data cleared on this device');
 };
 window.downloadBackup = function() { downloadBackup(_isAdmin); };
+window.dismissBackupReminder = function() { dismissBackupReminder(); };
 window.pickRestoreFile = function() { if (READONLY || !_isAdmin()) return; document.getElementById('restore-file').click(); };
 window.onRestoreFile = function(inp) { const f = inp.files && inp.files[0]; inp.value = ''; return prepareRestore(f, _isAdmin); };
 window.downloadChores = function() { downloadChores(_isAdmin); };
