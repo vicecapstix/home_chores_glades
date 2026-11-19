@@ -276,6 +276,17 @@ export function validPoints(n) {
   return Number.isInteger(v) && v >= POINTS_MIN && v <= POINTS_MAX ? v : 0;
 }
 
+// Optional per-chore time estimate (#358): whole minutes 1-180, else 0 (ignored). Display only, never affects points.
+export const MINUTES_MIN = 1, MINUTES_MAX = 180;
+export function validMinutes(n) {
+  const v = typeof n === 'string' && n.trim() !== '' ? Number(n) : n;
+  return Number.isInteger(v) && v >= MINUTES_MIN && v <= MINUTES_MAX ? v : 0;
+}
+export function minutesLabel(t) {
+  const m = t && typeof t.minutes === 'number' ? validMinutes(t.minutes) : 0; // stored value must be a number
+  return m ? '~' + m + ' min' : '';
+}
+
 export function taskPoints(t) {
   const o = typeof t.pointsOverride === 'number' ? validPoints(t.pointsOverride) : 0; // stored value must be a number
   if (o) return o;
@@ -472,7 +483,7 @@ export function weekPlan(tasks, now = Date.now()) {
     if (!t || !t.name) continue;
     const doneOn = t.done && t.lastDone ? localDateStr(new Date(t.lastDone)) : '';
     const off = day => offOnDate(t, day.date); // switched off per plan day (#301, #350)
-    const item = day => ({ id: t.id, name: t.name, icon: iconPrefix(t), person: t.person || '', dueTime: validTime(t.dueTime), done: !!t.done && doneOn === day.date });
+    const item = day => ({ id: t.id, name: t.name, icon: iconPrefix(t), person: t.person || '', dueTime: validTime(t.dueTime), minutes: typeof t.minutes === 'number' ? validMinutes(t.minutes) : 0, done: !!t.done && doneOn === day.date });
     if (t.freq === 'once') {
       if (t.done || !/^\d{4}-\d{2}-\d{2}$/.test(String(t.dueDate || ''))) continue;
       const day = days.find(x => x.date === (t.dueDate < todayStr ? todayStr : t.dueDate)); // overdue one-offs are due now
@@ -493,6 +504,8 @@ export function weekPlan(tasks, now = Date.now()) {
   }
   for (const day of days) {
     if (day.paused) day.items = [];
+    day.minutes = {}; // total estimated minutes per person ('' = Anyone), only chores with an estimate
+    for (const it of day.items) if (it.minutes) day.minutes[it.person] = (day.minutes[it.person] || 0) + it.minutes;
     day.items.sort((a, b) => (a.dueTime || '99:99').localeCompare(b.dueTime || '99:99') || String(a.name).localeCompare(String(b.name)));
   }
   return days;

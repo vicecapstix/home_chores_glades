@@ -2,7 +2,7 @@ import { state, getMembers, memberColor } from './state.js';
 import { PCOLS, BADGES, CATEGORIES, READONLY } from './config.js';
 import { openModal, closeModal } from './modals.js';
 import { patchPaths } from './firebase.js';
-import { CHORE_ICONS, validTimeOfDay, validEveryWeeks, getWeekStart, esc, num, jsq, avatarPrefix, sha256, initialLastDone, validInterval, validTime, dueStatus, localDateStr, currentStreak, currentWeekPoints, weekRecap, lastWeekChampion, freezeTag, validPoints, payoutList } from './utils.js';
+import { CHORE_ICONS, validTimeOfDay, validEveryWeeks, getWeekStart, esc, num, jsq, avatarPrefix, sha256, initialLastDone, validInterval, validTime, dueStatus, localDateStr, currentStreak, currentWeekPoints, weekRecap, lastWeekChampion, freezeTag, validPoints, validMinutes, payoutList } from './utils.js';
 import { cycleTheme, initTheme } from './theme.js';
 import { isAdmin } from './auth.js';
 
@@ -246,6 +246,7 @@ export function templateTask(t) {
     ...(t.needsCheck ? { needsCheck: true } : {}), // parent check (#240)
     ...(CHORE_ICONS.includes(t.icon) ? { icon: t.icon } : {}),
     ...(validPoints(t.pointsOverride) ? { pointsOverride: validPoints(t.pointsOverride) } : {}),
+    ...(validMinutes(t.minutes) ? { minutes: validMinutes(t.minutes) } : {}),
     ...(validTimeOfDay(t.timeOfDay) ? { timeOfDay: t.timeOfDay } : {}),
     ...(subs.length ? { subtasks: subs } : {}),
   };
@@ -295,6 +296,7 @@ export function applyTemplate(id) {
       ...(t.needsCheck === true ? { needsCheck: true } : {}),
       ...(CHORE_ICONS.includes(t.icon) ? { icon: t.icon } : {}),
       ...(validPoints(t.pointsOverride) ? { pointsOverride: validPoints(t.pointsOverride) } : {}),
+      ...(validMinutes(t.minutes) ? { minutes: validMinutes(t.minutes) } : {}),
       ...(validTimeOfDay(t.timeOfDay) ? { timeOfDay: t.timeOfDay } : {}),
       subtasks: Object.fromEntries((Array.isArray(t.subtasks) ? t.subtasks : []).slice(0, MAX_TPL_SUBTASKS).map((n, i) =>
         ['s' + now + i, { id: 's' + now + i, name: String(n).slice(0, 100), done: false }])),
