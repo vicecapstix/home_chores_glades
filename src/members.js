@@ -1,6 +1,6 @@
 import { state, getMembers, nextColorIdx } from './state.js';
 import { READONLY, PCOLS } from './config.js';
-import { patchMember, patchPaths } from './firebase.js';
+import { patchMember, patchPaths, releaseStock } from './firebase.js';
 import { showToast } from './ui.js';
 import { getWeekStart, AVATARS } from './utils.js';
 
@@ -83,8 +83,9 @@ export async function removeMember(name, isAdminFn, currentMemberFn, onSelfRemov
     }
   });
   // Pending requests held points for a member who is gone: drop them (no refund).
+  const freed = []; // reward ids whose reserved copy goes back on stock (#357)
   Object.entries(state.redemptions || {}).forEach(([id, r]) => {
-    if (r && r.member === name && r.status === 'pending') { delete state.redemptions[id]; paths['redemptions/' + id] = null; }
+    if (r && r.member === name && r.status === 'pending') { delete state.redemptions[id]; paths['redemptions/' + id] = null; freed.push(r.rewardId); }
   });
   // Claims are pending by design: drop theirs so a later member with the same name can't be paid for them.
   Object.entries(state.claims || {}).forEach(([id, c]) => {
@@ -92,6 +93,7 @@ export async function removeMember(name, isAdminFn, currentMemberFn, onSelfRemov
   });
   try {
     await patchPaths(paths);
+    for (const rid of freed) await releaseStock(rid).catch(() => showToast('Could not return a reserved copy to stock — fix the stock by hand'));
     if (wasSelf && onSelfRemoved) onSelfRemoved();
   } catch (err) {
     showToast('Save failed: ' + (err.code || err.message));

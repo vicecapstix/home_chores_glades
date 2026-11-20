@@ -6,6 +6,7 @@ vi.mock('../src/firebase.js', () => ({
   patchRoot: vi.fn().mockResolvedValue(undefined),
   spendPoints: vi.fn().mockResolvedValue(true),
   refundPoints: vi.fn().mockResolvedValue(undefined),
+  reserveStock: vi.fn().mockResolvedValue(true), releaseStock: vi.fn().mockResolvedValue(undefined),
   decideRedemption: vi.fn(async () => decideOk),
 }));
 vi.mock('../src/ui.js', () => ({ showToast: vi.fn() }));
