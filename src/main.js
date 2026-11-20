@@ -156,6 +156,7 @@ initCardArrowNav();
       pause: val.pause || null,
       teamGoal: val.teamGoal || null,
       doublePoints: val.doublePoints || null,
+      bonusChore: val.bonusChore || null,
       pocketMoney: val.pocketMoney || null,
     });
 
