@@ -42,6 +42,7 @@ import { setAway, clearAway, checkAwayExpiry, awayAdminHTML } from './away.js';
 import { setTeamGoal, clearTeamGoal, teamGoalAdminHTML } from './teamgoal.js';
 import { setPocketMoney, clearPocketMoney, markPaid, pocketMoneyAdminHTML, markPaidButtonHTML } from './pocketmoney.js';
 import { setDoublePoints, clearDoublePoints, doublePointsAdminHTML } from './doublepoints.js';
+import { setBonusChore, clearBonusChore, bonusChoreAdminHTML } from './bonuschore.js';
 import { checkOffExpiry, switchOnNow } from './seasonal.js';
 import { checkPauseExpiry, renderPauseBanner, setPause, clearPause, pauseAdminHTML } from './pause.js';
 import { addMember, backfillColors, removeMember, toggleRole, toggleRoleInPanel, setAvatar, renameMember } from './members.js';
@@ -313,7 +314,7 @@ window.openAdminPanel = function() {
       '<button class="btn-sm" aria-label="Progress for ' + esc(m) + '" onclick="window.closeAdminPanel();window.openProgress(\'' + jsq(m) + '\')">Progress</button>' +
       '<button class="btn-sm" aria-label="Adjust points for ' + esc(m) + '" onclick="window.adjustBonus(\'' + jsq(m) + '\')">± Points</button>' + markPaidButtonHTML(m) +
       '</div>';
-  }).join('') + pauseAdminHTML() + awayAdminHTML() + teamGoalAdminHTML() + doublePointsAdminHTML() + pocketMoneyAdminHTML();
+  }).join('') + pauseAdminHTML() + awayAdminHTML() + teamGoalAdminHTML() + doublePointsAdminHTML() + bonusChoreAdminHTML() + pocketMoneyAdminHTML();
   document.getElementById('admin-parent-in').classList.toggle('hidden', !!state.parentEmail);
   document.getElementById('admin-parent-out').classList.toggle('hidden', !state.parentEmail);
   openModal('admin-panel-modal');
@@ -328,6 +329,8 @@ window.setPocketMoney = () => setPocketMoney(document.getElementById('pm-pts')?.
 window.clearPocketMoney = () => clearPocketMoney(_isAdmin).then(ok => ok && window.openAdminPanel());
 window.markPaid = name => markPaid(name, _isAdmin, _currentMember).then(ok => ok && window.openAdminPanel());
 window.clearDoublePoints = () => clearDoublePoints(_isAdmin).then(ok => ok && window.openAdminPanel());
+window.setBonusChore = () => setBonusChore(document.getElementById('bc-task')?.value, document.getElementById('bc-extra')?.value, _isAdmin).then(ok => ok && window.openAdminPanel());
+window.clearBonusChore = () => clearBonusChore(_isAdmin).then(ok => ok && window.openAdminPanel());
 window.clearPause = () => clearPause(_isAdmin).then(() => window.openAdminPanel());
 // Parent sign in (#97)
 window.openParentSignIn = function() {
