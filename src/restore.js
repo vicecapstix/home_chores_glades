@@ -18,6 +18,7 @@ const ID_RE = /^[A-Za-z0-9_-]{1,64}$/;
 const isObj = v => v && typeof v === 'object' && !Array.isArray(v);
 const entries = v => (Array.isArray(v) ? v.map((x, i) => [String(i), x]) : isObj(v) ? Object.entries(v) : []);
 const num = v => (Number.isFinite(Number(v)) && Number(v) >= 0 ? Number(v) : 0);
+const signed = v => (Number.isFinite(Number(v)) && v !== '' && v !== null ? Number(v) : 0); // points may be < 0 after an admin deduction (#380)
 const clone = v => JSON.parse(JSON.stringify(v));
 
 // Pure. Returns { ok:true, clean, summary } or { ok:false, error }.
@@ -38,7 +39,7 @@ export function validateBackup(raw, current = state.members) {
     const { pinHash, ...m } = m0; // eslint-disable-line no-unused-vars
     members[name] = {
       ...clone(m), name, role: m.role === 'admin' ? 'admin' : 'member',
-      points: num(m.points), weekPoints: num(m.weekPoints), streak: num(m.streak), completedCount: num(m.completedCount),
+      points: signed(m.points), weekPoints: num(m.weekPoints), streak: num(m.streak), completedCount: num(m.completedCount),
       pinHash: (current && current[name] && current[name].pinHash) || '',
     };
   }
