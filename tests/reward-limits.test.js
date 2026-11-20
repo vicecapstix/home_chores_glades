@@ -7,6 +7,7 @@ vi.mock('../src/firebase.js', () => ({
   patchRoot: vi.fn().mockResolvedValue(undefined),
   spendPoints: vi.fn().mockResolvedValue(true),
   refundPoints: vi.fn().mockResolvedValue(undefined),
+  reserveStock: vi.fn().mockResolvedValue(true), releaseStock: vi.fn().mockResolvedValue(undefined),
 }));
 vi.mock('../src/ui.js', () => ({ showToast: vi.fn() }));
 vi.mock('../src/undo.js', () => ({ pushUndo: vi.fn() }));

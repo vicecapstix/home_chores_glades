@@ -8,7 +8,7 @@ vi.mock('firebase/app', () => ({ initializeApp: vi.fn() }));
 vi.mock('firebase/auth', () => ({ getAuth: vi.fn(), signInAnonymously: vi.fn(), onAuthStateChanged: vi.fn() }));
 vi.mock('firebase/database', () => ({
   getDatabase: vi.fn(() => ({})), ref: vi.fn((_d, p) => p), set: vi.fn(), remove: vi.fn(),
-  update: (...a) => updateImpl(...a), onValue: vi.fn(), runTransaction: vi.fn(),
+  update: (...a) => updateImpl(...a), onValue: vi.fn(), runTransaction: vi.fn(async () => ({ committed: true, snapshot: { val: () => null } })),
 }));
 vi.mock('../src/ui.js', () => ({ showToast: vi.fn() }));
 vi.mock('../src/undo.js', () => ({ pushUndo: vi.fn() }));
@@ -43,7 +43,7 @@ describe('failed toggle retry (#271)', () => {
     updateImpl = vi.fn().mockRejectedValueOnce(new Error('NETWORK')).mockResolvedValue(undefined);
     await tasks.toggleTask('t1', me, notAdmin);
     await tasks.toggleTask('t1', me, notAdmin);
-    expect(updateImpl).toHaveBeenCalledTimes(2);
+    expect(updateImpl).toHaveBeenCalledTimes(3); // failed task write, then task write + member streak patch (points txn now mocked as committed)
     expect(updateImpl.mock.calls[1][1]).toMatchObject({ done: true, lastDoneBy: 'Al', lastDonePoints: 1 });
     expect(pending.syncState('t1')).toBe('');
   });

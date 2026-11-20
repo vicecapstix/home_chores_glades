@@ -5,6 +5,7 @@ import { addMember, removeMember, toggleRole } from '../src/members.js';
 vi.mock('../src/firebase.js', () => ({
   patchPaths:  vi.fn().mockResolvedValue(undefined),
   patchMember: vi.fn().mockResolvedValue(undefined),
+  releaseStock: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock('../src/ui.js', () => ({

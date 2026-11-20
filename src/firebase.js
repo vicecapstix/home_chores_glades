@@ -175,6 +175,14 @@ export async function decideRedemption(id, status, by) {
   return !!res.committed;
 }
 
+// Atomically remove a still-pending reward request (undo of a request, #357): true only when
+// this call removed it, so an admin's deny on another device and the undo can't both give a copy back.
+export async function takePendingRedemption(id) {
+  if (READONLY || !_db || !_live) return false;
+  const res = await runTransaction(ref(_db, 'state/redemptions/' + id), cur => (cur && cur.status === 'pending' ? null : undefined));
+  return !!res.committed;
+}
+
 // Atomically remove a pending extra-job claim (#224). Returns true only for the
 // one caller whose transaction removed it, so two parents can't both award it.
 export async function takeClaim(id) {
@@ -240,6 +248,25 @@ export async function removeHistoryEntry(match) {
   });
   const removed = !!res.committed && found;
   return { ok: !!res.committed, removed, rest };
+}
+
+// Limited-stock rewards (#357). A pending request reserves one; deny/undo/failed request returns it.
+// A reward without `stock` is unlimited: both helpers leave it alone. Returns false only when sold out
+// (not live: nothing reserved and true, so the points step then reports the cached start as before).
+export async function reserveStock(id) {
+  if (READONLY || !_db || !_live) return true;
+  let soldOut = false;
+  await runTransaction(ref(_db, 'state/rewards/' + id + '/stock'), cur => {
+    if (cur == null) return undefined;
+    if (cur < 1) { soldOut = true; return undefined; }
+    return cur - 1;
+  });
+  return !soldOut;
+}
+
+export async function releaseStock(id) {
+  if (READONLY || !_db || !_live) return;
+  await runTransaction(ref(_db, 'state/rewards/' + id + '/stock'), cur => (cur == null ? undefined : Math.min(99, cur + 1)));
 }
 
 export async function refundPoints(name, cost) {
