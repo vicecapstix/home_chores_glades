@@ -208,8 +208,8 @@
       <input type="text" id="reward-icon" placeholder="🎁" maxlength="4" />
       <label for="reward-perweek" class="sr-only">Limit per week (optional, 1 to 14)</label>
       <input type="number" id="reward-perweek" placeholder="Max/wk" min="1" max="14" inputmode="numeric" title="Optional: most times one person can request this per week" />
-      <label for="reward-stock" class="sr-only">Stock (optional, 1 to 99, blank for unlimited)</label>
-      <input type="number" id="reward-stock" placeholder="Stock" min="1" max="99" inputmode="numeric" title="Optional: how many can be given. Blank = unlimited" />
+      <label for="reward-stock" class="sr-only">Stock (optional, 0 to 99, 0 = sold out, blank for unlimited)</label>
+      <input type="number" id="reward-stock" placeholder="Stock" min="0" max="99" inputmode="numeric" title="Optional: how many can be given. Blank = unlimited" />
       <button type="submit" class="btn-sm btn-accent" id="reward-save">Add reward</button>
       <button type="button" class="btn-sm hidden" id="reward-cancel" onclick="window.cancelRewardEdit()">Cancel</button>
     </form>

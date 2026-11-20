@@ -37,7 +37,7 @@ describe('validation', () => {
     expect(R.validateReward('x', 5, '', '', '').reward).not.toHaveProperty('stock');
     expect(R.validateReward('x', 5, '', '', '3').reward.stock).toBe(3);
     expect(R.validateReward('x', 5, '', '', 99).reward.stock).toBe(99);
-    for (const v of ['0', 100, '1.5', 'abc', -1]) expect(R.validateReward('x', 5, '', '', v).error).toMatch(/1–99/);
+    for (const v of [100, '1.5', 'abc', -1]) expect(R.validateReward('x', 5, '', '', v).error).toMatch(/0–99/);
   });
 });
 

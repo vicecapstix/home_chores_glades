@@ -118,7 +118,7 @@ export async function decideRequest(id, status, isAdminFn, currentMemberFn) {
     catch (err) { showToast('Update failed: ' + (err.code || err.message)); return; }
     if (!ok) { showToast('Already decided'); return; }
     r.status = status; r.decidedAt = Date.now(); r.decidedBy = currentMemberFn() || 'admin';
-    if (status === 'denied') await releaseStock(r.rewardId).catch(() => {});
+    if (status === 'denied') await releaseStock(r.rewardId).catch(() => showToast('Could not return the copy to stock — fix the stock by hand'));
     if (status === 'denied' && state.members[r.member]) {
       try { await refundPoints(r.member, r.cost); }
       catch (err) { showToast('Denied, but refund failed for ' + r.member + ' (' + r.cost + ' pts) — add manually'); return; }

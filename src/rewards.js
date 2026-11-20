@@ -37,7 +37,7 @@ export function validateReward(name, cost, icon, perWeek, stock) {
   const st = String(stock == null ? '' : stock).trim();
   if (st) {
     const k = Number(st);
-    if (!Number.isInteger(k) || k < 1 || k > MAX_STOCK) return { error: 'Stock must be 1–' + MAX_STOCK + ' (blank = unlimited)' };
+    if (!Number.isInteger(k) || k < 0 || k > MAX_STOCK) return { error: 'Stock must be 0–' + MAX_STOCK + ' (blank = unlimited)' };
     reward.stock = k;
   }
   return { reward };

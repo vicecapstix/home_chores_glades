@@ -93,7 +93,7 @@ export async function removeMember(name, isAdminFn, currentMemberFn, onSelfRemov
   });
   try {
     await patchPaths(paths);
-    for (const rid of freed) await releaseStock(rid).catch(() => {});
+    for (const rid of freed) await releaseStock(rid).catch(() => showToast('Could not return a reserved copy to stock — fix the stock by hand'));
     if (wasSelf && onSelfRemoved) onSelfRemoved();
   } catch (err) {
     showToast('Save failed: ' + (err.code || err.message));
