@@ -665,3 +665,10 @@ details.off-chores[open] > summary::after { content: '\25BE'; }
 body[data-readonly] .my-done { display: none !important; }
 @keyframes my-done-pop { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .my-done { animation: none; } }
+
+/* Backup reminder (#359): admin only, never on the TV */
+.backup-reminder { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 8px 0; padding: 10px 14px; border-radius: 12px; background: var(--soon-light); color: var(--soon); border: 1px solid var(--border); font-weight: 600; }
+.backup-reminder > span { flex: 1 1 12rem; }
+.backup-reminder.hidden { display: none; }
+body[data-readonly] .backup-reminder { display: none !important; }
+body[data-role="member"] .backup-reminder { display: none !important; }

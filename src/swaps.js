@@ -79,10 +79,15 @@ export async function acceptSwap(id, currentMemberFn) {
     const entry = { type: 'swap', taskId: s.taskId, taskName: 'Swap: ' + s.taskName + ' (' + s.from + ' → ' + me + ')', person: me, from: s.from, points: 0, completedAt: at };
     try { await appendHistory(entry); }
     catch (err) { showToast('Swapped, but the history note failed: ' + (err.code || err.message)); }
+    const lastDoneAtSwap = t ? (t.lastDone || 0) : 0;
     pushUndo({
       label: 'swap ' + s.taskName, verb: 'Accepted',
       undo: async () => {
-        if (state.tasks[s.taskId]?.person !== me) return;
+        const cur = state.tasks[s.taskId];
+        if (cur?.person !== me) return;
+        // Ticked (or reset) since the swap: handing it back would give a done chore to someone who didn't do it (#352).
+        // Throw so undo.js shows "Restore failed" instead of a false "Restored" (same as skip undo, #309).
+        if (cur.done || (cur.lastDone || 0) !== lastDoneAtSwap) throw new Error('the chore has been done');
         await patchRoot({ ['tasks/' + s.taskId + '/person']: s.from });
         await removeHistoryEntry({ type: 'swap', taskId: s.taskId, person: me, completedAt: at });
       },

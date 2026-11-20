@@ -48,7 +48,9 @@ export async function adjustBonus(name, amount, reason, isAdminFn, currentMember
       label: (amount > 0 ? '+' : '') + amount + ' ' + name,
       verb: amount > 0 ? 'Awarded' : 'Deducted',
       undo: async () => {
-        await adjustMemberPoints(name, { ...opts, pts: -amount, weekPts: -weekMoved, allowNegative: true });
+        const back = await adjustMemberPoints(name, { ...opts, pts: -amount, weekPts: -weekMoved, allowNegative: true });
+        // Member gone or cached copy showing: the points did not move, so keep the history line and say so (#376).
+        if (!back || !back.ok) throw new Error(back && back.reason === 'missing' ? 'the member no longer exists' : 'not connected - try again');
         await removeHistoryEntry({ type: 'bonus', person: name, completedAt: entry.completedAt });
       },
     });
