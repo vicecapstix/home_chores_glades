@@ -365,6 +365,7 @@ const checking = new Set();
 
 async function applyToggle(id, t, awardee, nowTs, isAdminFn, checkedBy) {
   const done = !t.done;
+  const origLastDone = t.lastDone; // t may be updated in place by the write below
   // Double-points day (#225), judged at the tick time (for a parent check, when the child ticked);
   // stored as lastDonePoints so uncheck reverses exactly.
   const earned = taskPoints(t) * activeMultiplier(state.doublePoints, new Date(nowTs));
@@ -431,10 +432,19 @@ async function applyToggle(id, t, awardee, nowTs, isAdminFn, checkedBy) {
     const { streakDate, newStreak, freezes, currentBadges, newBadgeIds } = completionAward(m, pts, nowTs);
     const memberUpdate = { streak: newStreak, lastStreakDate: streakDate, freezes };
     if (newBadgeIds.length) memberUpdate.badges = [...currentBadges, ...newBadgeIds];
+    // The task is already saved as done: if no points could be given, put it back (#379).
+    const rollBack = async () => {
+      try { await patchTask(id, { done: false, lastDone: origLastDone, prevLastDone: null, lastDoneBy: null, lastDonePoints: null, lastDoneWeek: null, prevStreak: null, prevStreakDate: null, prevFreezes: null, lastDoneBadges: null }); }
+      catch { /* offline: nothing more to do */ }
+      dropRetry(id);
+      return false;
+    };
     try {
       // Points/count/week via one atomic transaction; streak/badges stay a patch.
-      const r = await adjustMemberPoints(awardee, { pts, count: 1, weekStart, countWeek: tickWeek === weekStart });
-      if (!r.ok) { showToast('Member update failed'); return; }
+      let r;
+      try { r = await adjustMemberPoints(awardee, { pts, count: 1, weekStart, countWeek: tickWeek === weekStart }); }
+      catch (err) { showToast('Member update failed: ' + (err.code || err.message)); return rollBack(); }
+      if (!r.ok) { showToast('Member update failed'); return rollBack(); }
       await patchMember(awardee, memberUpdate);
       newBadgeIds.forEach(bid => {
         const b = BADGES.find(b => b.id === bid);
