@@ -62,6 +62,7 @@ src/
   textsize.js      — Normal/Large/Extra large text size (html.ts-* class), device-local; ?text=large on the TV
   teamgoal.js      — family weekly points goal (state/teamGoal), bar + admin form
   doublepoints.js  — double-points day (state/doublePoints {date, mult}), banner + admin form
+  bonuschore.js    — bonus chore of the day (state/bonusChore {date, taskId, extra}): +1..20 points on one chore for one local date, tag on card/TV, admin form
   pocketmoney.js   — pocket money: display-only rate (state/pocketMoney {pts, amount}), owed on chips/TV, admin Mark paid + undo
   tv.js            — TV dashboard helpers for ?readonly=1
   starter.js       — built-in starter chore list + "Add from list" modal (static code, survives a wipe)
@@ -120,6 +121,7 @@ Database path: `/state`
   redemptions: { "<id>": { id, rewardId, rewardName, cost, member, requestedAt, status, …, givenAt?, givenBy? } }
   pause:     { until, by, since }  ← house pause (holiday mode); absent when not paused
   doublePoints: { date, mult }  ← double-points day (x2/x3 on one local date); absent when off
+  bonusChore: { date, taskId, extra }  ← bonus chore of the day (+1..20 extra points on one chore, one local date); absent when off
   pocketMoney: { pts, amount }  ← display-only points-to-cash rate (pts 1-1000, amount 0.01-1000); absent when off
 ```
 

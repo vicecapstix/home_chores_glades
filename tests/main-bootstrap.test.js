@@ -65,6 +65,14 @@ describe('main.js bootstrap (#40)', () => {
     expect(Object.keys(state.tasks)).toEqual(['t1']);
   });
 
+  it('a live snapshot keeps the bonus chore of the day (#360)', async () => {
+    await boot();
+    const bonus = { date: '2026-11-20', taskId: 't1', extra: 5 };
+    h.listeners.state.cb({ val: () => ({ ...live, bonusChore: bonus }) });
+    const { state } = await import('../src/state.js');
+    expect(state.bonusChore).toEqual(bonus);
+  });
+
   it('does not attach the /state listener until initAuth has resolved', async () => {
     let release;
     h.authGate = new Promise(r => { release = r; });

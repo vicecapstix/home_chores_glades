@@ -6,6 +6,7 @@ import { renderMyDone } from './mydone.js';
 import { renderBackupReminder } from './backupreminder.js';
 import { renderTeamGoal } from './teamgoal.js';
 import { renderDoublePointsBanner, activeMultiplier } from './doublepoints.js';
+import { bonusFor } from './bonuschore.js';
 import { owedHTML } from './pocketmoney.js';
 import { awayText, esc, num, jsq, taskPoints, avatarPrefix, validTime, dueStatus, freqLabel, rotationTag, isMine, isSkipped, localDateStr, doneAgoLabel, currentStreak, iconPrefix, minutesLabel, timeOfDayLabel, isOffNow, parseLocalDate, goalHTML, isStaleDoneOnce, viewFromSearch, freezeTag } from './utils.js';
 import { pColor } from './ui.js';
@@ -447,8 +448,9 @@ export function cardHTML(t) {
   const freqTag = t.freq === 'once'
     ? '<span class="tag tag-freq">📅 ' + esc(t.dueDate || 'One-off') + '</span>'
     : '<span class="tag tag-freq">' + esc(freqLabel(t)) + '</span>';
-  const n = taskPoints(t) * activeMultiplier();
-  const ptsTag = t.done ? '' : '<span class="tag tag-freq tag-pts" aria-label="worth ' + n + ' point' + (n === 1 ? '' : 's') + '">+' + n + ' pts</span>';
+  const bonus = t.done ? 0 : bonusFor(t);
+  const n = taskPoints(t) * activeMultiplier() + bonus;
+  const ptsTag = t.done ? '' : '<span class="tag tag-freq tag-pts" aria-label="worth ' + n + ' point' + (n === 1 ? '' : 's') + '">+' + n + ' pts</span>' + (bonus ? '<span class="tag tag-soon">⭐ +' + bonus + ' today</span>' : '');
   const minTag = minutesLabel(t) ? '<span class="tag tag-freq">' + esc(minutesLabel(t)) + '</span>' : '';
   const timeTag = validTime(t.dueTime) ? '<span class="tag tag-freq">⏰ ' + esc(t.dueTime) + '</span>' : '';
   const offTag = isOffNow(t) ? '<span class="tag tag-freq">💤 Off until ' + esc(parseLocalDate(t.offUntil).toLocaleDateString([], { day: 'numeric', month: 'short' })) + '</span>' : '';

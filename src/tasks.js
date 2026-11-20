@@ -5,6 +5,7 @@ import { showToast } from './ui.js';
 import { pushUndo } from './undo.js';
 import { dropRetry } from './pending.js';
 import { activeMultiplier } from './doublepoints.js';
+import { bonusFor } from './bonuschore.js';
 import { esc, jsq, validTime, validInterval, INTERVAL_MIN, INTERVAL_MAX, freqDays, cycleDays, daysSince, dueStatus, taskPoints, getWeekStart, localDateStr, prevScheduledStart, validEveryWeeks, isStaleDoneOnce, initialLastDone, CHORE_ICONS, TIMES_OF_DAY, validTimeOfDay, isOffNow, validDateStr, nextRotationPerson, awayNames, DAY_NAMES, nextStreak, isPausedNow, freezeCount, validPoints, POINTS_MIN, POINTS_MAX, validMinutes, MINUTES_MIN, MINUTES_MAX } from './utils.js';
 
 // Re-export for other modules
@@ -368,7 +369,7 @@ async function applyToggle(id, t, awardee, nowTs, isAdminFn, checkedBy) {
   const origLastDone = t.lastDone; // t may be updated in place by the write below
   // Double-points day (#225), judged at the tick time (for a parent check, when the child ticked);
   // stored as lastDonePoints so uncheck reverses exactly.
-  const earned = taskPoints(t) * activeMultiplier(state.doublePoints, new Date(nowTs));
+  const earned = taskPoints(t) * activeMultiplier(state.doublePoints, new Date(nowTs)) + bonusFor(t, new Date(nowTs)); // bonus chore adds after the multiplier (#360)
   // Points belong to the week of the tick (#272): a parent check approved after the week rolled
   // over must not count in the new week's weekPoints (history already uses the tick time).
   const tickWeek = getWeekStart(new Date(nowTs));
