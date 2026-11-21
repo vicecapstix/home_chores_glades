@@ -18,11 +18,15 @@ A real-time chore tracker for families — assign tasks, track progress, earn po
 - **Rewards** — admins define a rewards catalog; members spend points on requests, admins approve or deny them
 - **Reward limits** — an optional cap of N requests per week per member, shown as "n/N this week"
 - **To give** — approved rewards wait in a To give list until an admin taps Given ✓
+- **Reward stock** — a reward can have a limited number of copies (1-99); a pending request reserves one, a denied or undone request returns it, and it shows Sold out at zero
 - **Activity history** — recent completions, bonuses, reward requests and refunds, filterable by member
 - **My chores** — filter to the chores assigned to you; reorder with the move up/down buttons
+- **Chore search** — type in the search box to narrow the chore list by name; Esc clears it
 - **Theme** — Auto (follows the device), Light or Dark, from the header button
+- **Text size** — Normal, Large or Extra large from the header button, saved on that device only. On the TV add `?text=large` (or `xl`) to the URL
 - **Chore frequencies** — daily, specific weekdays, weekly, fortnightly, monthly, **Every N days**, or a one-off task with a due date; optional due time
 - **Time of day** — an optional Morning, After school or Evening label on a chore, shown as a tag on its card
+- **Chore minutes** — an optional "about N min" estimate (1-180) on a chore, shown as a tag on its card and totalled in This week. Display only: it never changes points
 - **Switch off until** — admins can switch a chore off for the season: it is never due and does not reset until the date passes, then it switches back on by itself
 - **Rotate assignee** — a chore can rotate between two or more members each time it resets
 - **Skip this time** — admins can skip one occurrence of a recurring chore (no points, no streak change)
@@ -38,9 +42,11 @@ A real-time chore tracker for families — assign tasks, track progress, earn po
 - **± Points** — admins can give a bonus or a deduction with a reason (recorded in history, undoable)
 - **Saving goal** — a member pins a reward to save towards; a progress bar shows on their chip and the TV
 - **Family goal** — a shared weekly points target with a reward, shown as a progress bar
+- **Bonus chore** — an admin picks one chore and +1 to +20 extra points for today only; it shows as a tag on the card and the TV, and ends by itself after that day
 - **This week / My progress** — a Mon–Sun planner of what's due, and each member's last 4 weeks of points
 - **Calendar download** — the This week planner can download a member's chores as an `.ics` calendar file (built in the browser, nothing is sent anywhere)
 - **Pocket money** — admins can set a points-to-cash rate; the amount owed shows on member chips and the TV, and admins can mark it paid (undoable). Display only, points never change
+- **TV tomorrow** — from 18:00 the TV shows a Tomorrow panel with the chores due the next day
 - **Chore swaps** — a member can offer one of their pending chores to a sibling, who accepts or declines; offers expire after 24 hours
 - **Avatars & rename** — admins can give members an emoji avatar or rename them (points and PIN are kept)
 - **Chore icons** — admins can pick an optional emoji for a chore (fixed list); it shows on cards, the TV and the This week planner, and is kept in templates and chore files
@@ -48,6 +54,8 @@ A real-time chore tracker for families — assign tasks, track progress, earn po
 - **Badges** — First Chore (1), Getting Started (10), Tenacious (25), Fifty Strong (50), Century (100 completions); Consistent (3-day streak), On Fire (7), Dedicated (30)
 - **Templates** — save the current task list as a reusable template
 - **Backup, restore & print** — admins can download a JSON backup (no PINs), restore from one (PINs kept), or print a Mon–Sun chart. Admins can also download just the chore list as a file and upload it again later (new chores only; names that already exist are skipped).
+- **Backup reminder** — admins see a banner after 30 days without a backup download on that device; Later hides it for 7 days
+- **Data size** — admins can see how big the stored data is and a rough monthly download, to stay inside the free Spark plan
 - **Stats** — completion charts by week, month, or all time; export to CSV
 - **Browser notifications** — get an alert when a chore goes overdue (requires permission)
 - **Due-time reminders** — the assignee gets one notification per chore per day once its due time passes
