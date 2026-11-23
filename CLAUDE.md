@@ -65,6 +65,7 @@ src/
   bonuschore.js    — bonus chore of the day (state/bonusChore {date, taskId, extra}): +1..20 points on one chore for one local date, tag on card/TV, admin form
   pocketmoney.js   — pocket money: display-only rate (state/pocketMoney {pts, amount}), owed on chips/TV, admin Mark paid + undo
   tv.js            — TV dashboard helpers for ?readonly=1
+  appbadge.js      — installed-app icon badge: my chores still due today (Badging API, display only)
   starter.js       — built-in starter chore list + "Add from list" modal (static code, survives a wipe)
   public/          — sw.js, manifest.webmanifest, icons (copied to dist/ by Vite)
 tests/             — Vitest unit tests (Firebase mocked; never touch a live DB)
