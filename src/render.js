@@ -1,6 +1,6 @@
 import { state, getMembers } from './state.js';
 import { PCOLS, BADGES, READONLY } from './config.js';
-import { renderTvStrip, renderTvTomorrow } from './tv.js';
+import { renderTvStrip, renderTvTomorrow, tvMember, tvMemberTasks } from './tv.js';
 import { renderGoal } from './goal.js';
 import { renderMyDone } from './mydone.js';
 import { renderBackupReminder } from './backupreminder.js';
@@ -537,9 +537,11 @@ export function cardHTML(t) {
 
 // ── Internal helper ───────────────────────────────────────────────────────────
 
+export function visibleTasks() { return _visibleTasks(); }
 function _visibleTasks() {
   const all = Object.values(state.tasks);
-  if (READONLY || _isAdmin() || !_currentMember()) return all;
+  if (READONLY) return tvMemberTasks(all, tvMember()); // one-member tablet view (#398)
+  if (_isAdmin() || !_currentMember()) return all;
   const me = _currentMember();
   return all.filter(t => !t.person || t.person === me);
 }

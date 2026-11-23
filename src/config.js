@@ -26,4 +26,5 @@ export const BADGES = [
 ];
 
 export const READONLY = new URLSearchParams(location.search).get('readonly') === '1';
+export const TV_MEMBER = READONLY ? (new URLSearchParams(location.search).get('member') || '').trim().slice(0, 60) : ''; // one-member tablet view (#398)
 export const TV_CYCLE = READONLY && new URLSearchParams(location.search).get('cycle') === '1'; // TV auto-cycle (#148)
