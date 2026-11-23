@@ -34,7 +34,7 @@ describe('member ticks a needs-check chore', () => {
     const { me, adm } = as('Bo', false);
     await toggleTask('a', me, adm);
     expect(patchTask).toHaveBeenCalledTimes(1);
-    expect(patchTask.mock.calls[0][1]).toEqual({ checkPending: { by: 'Bo', at: NOW }, checkNote: null });
+    expect(patchTask.mock.calls[0][1]).toEqual({ checkPending: { by: 'Bo', at: NOW, bonus: 0, mult: 1 }, checkNote: null });
     expect(adjustMemberPoints).not.toHaveBeenCalled(); expect(appendHistory).not.toHaveBeenCalled(); expect(patchMember).not.toHaveBeenCalled();
     expect(state.tasks.a.done).toBe(false);
   });
