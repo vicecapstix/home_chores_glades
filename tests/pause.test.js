@@ -3,7 +3,7 @@ import { state, applySnapshot } from '../src/state.js';
 
 vi.mock('../src/firebase.js', () => ({
   writeState: vi.fn().mockResolvedValue(undefined), patchTask: vi.fn().mockResolvedValue(undefined),
-  patchMember: vi.fn().mockResolvedValue(undefined), patchRoot: vi.fn().mockResolvedValue(undefined),
+  patchMember: vi.fn().mockResolvedValue(undefined), patchRoot: vi.fn().mockResolvedValue(undefined), resetTasks: vi.fn().mockResolvedValue(undefined),
   removeTask: vi.fn(), restoreTask: vi.fn(), patchSubtask: vi.fn(),
 }));
 vi.mock('../src/ui.js', () => ({ showToast: vi.fn(), pColor: vi.fn(() => null) }));
@@ -54,7 +54,7 @@ describe('paused behaviour (#70)', () => {
     state.pause = { until: '2026-10-20', since: NOW };
     checkTaskResets();
     expect(state.tasks.t1.done).toBe(true);
-    expect(fb.patchRoot).not.toHaveBeenCalled();
+    expect(fb.resetTasks).not.toHaveBeenCalled();
     state.pause = null;
     checkTaskResets();
     expect(state.tasks.t1.done).toBe(false);

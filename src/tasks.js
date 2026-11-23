@@ -1,11 +1,12 @@
 import { state, getMembers } from './state.js';
 import { READONLY, BADGES, CATEGORIES } from './config.js';
-import { patchPaths, takeCheckPending, adjustMemberPoints, appendHistory, removeHistoryEntry, patchTask, patchMember, patchRoot, removeTask, restoreTask, patchSubtask } from './firebase.js';
+import { patchPaths, resetTasks, takeCheckPending, adjustMemberPoints, appendHistory, removeHistoryEntry, patchTask, patchMember, patchRoot, removeTask, restoreTask, patchSubtask } from './firebase.js';
 import { showToast } from './ui.js';
 import { pushUndo } from './undo.js';
 import { dropRetry } from './pending.js';
-import { activeMultiplier } from './doublepoints.js';
-import { bonusFor } from './bonuschore.js';
+import { isDisconnected } from './connection.js';
+import { activeMultiplier, DOUBLE_MULTS } from './doublepoints.js';
+import { bonusFor, MAX_BONUS } from './bonuschore.js';
 import { esc, jsq, validTime, validInterval, INTERVAL_MIN, INTERVAL_MAX, freqDays, cycleDays, daysSince, dueStatus, taskPoints, getWeekStart, localDateStr, prevScheduledStart, validEveryWeeks, isStaleDoneOnce, initialLastDone, CHORE_ICONS, TIMES_OF_DAY, validTimeOfDay, isOffNow, validDateStr, nextRotationPerson, awayNames, DAY_NAMES, nextStreak, isPausedNow, freezeCount, validPoints, POINTS_MIN, POINTS_MAX, validMinutes, MINUTES_MIN, MINUTES_MAX } from './utils.js';
 
 // Re-export for other modules
@@ -15,7 +16,8 @@ export { dueStatus, taskPoints, freqDays };
 
 export function checkTaskResets() {
   if (state.pause) return; // paused (or expiry resume pending): freeze resets
-  const patch = {};
+  if (isDisconnected()) return; // an offline copy can be a day stale: never write resets from it (#388)
+  const patch = {}, seen = {};
   const now = Date.now();
   Object.values(state.tasks).forEach(t => {
     if (t.freq === 'once' || isOffNow(t, now)) return;
@@ -23,6 +25,7 @@ export function checkTaskResets() {
       ? (prevScheduledStart(t.days, now, t) !== null && prevScheduledStart(t.days, now, t) > (t.lastDone || 0))
       : daysSince(t.lastDone || 0, now) >= cycleDays(t, t.lastDone);
     if (t.done && due) {
+      seen[t.id] = t.lastDone || 0; // the server applies the reset only if it still shows this completion (#388)
       t.done = false;
       t.lastDoneBy = null;
       t.lastDonePoints = null;
@@ -38,9 +41,9 @@ export function checkTaskResets() {
       if (next) { t.person = next; patch['tasks/' + t.id + '/person'] = next; }
     }
   });
-  // One multi-path update touching only the reset leaves (never a full-state set).
+  // Only the reset leaves, one guarded transaction per due chore (never a full-state set).
   if (READONLY || !Object.keys(patch).length) return;
-  patchRoot(patch).catch(err => showToast('Save error: ' + (err.code || err.message)));
+  resetTasks(patch, seen).catch(err => showToast('Save error: ' + (err.code || err.message)));
 }
 
 // ── Weekday chips ─────────────────────────────────────────────────────────────
@@ -326,7 +329,10 @@ async function submitForCheck(id, t, me, awardee) {
     if (t.checkPending) {
       if (t.checkPending.by !== me) { showToast('Waiting for ' + t.checkPending.by + "'s parent check"); return; }
       await patchTask(id, { checkPending: null }); // cancel own request
-    } else await patchTask(id, { checkPending: { by: awardee, at: Date.now() }, checkNote: null });
+    } else {
+      const at = Date.now(); // bonus and multiplier are fixed at the tick, so a later change can't cost the child points (#387)
+      await patchTask(id, { checkPending: { by: awardee, at, bonus: bonusFor(t, new Date(at)), mult: activeMultiplier(state.doublePoints, new Date(at)) }, checkNote: null });
+    }
   } catch (err) { showToast('Update failed: ' + (err.code || err.message)); }
 }
 
@@ -342,7 +348,7 @@ export async function approveCheck(id, isAdminFn, currentMemberFn) {
     try { p = await takeCheckPending(id); } catch (err) { showToast('Update failed: ' + (err.code || err.message)); return; }
     if (!p) { showToast('Already checked'); return; }
     if (!state.members[p.by]) { showToast(p.by + ' is no longer a member'); await patchTask(id, { checkPending: p }).catch(() => {}); return; }
-    const ok = await applyToggle(id, t, p.by, p.at, isAdminFn, currentMemberFn() || 'admin');
+    const ok = await applyToggle(id, t, p.by, p.at, isAdminFn, currentMemberFn() || 'admin', p);
     if (ok === false) await patchTask(id, { checkPending: p }).catch(() => {}); // completion not saved: keep the child's request
   } finally { checking.delete(id); }
 }
@@ -364,12 +370,24 @@ export async function sendBackCheck(id, reason, isAdminFn) {
 }
 const checking = new Set();
 
-async function applyToggle(id, t, awardee, nowTs, isAdminFn, checkedBy) {
+// Bonus and multiplier for a tick: a parent-check request carries the ones in force when the child
+// ticked (#387); older requests without them use today's settings as at the tick time.
+export function tickExtras(t, ts, p) {
+  const b = p && Number(p.bonus), m = p && Number(p.mult);
+  const okB = Number.isInteger(b) && b >= 0 && b <= MAX_BONUS, okM = m === 1 || DOUBLE_MULTS.includes(m);
+  return {
+    bonus: okB ? b : (p && p.bonus != null ? 0 : bonusFor(t, new Date(ts))),
+    mult: okM ? m : (p && p.mult != null ? 1 : activeMultiplier(state.doublePoints, new Date(ts))),
+  };
+}
+
+async function applyToggle(id, t, awardee, nowTs, isAdminFn, checkedBy, pending) {
   const done = !t.done;
   const origLastDone = t.lastDone; // t may be updated in place by the write below
   // Double-points day (#225), judged at the tick time (for a parent check, when the child ticked);
   // stored as lastDonePoints so uncheck reverses exactly.
-  const earned = taskPoints(t) * activeMultiplier(state.doublePoints, new Date(nowTs)) + bonusFor(t, new Date(nowTs)); // bonus chore adds after the multiplier (#360)
+  const { bonus, mult } = tickExtras(t, nowTs, pending);
+  const earned = taskPoints(t) * mult + bonus; // bonus chore adds after the multiplier (#360)
   // Points belong to the week of the tick (#272): a parent check approved after the week rolled
   // over must not count in the new week's weekPoints (history already uses the tick time).
   const tickWeek = getWeekStart(new Date(nowTs));

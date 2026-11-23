@@ -4,7 +4,7 @@ import { state } from './state.js';
 import { READONLY } from './config.js';
 import { openModal } from './modals.js';
 import { esc, jsq, avatarPrefix, taskPoints } from './utils.js';
-import { activeMultiplier } from './doublepoints.js';
+import { tickExtras } from './tasks.js';
 import { runToCheckNotify } from './notifications.js';
 
 let adminFn = () => false;
@@ -25,7 +25,8 @@ export function toCheckHTML(tasks = state.tasks) {
   if (!list.length) return '<div class="empty">Nothing is waiting for a check.</div>';
   return '<ul class="tc-list">' + list.map(t => {
     const p = t.checkPending;
-    const pts = taskPoints(t) * activeMultiplier(state.doublePoints, new Date(p.at || Date.now()));
+    const x = tickExtras(t, p.at || Date.now(), p);
+    const pts = taskPoints(t) * x.mult + x.bonus;
     const who = avatarPrefix(state.members[p.by]) + p.by;
     const id = jsq(t.id), nm = esc(t.name);
     return '<li class="tc-row"><div class="tc-info"><span class="tc-name">' + nm + '</span>' +

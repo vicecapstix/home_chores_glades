@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { state } from '../src/state.js';
 
-vi.mock('../src/firebase.js', () => ({ writeState: vi.fn(), patchTask: vi.fn(), patchMember: vi.fn(), patchRoot: vi.fn(() => Promise.resolve()) }));
+vi.mock('../src/firebase.js', () => ({ writeState: vi.fn(), patchTask: vi.fn(), patchMember: vi.fn(), resetTasks: vi.fn(() => Promise.resolve()) }));
 vi.mock('../src/ui.js', () => ({ showToast: vi.fn(), pColor: vi.fn(() => null) }));
 import * as fb from '../src/firebase.js';
 import { startRollover } from '../src/rollover.js';
@@ -16,14 +16,14 @@ beforeEach(() => {
 afterEach(() => { stop && stop(); vi.useRealTimers(); });
 
 describe('local rollover timer (#88)', () => {
-  it('resets a done daily task after a day passes without a snapshot, and writes via patchRoot', () => {
+  it('resets a done daily task after a day passes without a snapshot, and writes via resetTasks', () => {
     state.tasks = { t1: { id: 't1', name: 'Dishes', freq: 'daily', done: true, lastDone: Date.now(), lastDoneBy: 'A', lastDonePoints: 1 } };
     const render = vi.fn();
     stop = startRollover(render);
     vi.advanceTimersByTime(25 * H);
     expect(state.tasks.t1.done).toBe(false);
     expect(render).toHaveBeenCalled();
-    expect(fb.patchRoot).toHaveBeenCalledWith(expect.objectContaining({ 'tasks/t1/done': false }));
+    expect(fb.resetTasks.mock.calls[0][0]).toMatchObject({ 'tasks/t1/done': false });
   });
   it('re-renders when a soon task becomes overdue', () => {
     const due = new Date('2026-05-12T09:00:00');
