@@ -1,6 +1,6 @@
 // TV dashboard helpers for ?readonly=1 — display only, no Firebase access.
 import { state, getMembers, memberColor } from './state.js';
-import { PCOLS, READONLY, TV_CYCLE } from './config.js';
+import { PCOLS, READONLY, TV_CYCLE, TV_MEMBER } from './config.js';
 import { owedHTML } from './pocketmoney.js';
 import { awayText, esc, avatarPrefix, currentWeekPoints, currentStreak, freezeTag, lastWeekChampion, goalHTML, weekPlan, localDateStr, DAY_NAMES } from './utils.js';
 
@@ -29,15 +29,27 @@ export function tvChampionHTML(history = state.history) {
   return '<span class="tv-champ">🏆 Last week: ' + c.names.map(esc).join(' & ') + ' — ' + c.points + ' pts</span>';
 }
 
+// One-member tablet view (#398): ?readonly=1&member=Bo. Returns the real member name (exact, then
+// case-insensitive) or '' for empty/unknown/not-yet-loaded, which means the full board. Display only.
+export function tvMember(members = state.members, raw = TV_MEMBER) {
+  const want = String(raw || '').trim();
+  if (!want || !members) return '';
+  if (members[want]) return want;
+  return Object.keys(members).find(n => n.toLowerCase() === want.toLowerCase()) || '';
+}
+// That member's chores plus 'Anyone' chores; everything when no member is chosen.
+export function tvMemberTasks(tasks, name) { return name ? tasks.filter(t => !t.person || t.person === name) : tasks; }
+
 export function tvStripHTML(members = state.members, history = state.history, rewards = state.rewards) {
   const names = getMembers();
-  const sorted = Object.values(members).slice().sort((a, b) => currentWeekPoints(b) - currentWeekPoints(a));
+  const only = tvMember(members);
+  const sorted = Object.values(members).filter(m => !only || m.name === only).slice().sort((a, b) => currentWeekPoints(b) - currentWeekPoints(a));
   return sorted.map(m => {
     const c = memberColor(m.name, names) || PCOLS[0];
     return '<span class="tv-chip" style="background:' + c.bg + ';color:' + c.text + ';">' +
       esc(avatarPrefix(m)) + esc(m.name) + ' <b>' + currentWeekPoints(m) + '</b> pts' +
       (currentStreak(m) > 0 ? ' 🔥' + currentStreak(m) + freezeTag(m) : '') + (awayText(m) ? ' <span class="chip-away">' + esc(awayText(m)) + '</span>' : '') + goalHTML(m, rewards) + owedHTML(m) + '</span>';
-  }).join('') + tvChampionHTML(history);
+  }).join('') + (only ? '' : tvChampionHTML(history));
 }
 
 export function renderTvStrip() {

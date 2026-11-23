@@ -69,10 +69,10 @@ describe('render on the readonly tablet (#398)', () => {
   });
   it('the visible chore list follows the member', async () => {
     const { state } = await setup('Bo');
-    const { visibleTasksForTest } = await import('../src/render.js');
-    expect(visibleTasksForTest().map(t => t.name).sort()).toEqual(['Anyone job', 'Bo job']);
+    const { visibleTasks } = await import('../src/render.js');
+    expect(visibleTasks().map(t => t.name).sort()).toEqual(['Anyone job', 'Bo job']);
     state.members = {};
-    expect(visibleTasksForTest().length).toBe(3);
+    expect(visibleTasks().length).toBe(3);
   });
   it('is ignored outside the readonly view', async () => {
     vi.resetModules();
@@ -80,7 +80,7 @@ describe('render on the readonly tablet (#398)', () => {
     const { state } = await import('../src/state.js');
     state.members = { Bo: { name: 'Bo' } };
     state.tasks = { a: { id: 'a', name: 'A', person: 'Cy', freq: 'daily', done: false }, b: { id: 'b', name: 'B', person: 'Bo', freq: 'daily', done: false } };
-    const { visibleTasksForTest } = await import('../src/render.js');
-    expect(visibleTasksForTest().length).toBe(2);
+    const { visibleTasks } = await import('../src/render.js');
+    expect(visibleTasks().length).toBe(2);
   });
 });
