@@ -3,7 +3,7 @@ import { state, applySnapshot } from '../src/state.js';
 
 vi.mock('../src/firebase.js', () => ({
   writeState: vi.fn(), patchTask: vi.fn(), patchMember: vi.fn().mockResolvedValue(undefined),
-  patchRoot: vi.fn().mockResolvedValue(undefined), patchPaths: vi.fn().mockResolvedValue(undefined),
+  resetTasks: vi.fn().mockResolvedValue(undefined), patchPaths: vi.fn().mockResolvedValue(undefined),
   removeTask: vi.fn(), restoreTask: vi.fn(), patchSubtask: vi.fn(),
 }));
 vi.mock('../src/ui.js', () => ({ showToast: vi.fn(), pColor: vi.fn(() => null) }));
@@ -70,7 +70,7 @@ describe('rotation skips the away member', () => {
     state.tasks = { t1: mk({ person: 'Ann', done: true, rotation: ['Ann', 'Bo', 'Cy'], lastDone: NOW - 10 * DAY }) };
     checkTaskResets();
     expect(state.tasks.t1.person).toBe('Cy');
-    expect(fb.patchRoot.mock.calls[0][0]['tasks/t1/person']).toBe('Cy');
+    expect(fb.resetTasks.mock.calls[0][0]['tasks/t1/person']).toBe('Cy');
   });
 });
 

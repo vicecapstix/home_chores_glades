@@ -6,7 +6,7 @@ vi.mock('../src/firebase.js', () => ({
   writeState:    vi.fn().mockResolvedValue(undefined),
   patchTask:     vi.fn().mockResolvedValue(undefined),
   patchMember:   vi.fn().mockResolvedValue(undefined),
-  patchRoot:     vi.fn().mockResolvedValue(undefined),
+  patchRoot:     vi.fn().mockResolvedValue(undefined), resetTasks: vi.fn().mockResolvedValue(undefined),
   removeTask:    vi.fn().mockResolvedValue(undefined),
   restoreTask:   vi.fn().mockResolvedValue(undefined),
   patchSubtask:  vi.fn().mockResolvedValue(undefined),
@@ -22,7 +22,7 @@ vi.mock('../src/undo.js', () => ({
   pushUndo: vi.fn(),
 }));
 
-import { adjustMemberPoints, appendHistory, writeState, patchTask, patchMember, patchRoot, removeTask } from '../src/firebase.js';
+import { adjustMemberPoints, appendHistory, writeState, patchTask, patchMember, patchRoot, resetTasks, removeTask } from '../src/firebase.js';
 import { showToast } from '../src/ui.js';
 import { pushUndo } from '../src/undo.js';
 
@@ -82,7 +82,7 @@ describe('checkTaskResets', () => {
   it('patches the reset leaves when at least one task was reset', () => {
     state.tasks.t1 = makeTask({ done: true, lastDone: FIXED_DATE.getTime() - 8 * 86400000 });
     checkTaskResets();
-    expect(patchRoot).toHaveBeenCalledOnce();
+    expect(resetTasks).toHaveBeenCalledOnce();
   });
   it('does NOT reset a done task that is still within its period', () => {
     state.tasks.t1 = makeTask({ done: true, lastDone: FIXED_DATE.getTime() - 3 * 86400000 }); // 3d ago, weekly

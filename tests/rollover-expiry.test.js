@@ -4,7 +4,7 @@ import { state } from '../src/state.js';
 
 vi.mock('../src/firebase.js', () => ({
   writeState: vi.fn(), patchTask: vi.fn(), patchMember: vi.fn().mockResolvedValue(undefined),
-  patchRoot: vi.fn(() => Promise.resolve()), patchPaths: vi.fn(() => Promise.resolve()),
+  patchRoot: vi.fn(() => Promise.resolve()), resetTasks: vi.fn().mockResolvedValue(undefined), patchPaths: vi.fn(() => Promise.resolve()),
 }));
 vi.mock('../src/ui.js', () => ({ showToast: vi.fn(), pColor: vi.fn(() => null) }));
 import * as fb from '../src/firebase.js';

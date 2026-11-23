@@ -1,9 +1,10 @@
 import { state, getMembers } from './state.js';
 import { READONLY, BADGES, CATEGORIES } from './config.js';
-import { patchPaths, takeCheckPending, adjustMemberPoints, appendHistory, removeHistoryEntry, patchTask, patchMember, patchRoot, removeTask, restoreTask, patchSubtask } from './firebase.js';
+import { patchPaths, resetTasks, takeCheckPending, adjustMemberPoints, appendHistory, removeHistoryEntry, patchTask, patchMember, patchRoot, removeTask, restoreTask, patchSubtask } from './firebase.js';
 import { showToast } from './ui.js';
 import { pushUndo } from './undo.js';
 import { dropRetry } from './pending.js';
+import { isDisconnected } from './connection.js';
 import { activeMultiplier } from './doublepoints.js';
 import { bonusFor } from './bonuschore.js';
 import { esc, jsq, validTime, validInterval, INTERVAL_MIN, INTERVAL_MAX, freqDays, cycleDays, daysSince, dueStatus, taskPoints, getWeekStart, localDateStr, prevScheduledStart, validEveryWeeks, isStaleDoneOnce, initialLastDone, CHORE_ICONS, TIMES_OF_DAY, validTimeOfDay, isOffNow, validDateStr, nextRotationPerson, awayNames, DAY_NAMES, nextStreak, isPausedNow, freezeCount, validPoints, POINTS_MIN, POINTS_MAX, validMinutes, MINUTES_MIN, MINUTES_MAX } from './utils.js';
@@ -15,7 +16,8 @@ export { dueStatus, taskPoints, freqDays };
 
 export function checkTaskResets() {
   if (state.pause) return; // paused (or expiry resume pending): freeze resets
-  const patch = {};
+  if (isDisconnected()) return; // an offline copy can be a day stale: never write resets from it (#388)
+  const patch = {}, seen = {};
   const now = Date.now();
   Object.values(state.tasks).forEach(t => {
     if (t.freq === 'once' || isOffNow(t, now)) return;
@@ -23,6 +25,7 @@ export function checkTaskResets() {
       ? (prevScheduledStart(t.days, now, t) !== null && prevScheduledStart(t.days, now, t) > (t.lastDone || 0))
       : daysSince(t.lastDone || 0, now) >= cycleDays(t, t.lastDone);
     if (t.done && due) {
+      seen[t.id] = t.lastDone || 0; // the server applies the reset only if it still shows this completion (#388)
       t.done = false;
       t.lastDoneBy = null;
       t.lastDonePoints = null;
@@ -38,9 +41,9 @@ export function checkTaskResets() {
       if (next) { t.person = next; patch['tasks/' + t.id + '/person'] = next; }
     }
   });
-  // One multi-path update touching only the reset leaves (never a full-state set).
+  // Only the reset leaves, one guarded transaction per due chore (never a full-state set).
   if (READONLY || !Object.keys(patch).length) return;
-  patchRoot(patch).catch(err => showToast('Save error: ' + (err.code || err.message)));
+  resetTasks(patch, seen).catch(err => showToast('Save error: ' + (err.code || err.message)));
 }
 
 // ── Weekday chips ─────────────────────────────────────────────────────────────

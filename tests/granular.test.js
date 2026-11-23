@@ -3,12 +3,12 @@ import { state } from '../src/state.js';
 
 vi.mock('../src/firebase.js', () => ({
   writeState: vi.fn().mockResolvedValue(undefined), patchTask: vi.fn().mockResolvedValue(undefined),
-  patchMember: vi.fn().mockResolvedValue(undefined), patchRoot: vi.fn().mockResolvedValue(undefined),
+  patchMember: vi.fn().mockResolvedValue(undefined), patchRoot: vi.fn().mockResolvedValue(undefined), resetTasks: vi.fn().mockResolvedValue(undefined),
   removeTask: vi.fn(), restoreTask: vi.fn(), patchSubtask: vi.fn().mockResolvedValue(undefined),
 }));
 vi.mock('../src/ui.js', () => ({ showToast: vi.fn() }));
 vi.mock('../src/undo.js', () => ({ pushUndo: vi.fn() }));
-import { writeState, patchTask, patchRoot, patchSubtask } from '../src/firebase.js';
+import { writeState, patchTask, patchRoot, resetTasks, patchSubtask } from '../src/firebase.js';
 import { checkTaskResets, claimTask, addSubtask, removeSubtask } from '../src/tasks.js';
 
 // Wednesday 2026-10-14 12:00 local
@@ -33,8 +33,8 @@ describe('checkTaskResets uses one multi-path update', () => {
     };
     checkTaskResets();
     expect(writeState).not.toHaveBeenCalled();
-    expect(patchRoot).toHaveBeenCalledTimes(1);
-    expect(patchRoot).toHaveBeenCalledWith({
+    expect(resetTasks).toHaveBeenCalledTimes(1);
+    expect(resetTasks.mock.calls[0][0]).toEqual({
       'tasks/a/done': false, 'tasks/a/lastDoneBy': null, 'tasks/a/lastDonePoints': null,
     });
   });
@@ -46,7 +46,7 @@ describe('checkTaskResets uses one multi-path update', () => {
     };
     checkTaskResets();
     expect(writeState).not.toHaveBeenCalled();
-    expect(patchRoot).toHaveBeenCalledWith({
+    expect(resetTasks.mock.calls[0][0]).toEqual({
       'tasks/w/done': false, 'tasks/w/lastDoneBy': null, 'tasks/w/lastDonePoints': null,
     });
   });
@@ -54,7 +54,7 @@ describe('checkTaskResets uses one multi-path update', () => {
   it('does not write at all when nothing is due', () => {
     state.tasks = { a: { id: 'a', name: 'A', freq: 'weekly', done: true, lastDone: NOW - DAY } };
     checkTaskResets();
-    expect(patchRoot).not.toHaveBeenCalled();
+    expect(resetTasks).not.toHaveBeenCalled();
     expect(writeState).not.toHaveBeenCalled();
   });
 });
