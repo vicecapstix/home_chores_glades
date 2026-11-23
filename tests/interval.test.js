@@ -5,10 +5,10 @@ vi.mock('../src/auth.js', () => ({ isAdmin: () => true }));
 vi.mock('../src/firebase.js', () => ({
   writeState: vi.fn().mockResolvedValue(undefined), patchTask: vi.fn().mockResolvedValue(undefined),
   patchMember: vi.fn(), patchPaths: vi.fn().mockResolvedValue(undefined),
-  patchRoot: vi.fn().mockResolvedValue(undefined), removeTask: vi.fn(), restoreTask: vi.fn(), patchSubtask: vi.fn(),
+  resetTasks: vi.fn().mockResolvedValue(undefined), removeTask: vi.fn(), restoreTask: vi.fn(), patchSubtask: vi.fn(),
 }));
 vi.mock('../src/undo.js', () => ({ pushUndo: vi.fn() }));
-import { patchRoot, patchPaths, writeState } from '../src/firebase.js';
+import { resetTasks, patchPaths, writeState } from '../src/firebase.js';
 import * as ui from '../src/ui.js';
 import { checkTaskResets, addTask, saveTask, skipTask } from '../src/tasks.js';
 import { dueStatus, taskPoints, freqDays, freqLabel, validInterval, initialLastDone } from '../src/utils.js';
@@ -47,8 +47,8 @@ describe('freqDays / label', () => {
 
 describe('reset at N-1 / N / N+1 days', () => {
   const reset = ago => { state.tasks = { a: mk({ lastDone: NOW - ago * DAY }) }; checkTaskResets(); return state.tasks.a.done; };
-  it('stays done at N-1', () => { expect(reset(2)).toBe(true); expect(patchRoot).not.toHaveBeenCalled(); });
-  it('resets at N', () => { expect(reset(3)).toBe(false); expect(patchRoot).toHaveBeenCalledTimes(1); });
+  it('stays done at N-1', () => { expect(reset(2)).toBe(true); expect(resetTasks).not.toHaveBeenCalled(); });
+  it('resets at N', () => { expect(reset(3)).toBe(false); expect(resetTasks).toHaveBeenCalledTimes(1); });
   it('resets at N+1', () => { expect(reset(4)).toBe(false); });
 });
 

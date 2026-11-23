@@ -4,12 +4,12 @@ import { nextRotationPerson, rotationList } from '../src/utils.js';
 
 vi.mock('../src/firebase.js', () => ({
   writeState: vi.fn().mockResolvedValue(undefined), patchTask: vi.fn(), patchMember: vi.fn(),
-  patchRoot: vi.fn().mockResolvedValue(undefined), patchPaths: vi.fn().mockResolvedValue(undefined),
+  resetTasks: vi.fn().mockResolvedValue(undefined), patchPaths: vi.fn().mockResolvedValue(undefined),
   removeTask: vi.fn(), restoreTask: vi.fn(), patchSubtask: vi.fn(),
 }));
 vi.mock('../src/ui.js', () => ({ showToast: vi.fn() }));
 vi.mock('../src/undo.js', () => ({ pushUndo: vi.fn() }));
-import { writeState, patchRoot, patchPaths } from '../src/firebase.js';
+import { writeState, resetTasks, patchPaths } from '../src/firebase.js';
 import { checkTaskResets, editTask, saveTask, rotationChipsHTML } from '../src/tasks.js';
 import { removeMember, renamePaths } from '../src/members.js';
 
@@ -49,14 +49,14 @@ describe('reset rotates the assignee', () => {
     state.tasks = { a: task({ rotation: ['Ann', 'Bo', 'Cy'] }) };
     checkTaskResets();
     expect(state.tasks.a.person).toBe('Bo');
-    expect(patchRoot).toHaveBeenCalledWith(expect.objectContaining({ 'tasks/a/done': false, 'tasks/a/person': 'Bo' }));
+    expect(resetTasks.mock.calls[0][0]).toMatchObject({ 'tasks/a/done': false, 'tasks/a/person': 'Bo' });
   });
   it('leaves person alone without a rotation, and when the task is not due', () => {
     state.tasks = { a: task() , b: task({ id: 'b', rotation: ['Ann', 'Bo'], done: true, lastDone: T0 - 3600000 }) };
     checkTaskResets();
     expect(state.tasks.a.person).toBe('Ann');
     expect(state.tasks.b.person).toBe('Ann');
-    expect(patchRoot.mock.calls[0][0]['tasks/a/person']).toBeUndefined();
+    expect(resetTasks.mock.calls[0][0]['tasks/a/person']).toBeUndefined();
   });
   it('does not rotate while paused', () => {
     state.pause = { start: 1 };
