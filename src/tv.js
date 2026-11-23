@@ -86,7 +86,7 @@ export function renderTvTomorrow(now = Date.now()) {
   if (!READONLY) return;
   const el = document.getElementById('tv-tomorrow');
   if (!el) return;
-  const html = tvTomorrowHTML(state.tasks, now);
+  const html = tvTomorrowHTML(tvMemberTasks(Object.values(state.tasks || {}), tvMember()), now); // one-member view: only theirs + Anyone (#398)
   if (el.innerHTML !== html) el.innerHTML = html; // the 1-min rollover tick calls this; skip no-op rewrites
 }
 

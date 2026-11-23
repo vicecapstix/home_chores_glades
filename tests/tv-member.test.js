@@ -61,6 +61,28 @@ describe('render on the readonly tablet (#398)', () => {
     expect(html).toContain('Bo'); expect(html).toContain('<b>4</b>');
     expect(html).not.toContain('Cy');
   });
+  it('escapes a member name containing HTML and ignores a URL-only name', async () => {
+    const { state, tv } = await setup('<b>X</b>');
+    state.members['<b>X</b>'] = { name: '<b>X</b>', weekPoints: 1, weekStart: (await import('../src/utils.js')).getWeekStart(), streak: 0 };
+    tv.renderTvStrip();
+    const html = document.getElementById('tv-strip').innerHTML;
+    expect(html).toContain('&lt;b&gt;X&lt;/b&gt;'); expect(html).not.toContain('<b>X</b>');
+    delete state.members['<b>X</b>'];
+    tv.renderTvStrip();
+    expect(document.getElementById('tv-strip').innerHTML).not.toContain('<b>X</b>');
+  });
+  it('the evening Tomorrow panel only lists that member and Anyone', async () => {
+    const { state, tv } = await setup('Bo');
+    document.body.innerHTML += '<div id="tv-tomorrow"></div>';
+    state.tasks = {
+      a: { id: 'a', name: 'Bo job', freq: 'daily', person: 'Bo', done: false, lastDone: 0, subtasks: {} },
+      b: { id: 'b', name: 'Cy job', freq: 'daily', person: 'Cy', done: false, lastDone: 0, subtasks: {} },
+      c: { id: 'c', name: 'Anyone job', freq: 'daily', person: '', done: false, lastDone: 0, subtasks: {} },
+    };
+    tv.renderTvTomorrow(new Date(2026, 10, 23, 19, 0).getTime());
+    const html = document.getElementById('tv-tomorrow').innerHTML;
+    expect(html).toContain('Bo job'); expect(html).toContain('Anyone job'); expect(html).not.toContain('Cy job');
+  });
   it('unknown name falls back to the full strip', async () => {
     const { tv } = await setup('Nobody');
     tv.renderTvStrip();
