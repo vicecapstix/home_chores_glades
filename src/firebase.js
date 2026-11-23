@@ -118,6 +118,26 @@ export async function patchPaths(paths) {
   await update(ref(_db, 'state'), paths);
 }
 
+// Chore resets (#388): the same leaves checkTaskResets always wrote, but applied per task in a
+// transaction that only goes ahead if the server still shows the completion this device saw
+// (done, same lastDone). A device that slept offline can then never undo a newer tick.
+// `patch` keys are 'tasks/<id>/<path>' (null clears); `seen` maps task id -> lastDone it saw.
+export async function resetTasks(patch, seen) {
+  if (READONLY || !_db || !_live) return;
+  await Promise.all(Object.keys(seen).map(id => runTransaction(ref(_db, 'state/tasks/' + id), cur => {
+    if (!cur || !cur.done || (cur.lastDone || 0) !== seen[id]) return undefined;
+    const next = { ...cur };
+    Object.keys(patch).forEach(k => {
+      if (k.indexOf('tasks/' + id + '/') !== 0) return;
+      const parts = k.slice(('tasks/' + id + '/').length).split('/');
+      let o = next;
+      parts.slice(0, -1).forEach(p => { o[p] = { ...(o[p] || {}) }; o = o[p]; });
+      o[parts[parts.length - 1]] = patch[k];
+    });
+    return next;
+  })));
+}
+
 export async function patchRoot(fields) {
   if (READONLY || !_db || !_live) return;
   await update(ref(_db, 'state'), fields);

@@ -8,7 +8,7 @@ vi.mock('../src/auth.js', () => ({ isAdmin: () => true }));
 vi.mock('../src/firebase.js', () => ({
   writeState: vi.fn().mockResolvedValue(undefined), patchTask: vi.fn().mockResolvedValue(undefined),
   patchMember: vi.fn(), patchPaths: vi.fn().mockResolvedValue(undefined),
-  patchRoot: vi.fn(async f => { for (const [k, v] of Object.entries(f)) { const [, id, field] = k.split('/'); if (state.tasks[id] && field) state.tasks[id][field] = v; } }),
+  resetTasks: vi.fn(async f => { for (const [k, v] of Object.entries(f)) { const [, id, field] = k.split('/'); if (state.tasks[id] && field) state.tasks[id][field] = v; } }),
   removeTask: vi.fn(), restoreTask: vi.fn(), patchSubtask: vi.fn(),
 }));
 vi.mock('../src/ui.js', async orig => ({ ...(await orig()), showToast: vi.fn() }));
