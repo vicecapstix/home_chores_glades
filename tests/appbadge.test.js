@@ -80,7 +80,8 @@ describe('updateAppBadge (#399)', () => {
 
 describe('render() updates the badge (#399)', () => {
   it('render.js calls updateAppBadge', async () => {
-    const src = (await import('node:fs')).readFileSync(new URL('../src/render.js', import.meta.url), 'utf8');
+    const { readFileSync } = await import('node:fs'); const { resolve } = await import('node:path');
+    const src = readFileSync(resolve(__dirname, '../src/render.js'), 'utf8');
     expect(src).toMatch(/updateAppBadge\(/);
   });
 });

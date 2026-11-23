@@ -1,5 +1,6 @@
 import { state, getMembers } from './state.js';
 import { PCOLS, BADGES, READONLY } from './config.js';
+import { updateAppBadge } from './appbadge.js';
 import { renderTvStrip, renderTvTomorrow } from './tv.js';
 import { renderGoal } from './goal.js';
 import { renderMyDone } from './mydone.js';
@@ -186,6 +187,7 @@ export function render() {
   renderSwaps(_currentMember());
   renderGoal(Object.values(state.tasks || {}));
   renderMyDone(state.tasks, _currentMember(), _isAdmin);
+  updateAppBadge(state.tasks, _currentMember()); // installed-app icon badge (#399)
   renderBackupReminder(_isAdmin);
   renderTeamGoal();
   renderDoublePointsBanner();
