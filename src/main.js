@@ -73,6 +73,7 @@ if (READONLY) {
 }
 
 import { initTvMode, initTvCycle, refreshTvCycle } from './tv.js';
+import { initTvScroll } from './tvscroll.js';
 import { leaderboardHTML } from './ui.js';
 import { startRollover } from './rollover.js';
 import { registerServiceWorker, watchForUpdates, reloadWhenIdle } from './pwa.js';
@@ -104,6 +105,7 @@ registerServiceWorker().then(reg => watchForUpdates({ // new version (#312): TV 
 window.refreshApp = function() { location.reload(); };
 initInstall();
 initTvMode();
+initTvScroll(); // TV: slow auto-scroll of sections that don't fit (#400)
 initTvCycle(name => name === 'leaderboard'
   ? '<h3>This week</h3>' + leaderboardHTML('week') + '<h3>Last week</h3>' + leaderboardHTML('lastweek')
   : rewardsHTML(state.rewards, false));
