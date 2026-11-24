@@ -565,6 +565,9 @@ body.tv-night::after { content: ''; position: fixed; inset: 0; background: rgba(
   body.tv .tv-chip { padding: 6px 16px; border-radius: 20px; font-size: 1.1rem; }
   body.tv #task-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-lg); align-items: start; }
   body.tv .task-name { font-size: 1.4rem; overflow-wrap: anywhere; }
+  body.tv #task-list > .section { position: relative; max-height: 62vh; overflow: hidden; } /* a longer section auto-scrolls (#400) */
+  body.tv #task-list > .section > .section-head { position: sticky; top: 0; z-index: 1; background: var(--bg); }
+  body.tv .section-head[data-more]::after { content: ' · +' attr(data-more) ' more'; color: var(--muted); font-weight: 500; }
   body.tv .section[data-k="overdue"] { grid-column: 1; grid-row: 1; }
   body.tv .section[data-k="soon"] { grid-column: 2; grid-row: 1; }
   body.tv .section[data-k="done"] { grid-column: 1 / -1; grid-row: 2; }
