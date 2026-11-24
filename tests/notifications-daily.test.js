@@ -12,6 +12,7 @@ let N;
 beforeEach(() => {
   vi.useFakeTimers(); vi.setSystemTime(NOW);
   _resetForTests(); localStorage.clear();
+  localStorage.setItem('ff_quiet', JSON.stringify({ on: false })); // these tests run across midnight; quiet hours have their own tests (#401)
   document.body.innerHTML = '<button id="btn-notify" class="hidden"></button>';
   state.tasks = { a: t('a'), b: t('b'), other: t('other', { person: 'Bob' }) };
   N = vi.fn(); N.permission = 'granted'; N.requestPermission = vi.fn();

@@ -56,6 +56,7 @@ import {
 } from './render.js';
 
 import { initNotifications, enableNotifications } from './notifications.js';
+import { toggleQuietHours } from './quiethours.js';
 
 // ── Bound session helpers ─────────────────────────────────────────────────────
 const _isAdmin       = () => isAdmin();
@@ -240,6 +241,7 @@ window.toggleNewNote = function() {
 
 // Tasks
 window.enableNotifications = () => enableNotifications();
+window.toggleQuietHours = () => toggleQuietHours();
 window.addTask       = ()         => addTask(_isAdmin);
 window.approveCheck  = id         => approveCheck(id, _isAdmin, _currentMember);
 window.sendBackCheck = id         => { const r = window.prompt('Why not yet? (optional, up to 100 characters)', ''); if (r !== null) sendBackCheck(id, r, _isAdmin); };
