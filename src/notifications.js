@@ -1,6 +1,7 @@
 import { state } from './state.js';
 import { READONLY } from './config.js';
 import { dueStatus, localDateStr, dueTimePassedToday } from './utils.js';
+import { inQuietHours, isHeld, setHeld, syncQuietButton } from './quiethours.js';
 
 let _notifiedIds = new Set();
 const _pending = new Map();
@@ -10,6 +11,7 @@ let _currentMember = () => '';
 export function initNotifications(currentMemberFn) {
   _currentMember = currentMemberFn || (() => '');
   syncNotifyButton();
+  syncQuietButton();
   if (notificationsSupported() && Notification.permission === 'granted') scheduleOverdueCheck();
 }
 
@@ -36,6 +38,7 @@ export async function enableNotifications() {
   let perm = Notification.permission;
   if (perm === 'default') perm = await Notification.requestPermission();
   syncNotifyButton();
+  syncQuietButton();
   if (perm === 'granted') scheduleOverdueCheck();
   return perm;
 }
@@ -62,7 +65,31 @@ async function showOverdue(body, tag = 'ff-overdue-' + body) {
   try { new Notification('FamilyFlow', opts); return true; } catch(e) { return false; }
 }
 
-export function runOverdueCheck() {
+// Quiet hours (#401): chores that would have notified are held back; the first check after the window
+// sends ONE summary for everything held (overdue and due-time), instead of a burst.
+let _summaryBusy = false;
+const unnotifiedOverdue = () => selectNotifyTasks(state.tasks, _currentMember()).filter(t => !_notifiedIds.has(t.id));
+const unseenDue = now => { const seen = dueSeen(); return selectDueTimeTasks(state.tasks, _currentMember(), now).filter(t => !seen.includes(t.id)); };
+function quietGate(now, candidates) { // true = hold back; otherwise may return a summary promise via quietSummary
+  if (!inQuietHours(now)) return false;
+  if (candidates > 0) setHeld(true);
+  return true;
+}
+function quietSummary(now) {
+  if (!isHeld() || _summaryBusy) return null;
+  setHeld(false);
+  const over = unnotifiedOverdue(), due = unseenDue(now);
+  const ids = new Set([...over, ...due].map(t => t.id));
+  if (ids.size < 2) return null; // a single held chore is shown normally
+  _summaryBusy = true;
+  return showOverdue(ids.size + ' chores need your attention', 'ff-quiet-summary').then(ok => {
+    _summaryBusy = false;
+    if (!ok) { setHeld(true); return; }
+    ids.forEach(id => { _notifiedIds.add(id); markDueSeen(id); }); // mentioned once: no repeat from either check
+  });
+}
+
+export function runOverdueCheck(now = Date.now()) {
   const today = localDateStr();
   try {
     if (localStorage.getItem('fc_last_notify_date') !== today) {
@@ -71,6 +98,9 @@ export function runOverdueCheck() {
     }
   } catch(e) {}
   if (!notificationsSupported() || Notification.permission !== 'granted') return Promise.resolve();
+  if (quietGate(now, unnotifiedOverdue().length)) return Promise.resolve();
+  const summary = quietSummary(now);
+  if (summary) return summary;
   const jobs = selectNotifyTasks(state.tasks, _currentMember()).map(t => {
     if (_notifiedIds.has(t.id)) return null;
     if (_pending.has(t.id)) return _pending.get(t.id);
@@ -107,6 +137,9 @@ export function selectDueTimeTasks(tasks, me, now = Date.now()) {
 
 export function runDueTimeCheck(now = Date.now()) {
   if (READONLY || !notificationsSupported() || Notification.permission !== 'granted') return Promise.resolve();
+  if (quietGate(now, unseenDue(now).length)) return Promise.resolve();
+  const summary = quietSummary(now);
+  if (summary) return summary;
   const seen = dueSeen();
   return Promise.all(selectDueTimeTasks(state.tasks, _currentMember(), now).map(t => {
     if (seen.includes(t.id) || _duePending.has(t.id)) return null;
@@ -124,6 +157,7 @@ const TC_KEY = 'ff_tocheck_notified';
 let _tcBusy = false;
 export function runToCheckNotify(count, now = Date.now()) {
   if (READONLY || !(count > 0) || !notificationsSupported() || Notification.permission !== 'granted' || _tcBusy) return Promise.resolve(false);
+  if (inQuietHours(now)) return Promise.resolve(false); // not marked: fires once quiet hours end
   const today = localDateStr(new Date(now));
   try { if (localStorage.getItem(TC_KEY) === today) return Promise.resolve(false); } catch(e) {}
   _tcBusy = true;
@@ -134,4 +168,4 @@ export function runToCheckNotify(count, now = Date.now()) {
   });
 }
 
-export function _resetForTests() { _tcBusy = false; _duePending.clear(); _notifiedIds = new Set(); _pending.clear(); _started = false; _currentMember = () => ''; }
+export function _resetForTests() { _tcBusy = false; _summaryBusy = false; _duePending.clear(); _notifiedIds = new Set(); _pending.clear(); _started = false; _currentMember = () => ''; }
