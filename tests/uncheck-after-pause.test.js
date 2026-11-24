@@ -37,6 +37,7 @@ function applyPatch(patch) {
   Object.entries(patch).forEach(([k, v]) => {
     const [kind, id, field] = k.split('/');
     if (kind === 'tasks') state.tasks[id][field] = v;
+    if (kind === 'members' && field) state.members[id][field] = v; // pause/away also shift lastStreakDate
   });
 }
 
@@ -81,6 +82,8 @@ describe('uncheck after a pause or away shift (#389)', () => {
     await toggleTask('t1', () => 'Al', admin);
     expect(state.history).toHaveLength(0);
     expect(state.members.Al.points).toBe(10);
+    expect(state.members.Al.streak).toBe(3);
+    expect(state.members.Al.lastStreakDate).toBe('2026-05-10');
   });
 
   it('keeps the reset freeze: the shifted lastDone is left alone', async () => {

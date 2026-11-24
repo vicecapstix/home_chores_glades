@@ -269,7 +269,9 @@ async function undoCompletionRecords(id, t, c) {
   if (!m || c.prevStreakDate === undefined || c.prevStreakDate === null) return;
   const day = localDateStr(new Date(c.at));
   const otherSameDay = rest.some(h => !h.type && h.person === c.by && localDateStr(new Date(h.completedAt)) === day);
-  if (m.lastStreakDate !== day || otherSameDay || c.prevStreakDate === day) return;
+  // A pause/away resume shifts lastStreakDate forward (#389): later than this day with no later completion is still this tick's streak.
+  const laterDone = rest.some(h => !h.type && h.person === c.by && h.completedAt > c.at);
+  if ((m.lastStreakDate !== day && (m.lastStreakDate < day || laterDone)) || otherSameDay || c.prevStreakDate === day) return;
   try { await patchMember(c.by, { streak: c.prevStreak || 0, lastStreakDate: c.prevStreakDate || null, freezes: c.prevFreezes || 0 }); return c.prevStreak || 0; }
   catch (err) { showToast('Member update failed: ' + (err.code || err.message)); }
 }
