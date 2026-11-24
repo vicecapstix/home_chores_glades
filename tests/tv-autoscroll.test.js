@@ -100,7 +100,7 @@ describe('no effect outside the TV view (#400)', () => {
     expect(sec.querySelector('.section-head').dataset.more).toBeUndefined();
   });
   it('the section cap only exists under body.tv, and main starts the module', () => {
-    expect(css).toMatch(/body\.tv #task-list > \.section \{ max-height: 62vh; overflow: hidden;/);
+    expect(css).toMatch(/body\.tv #task-list > \.section \{ position: relative; max-height: 62vh; overflow: hidden;/); // relative: card.offsetTop is measured from the section
     expect(css).not.toMatch(/^\.section \{[^}]*overflow: hidden/m);
     expect(main).toContain("initTvScroll()");
   });
