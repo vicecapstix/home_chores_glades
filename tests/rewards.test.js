@@ -62,7 +62,7 @@ describe('admin CRUD writes path updates, never writeState', () => {
     expect(document.getElementById('reward-name').value).toBe('Old');
     document.getElementById('reward-cost').value = '9';
     await R.saveReward(admin);
-    expect(patchRoot).toHaveBeenCalledWith({ 'rewards/r1': { id: 'r1', name: 'Old', cost: 9, icon: '🎁' } });
+    expect(patchRoot).toHaveBeenCalledWith({ 'rewards/r1/name': 'Old', 'rewards/r1/cost': 9, 'rewards/r1/icon': '🎁', 'rewards/r1/perWeek': null });
     expect(Object.keys(state.rewards)).toEqual(['r1']);
   });
   it('deletes by nulling the path after confirm', async () => {
