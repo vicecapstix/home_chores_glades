@@ -243,6 +243,7 @@ Every piece of user-supplied data injected into `innerHTML` or an `onclick` stri
   lastDoneBy,    // member name — set on check, cleared on uncheck (prevents point farming)
   lastDonePoints,// points awarded — set on check, cleared on uncheck
   lastDoneBadges,// badge ids that check awarded (null when none) — uncheck takes back those whose check now fails, then clears it
+  lastDoneAt,    // tick time (ms), set on check and cleared on uncheck; unlike lastDone it is never shifted by a pause/away resume, so uncheck finds its history row (#389)
   notes,         // string, max 300 chars
   needsCheck,    // true when a parent must check the job before points are given (omitted otherwise)
   checkPending,  // { by, at } while a member's tick waits for a parent check (no points yet)
