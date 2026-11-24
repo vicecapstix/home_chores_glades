@@ -151,7 +151,7 @@ describe('admin form', () => {
     expect(document.getElementById('reward-perweek').value).toBe('2');
     document.getElementById('reward-perweek').value = '';
     await R.saveReward(admin);
-    expect(patchRoot.mock.calls[0][0]['rewards/r1']).not.toHaveProperty('perWeek');
+    expect(patchRoot.mock.calls[0][0]['rewards/r1/perWeek']).toBeNull();
   });
   it('non-admin cannot save', async () => {
     fill('Movie', '30', '3');

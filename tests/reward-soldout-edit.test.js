@@ -43,9 +43,9 @@ describe('editing a sold-out reward (#357 lead-engineer blocker)', () => {
     document.getElementById('reward-name').value = 'Cinema trip';
     await R.saveReward(admin);
     expect(showToast).not.toHaveBeenCalled();
-    const saved = Object.values(patchRoot.mock.calls[0][0])[0];
-    expect(saved.name).toBe('Cinema trip');
-    expect(saved.stock).toBe(0);
+    expect(patchRoot.mock.calls[0][0]['rewards/r1/name']).toBe('Cinema trip');
+    expect(patchRoot.mock.calls[0][0]).not.toHaveProperty('rewards/r1/stock'); // untouched, stays 0 (#390)
+    expect(state.rewards.r1.stock).toBe(0);
   });
 });
 
