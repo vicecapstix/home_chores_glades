@@ -160,11 +160,14 @@ export function cancelRewardEdit() {
   field('reward-cancel')?.classList.add('hidden');
 }
 
+let editingStock = null; // stock shown when Edit was tapped (null = unlimited), so a save only changes stock the admin touched (#390)
+
 export function editReward(id, isAdminFn) {
   if (READONLY || !isAdminFn()) return;
   const r = state.rewards?.[id];
   if (!r) return;
   editingId = id;
+  editingStock = r.stock != null ? r.stock : null;
   field('reward-name').value = r.name;
   field('reward-cost').value = r.cost;
   field('reward-icon').value = r.icon || '';
@@ -186,9 +189,20 @@ export async function saveReward(isAdminFn) {
     return;
   }
   const id = isEdit ? editingId : 'r' + Date.now();
-  const full = { id, ...reward };
+  let full = { id, ...reward }, update = { ['rewards/' + id]: full };
+  if (isEdit) {
+    // Leaf patches: stock is only written when the admin changed it, and then relative to the live value,
+    // so a copy reserved while the form was open is not given back (#390).
+    const cur = state.rewards[id], typed = reward.stock != null ? reward.stock : null;
+    let stock = cur.stock != null ? cur.stock : null;
+    if (typed !== editingStock) stock = typed === null || stock === null || editingStock === null ? typed : Math.max(0, Math.min(MAX_STOCK, stock + typed - editingStock));
+    full = { id, ...reward, ...(stock !== null ? { stock } : {}) };
+    update = {};
+    ['name', 'cost', 'icon', 'perWeek'].forEach(k => { update['rewards/' + id + '/' + k] = full[k] != null ? full[k] : null; });
+    if (stock !== (cur.stock != null ? cur.stock : null)) update['rewards/' + id + '/stock'] = stock;
+  }
   try {
-    await patchRoot({ ['rewards/' + id]: full });
+    await patchRoot(update);
     state.rewards[id] = full;
     cancelRewardEdit();
     renderRewards();
