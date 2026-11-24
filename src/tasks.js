@@ -269,7 +269,9 @@ async function undoCompletionRecords(id, t, c) {
   if (!m || c.prevStreakDate === undefined || c.prevStreakDate === null) return;
   const day = localDateStr(new Date(c.at));
   const otherSameDay = rest.some(h => !h.type && h.person === c.by && localDateStr(new Date(h.completedAt)) === day);
-  if (m.lastStreakDate !== day || otherSameDay || c.prevStreakDate === day) return;
+  // A pause/away resume shifts lastStreakDate forward (#389): later than this day with no later completion is still this tick's streak.
+  const laterDone = rest.some(h => !h.type && h.person === c.by && h.completedAt > c.at);
+  if ((m.lastStreakDate !== day && (m.lastStreakDate < day || laterDone)) || otherSameDay || c.prevStreakDate === day) return;
   try { await patchMember(c.by, { streak: c.prevStreak || 0, lastStreakDate: c.prevStreakDate || null, freezes: c.prevFreezes || 0 }); return c.prevStreak || 0; }
   catch (err) { showToast('Member update failed: ' + (err.code || err.message)); }
 }
@@ -393,8 +395,8 @@ async function applyToggle(id, t, awardee, nowTs, isAdminFn, checkedBy, pending)
   const tickWeek = getWeekStart(new Date(nowTs));
   // Check remembers the previous lastDone (and streak) so uncheck can restore them (#32).
   const taskUpdate = { done, lastDone: done ? nowTs : (typeof t.prevLastDone === 'number' ? t.prevLastDone : t.lastDone) };
-  if (done) { taskUpdate.prevLastDone = t.lastDone || 0; taskUpdate.checkPending = null; taskUpdate.checkNote = null; }
-  else taskUpdate.prevLastDone = null;
+  if (done) { taskUpdate.prevLastDone = t.lastDone || 0; taskUpdate.lastDoneAt = nowTs; taskUpdate.checkPending = null; taskUpdate.checkNote = null; } // lastDoneAt: tick time, never shifted by pause/away (#389)
+  else { taskUpdate.prevLastDone = null; taskUpdate.lastDoneAt = null; }
   if (done && awardee) {
     const am = state.members[awardee];
     if (am) {
@@ -415,13 +417,13 @@ async function applyToggle(id, t, awardee, nowTs, isAdminFn, checkedBy, pending)
     taskUpdate.lastDoneBadges = null;
   }
   const weekStart = getWeekStart();
-  const completion = { by: t.lastDoneBy, at: t.lastDone, prevStreak: t.prevStreak, prevStreakDate: t.prevStreakDate, prevFreezes: t.prevFreezes, badges: asList(t.lastDoneBadges) };
+  const completion = { by: t.lastDoneBy, at: t.lastDoneAt || t.lastDone, prevStreak: t.prevStreak, prevStreakDate: t.prevStreakDate, prevFreezes: t.prevFreezes, badges: asList(t.lastDoneBadges) };
   // Uncheck: reverse points FIRST, atomically on the live value. A member may
   // not claw back points they already spent; an admin can (balance may go < 0).
   let reversal = null;
   const beforeUncheck = !done && state.members[t.lastDoneBy] ? { ...state.members[t.lastDoneBy] } : null;
   if (!done && t.lastDoneBy && t.lastDonePoints && state.members[t.lastDoneBy]) {
-    const countedWeek = t.lastDoneWeek || (t.lastDone ? getWeekStart(new Date(t.lastDone)) : '');
+    const countedWeek = t.lastDoneWeek || (t.lastDone ? getWeekStart(new Date(t.lastDoneAt || t.lastDone)) : '');
     reversal = { pts: -t.lastDonePoints, count: -1, weekStart, countWeek: countedWeek === weekStart, allowNegative: isAdminFn() };
     try {
       const r = await adjustMemberPoints(t.lastDoneBy, reversal);
@@ -453,7 +455,7 @@ async function applyToggle(id, t, awardee, nowTs, isAdminFn, checkedBy, pending)
     if (newBadgeIds.length) memberUpdate.badges = [...currentBadges, ...newBadgeIds];
     // The task is already saved as done: if no points could be given, put it back (#379).
     const rollBack = async () => {
-      try { await patchTask(id, { done: false, lastDone: origLastDone, prevLastDone: null, lastDoneBy: null, lastDonePoints: null, lastDoneWeek: null, prevStreak: null, prevStreakDate: null, prevFreezes: null, lastDoneBadges: null }); }
+      try { await patchTask(id, { done: false, lastDone: origLastDone, prevLastDone: null, lastDoneAt: null, lastDoneBy: null, lastDonePoints: null, lastDoneWeek: null, prevStreak: null, prevStreakDate: null, prevFreezes: null, lastDoneBadges: null }); }
       catch { /* offline: nothing more to do */ }
       dropRetry(id);
       return false;
