@@ -42,6 +42,7 @@ src/
   mydone.js        — member's own "All done for today" banner, once per day per device (display only)
   install.js       — "Install app" button + iOS Add-to-Home-Screen hint
   history.js       — activity history modal
+  cheer.js         — parent cheer: admin 👏 on a History completion (state/history/<i>/cheer, transaction), member banner once per device
   pause.js         — holiday/pause mode
   fairness.js      — admin fairness report: points/completions per member, last 28 days (display only)
   datasize.js      — admin data size readout: bytes of /state (no PIN hashes), counts, rough monthly download (display only)
@@ -111,7 +112,7 @@ Database path: `/state`
   members:   { "Alice": { name, role, pinHash, points, weekPoints, weekStart,
                            streak, lastStreakDate, completedCount, badges }, … }
   tasks:     { "t<timestamp>": { id, name, freq, person, done, lastDone, … } }
-  history:   [ { taskId, taskName, person, completedAt, points, checkedBy? }, … ]  ← max 500; chore completions
+  history:   [ { taskId, taskName, person, completedAt, points, checkedBy?, cheer? }, … ]  ← max 500; chore completions
              also: { type:'bonus', taskName:'Bonus: <reason>', person, points (±), reason, by, completedAt } (admin ± Points, claims)
              and:  { type:'swap', taskId, taskName:'Swap: …', person (taker), from, points:0, completedAt }
   nextId:    <number>

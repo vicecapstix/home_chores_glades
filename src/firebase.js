@@ -270,6 +270,21 @@ export async function removeHistoryEntry(match) {
   return { ok: !!res.committed, removed, rest };
 }
 
+// Parent cheer (#403): set `cheer` on ONE history entry via a transaction on that entry only
+// (the array is not rewritten). `idx` comes from the cached list; the live entry must still match
+// `match` ({ completedAt, person, taskId? }) and have no cheer yet, else nothing is written.
+// Returns { ok, cheered }.
+export async function cheerHistoryEntry(idx, match, by) {
+  if (READONLY || !_db || !Number.isInteger(idx) || idx < 0) return { ok: false, cheered: false };
+  let hit = false;
+  const res = await runTransaction(ref(_db, 'state/history/' + idx), cur => {
+    hit = !!cur && !cur.type && !cur.cheer && cur.completedAt === match.completedAt && cur.person === match.person &&
+      (match.taskId === undefined || cur.taskId === match.taskId);
+    return hit ? { ...cur, cheer: by } : undefined;
+  });
+  return { ok: !!res.committed, cheered: !!res.committed && hit };
+}
+
 // Limited-stock rewards (#357). A pending request reserves one; deny/undo/failed request returns it.
 // A reward without `stock` is unlimited: both helpers leave it alone. Returns false only when sold out
 // (not live: nothing reserved and true, so the points step then reports the cached start as before).

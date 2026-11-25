@@ -4,6 +4,7 @@ import { updateAppBadge } from './appbadge.js';
 import { renderTvStrip, renderTvTomorrow } from './tv.js';
 import { renderGoal } from './goal.js';
 import { renderMyDone } from './mydone.js';
+import { renderCheerBanner } from './cheer.js';
 import { renderBackupReminder } from './backupreminder.js';
 import { renderTeamGoal } from './teamgoal.js';
 import { renderDoublePointsBanner, activeMultiplier } from './doublepoints.js';
@@ -187,6 +188,7 @@ export function render() {
   renderSwaps(_currentMember());
   renderGoal(Object.values(state.tasks || {}));
   renderMyDone(state.tasks, _currentMember(), _isAdmin);
+  renderCheerBanner(state.history, _currentMember());
   updateAppBadge(state.tasks, _currentMember()); // installed-app icon badge (#399)
   renderBackupReminder(_isAdmin);
   renderTeamGoal();

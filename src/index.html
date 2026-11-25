@@ -124,7 +124,7 @@
         <option value="last">Last week</option>
       </select>
     </div>
-    <div id="history-list"></div>
+    <div id="history-list" onclick="window.cheerClick(event)"></div>
   </div>
 </div>
 
@@ -326,6 +326,10 @@
   <div id="my-done" class="my-done hidden" role="status">
     <span id="my-done-text"></span>
     <button type="button" class="btn-sm" aria-label="Dismiss" onclick="window.hideMyDone()">OK</button>
+  </div>
+  <div id="cheer-banner" class="my-done hidden" role="status">
+    <span id="cheer-banner-text"></span>
+    <button type="button" class="btn-sm" aria-label="Dismiss" onclick="window.hideCheer()">OK</button>
   </div>
   <div id="backup-reminder" class="backup-reminder hidden" role="status">
     <span id="backup-reminder-text"></span>
