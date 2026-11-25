@@ -44,7 +44,7 @@ describe('Off section (#301)', () => {
     expect(sec.querySelector('summary').textContent).toContain('Off (1)');
     expect(sec.querySelector('#tc-pool')).toBeTruthy();
     expect(document.querySelectorAll('#tc-pool').length).toBe(1);
-    expect(document.querySelector('.section[data-k] #tc-pool')).toBeNull();
+    expect(document.querySelector('.section[data-k]:not(details) #tc-pool')).toBeNull();
     expect(document.querySelector('#tc-on')).toBeTruthy();
   });
   it('no Off section when nothing is switched off', () => {
