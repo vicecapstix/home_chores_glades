@@ -4,6 +4,7 @@ import { READONLY } from './config.js';
 import { patchRoot } from './firebase.js';
 import { showToast } from './ui.js';
 import { esc, localDateStr } from './utils.js';
+import { computeReturnPatch } from './away.js';
 
 const DAY = 86400000;
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -43,7 +44,30 @@ export function computeResumePatch(pause, tasks, members, endMs, today = localDa
     const shifted = localDateStr(d);
     patch['members/' + m.name + '/lastStreakDate'] = shifted > today ? today : shifted;
   });
+  mergeExpiredAway(patch, { since, dur, days }, tasks, members, endMs, today);
   return patch;
+}
+
+// #391: an away period that expired during the pause ends with the resume. Its shift is the union of
+// away and pause time (away time minus the overlap), added on top of the pause shift.
+function mergeExpiredAway(patch, p, tasks, members, endMs, today) {
+  Object.values(members).forEach(m => {
+    if (!m.awaySince || !DATE_RE.test(m.awayUntil || '')) return;
+    const awayEnd = parseLocal(m.awayUntil); awayEnd.setDate(awayEnd.getDate() + 1);
+    const aEnd = awayEnd.getTime();
+    if (aEnd > endMs || aEnd <= m.awaySince) return; // still away: its own return handles it
+    const overlap = Math.max(0, aEnd - Math.max(m.awaySince, p.since));
+    const extra = aEnd - m.awaySince - overlap;
+    const away = computeReturnPatch(m, tasks, aEnd, today, overlap);
+    Object.keys(away).forEach(k => {
+      const id = (k.match(/^tasks\/(.+)\/lastDone$/) || [])[1];
+      if (id && patch[k] !== undefined) patch[k] = Math.min(tasks[id].lastDone + p.dur + extra, endMs);
+      else if (k.endsWith('/lastStreakDate') && patch[k] !== undefined) {
+        const d = parseLocal(away[k]); d.setDate(d.getDate() + p.days);
+        const shifted = localDateStr(d); patch[k] = shifted > today ? today : shifted;
+      } else patch[k] = away[k];
+    });
+  });
 }
 
 export async function setPause(until, isAdminFn, currentMemberFn) {
@@ -62,7 +86,10 @@ async function resume(endMs) {
   if (_resuming) return;
   _resuming = true;
   const patch = computeResumePatch(state.pause, state.tasks, state.members, endMs);
-  try { await patchRoot(patch); state.pause = null; } catch (err) { showToast('Save failed: ' + (err.code || err.message)); }
+  try {
+    await patchRoot(patch); state.pause = null;
+    Object.keys(patch).forEach(k => { const m = k.match(/^members\/(.+)\/awaySince$/); if (m && state.members[m[1]]) { delete state.members[m[1]].awayUntil; delete state.members[m[1]].awaySince; } });
+  } catch (err) { showToast('Save failed: ' + (err.code || err.message)); }
   _resuming = false;
 }
 
