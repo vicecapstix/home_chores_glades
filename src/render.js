@@ -9,7 +9,7 @@ import { renderTeamGoal } from './teamgoal.js';
 import { renderDoublePointsBanner, activeMultiplier } from './doublepoints.js';
 import { bonusFor } from './bonuschore.js';
 import { owedHTML } from './pocketmoney.js';
-import { awayText, esc, num, jsq, taskPoints, avatarPrefix, validTime, dueStatus, freqLabel, rotationTag, isMine, isSkipped, localDateStr, doneAgoLabel, currentStreak, iconPrefix, minutesLabel, timeOfDayLabel, isOffNow, parseLocalDate, goalHTML, isStaleDoneOnce, viewFromSearch, freezeTag } from './utils.js';
+import { awayText, esc, num, jsq, taskPoints, avatarPrefix, validTime, dueStatus, freqLabel, rotationTag, isMine, isSkipped, localDateStr, doneAgoLabel, currentStreak, iconPrefix, minutesLabel, timeOfDayLabel, isOffNow, parseLocalDate, goalHTML, isStaleDoneOnce, viewFromSearch, freezeTag, lateLabel } from './utils.js';
 import { pColor } from './ui.js';
 import { renderSwaps, canOfferSwap } from './swaps.js';
 import { syncTagHTML } from './pending.js';
@@ -441,7 +441,7 @@ export function cardHTML(t) {
   const waiting = !t.done && t.checkPending;
   const dueTag = waiting ? '<span class="tag tag-soon">⏳ Waiting for parent check</span>'
                : skipped ? '<span class="tag tag-ok">' + (localDateStr(new Date(t.skippedAt)) === localDateStr(new Date()) ? 'Skipped today' : 'Skipped') + '</span>'
-               : s === 'overdue' ? '<span class="tag tag-overdue">Overdue</span>'
+               : s === 'overdue' ? '<span class="tag tag-overdue">Overdue</span>' + (lateLabel(t) ? '<span class="tag tag-overdue late-label">' + esc(lateLabel(t)) + '</span>' : '')
                : s === 'soon'    ? '<span class="tag tag-soon">Due soon</span>'
                : s === 'ok'      ? '<span class="tag tag-ok">On track</span>'
                : s === 'done' && t.lastDone ? '<span class="tag tag-ok">Done ' + doneAgoLabel(t.lastDone) + '</span>' : '';
