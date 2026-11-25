@@ -1,8 +1,11 @@
 import { state, getMembers, memberColor } from './state.js';
+import { READONLY } from './config.js';
 import { openModal } from './modals.js';
 import { esc, getWeekStart, prevWeekStart } from './utils.js';
 
 export const HISTORY_LIMIT = 50;
+let _canCheer = () => false;
+export function initHistory(isAdminFn) { _canCheer = () => !READONLY && !!isAdminFn(); }
 let filter = '';
 let choreFilter = '';
 let periodFilter = 'all'; // 'all' | 'this' | 'last'
@@ -65,8 +68,18 @@ function when(ts) {
     d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
 }
 
+// 👏 on a chore completion (#403): a mark when cheered, a button for admins when not.
+function cheerHTML(e, canCheer) {
+  if (e.type || e.label === undefined || !e.taskId) return '';
+  if (e.cheer) return '<span class="hist-cheer" title="' + esc('Cheered by ' + e.cheer) + '">👏 ' + esc(e.cheer) + '</span>';
+  if (!canCheer) return '';
+  return '<button type="button" class="btn-sm hist-cheer-btn" aria-label="' + esc('Cheer ' + e.person + ' for ' + e.label) + '" data-cheer-at="' + esc(String(e.completedAt)) +
+    '" data-cheer-person="' + esc(e.person || '') + '" data-cheer-task="' + esc(e.taskId) + '">👏</button>';
+}
+
 export function historyHTML(history, members, member, redemptions, opts = {}) {
   const filtered = !!(member || opts.chore || (opts.period && opts.period !== 'all'));
+  const canCheer = !!opts.canCheer;
   const rows = historyEvents(history, redemptions, member, filtered ? FILTERED_LIMIT : HISTORY_LIMIT, opts);
   if (!rows.length) return '<div class="empty">' + (filtered ? 'Nothing here yet.' : 'No completions yet.') + '</div>';
   return rows.map(e => {
@@ -74,6 +87,7 @@ export function historyHTML(history, members, member, redemptions, opts = {}) {
     return '<div class="hist-row">' +
       '<span class="lb-name hist-who" style="background:' + c.bg + ';color:' + c.text + '">' + esc(e.person || 'Anyone') + '</span>' +
       '<span class="hist-task">' + esc(e.label) + (e.checkedBy ? ' <span class="hist-checked">✓ checked by ' + esc(e.checkedBy) + '</span>' : '') + '</span>' +
+      cheerHTML(e, canCheer) +
       '<span class="hist-when">' + esc(when(e.completedAt)) + '</span>' +
       '<span class="hist-pts' + ((e.points || 0) < 0 ? ' neg' : '') + '">' + ((e.points || 0) > 0 ? '+' : '') + esc(String(e.points || 0)) + '</span>' +
       '</div>';
@@ -96,7 +110,7 @@ export function renderHistory() {
     names.map(n => '<option value="' + esc(n) + '"' + (n === choreFilter ? ' selected' : '') + '>' + esc(n) + '</option>').join('');
   const period = document.getElementById('history-period');
   if (period) period.value = periodFilter;
-  list.innerHTML = historyHTML(state.history, members, filter, state.redemptions, { chore: choreFilter, period: periodFilter });
+  list.innerHTML = historyHTML(state.history, members, filter, state.redemptions, { chore: choreFilter, period: periodFilter, canCheer: _canCheer() });
 }
 
 // Change handler for the chore / period selects (#256).
