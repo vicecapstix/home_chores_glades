@@ -344,6 +344,25 @@ export function dueStatus(t, now = Date.now()) {
   return isSkipped(t) && s !== 'overdue' ? 'ok' : s;
 }
 
+// How late an overdue chore is (#402): whole local days past its due day, display only.
+// 0 unless dueStatus says overdue, so pause / away / off / done / skipped / waiting-for-check are excluded.
+export function daysLate(t, now = Date.now()) {
+  if (!t || dueStatus(t, now) !== 'overdue') return 0;
+  if (t.freq === 'once') return validDateStr(t.dueDate) ? Math.max(0, daysSince(parseLocalDate(t.dueDate).getTime(), now)) : 0;
+  if (t.freq === 'weekdays') {
+    const p = prevScheduledStart(t.days, now, t);
+    return p === null ? 0 : Math.max(0, daysSince(p, now));
+  }
+  const u = validDateStr(t.offUntil) && !isOffNow(t, now) ? { ...t, lastDone: initialLastDone(t, now) } : t; // same as dueStatus
+  return Math.max(0, daysSince(u.lastDone || 0, now) - cycleDays(u, u.lastDone));
+}
+// 'Due today' / '1 day late' / 'N days late' for an overdue chore, else ''.
+export function lateLabel(t, now = Date.now()) {
+  if (!t || dueStatus(t, now) !== 'overdue') return '';
+  const n = daysLate(t, now);
+  return n <= 0 ? 'Due today' : n === 1 ? '1 day late' : n + ' days late';
+}
+
 // Due-time reminder (#150): true when the chore's dueTime moment falls on today, has passed, and the
 // chore is not done, skipped or paused (dueStatus covers done/skip/pause by reporting not-overdue).
 export function dueTimePassedToday(t, now = Date.now()) {
