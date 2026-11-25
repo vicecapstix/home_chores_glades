@@ -14,11 +14,12 @@ function parseLocal(s) { const [y, m, d] = s.split('-').map(Number); return new 
 
 // Pure: multi-path update ending a member's away period at `endMs`.
 // Streak date and recurring chores are shifted by the time away, like computeResumePatch (#70).
-export function computeReturnPatch(member, tasks, endMs, today = localDateStr(new Date(endMs))) {
+// `overlapMs` (#391): time already counted by a house pause, taken off so the shift is the union.
+export function computeReturnPatch(member, tasks, endMs, today = localDateStr(new Date(endMs)), overlapMs = 0) {
   const base = 'members/' + member.name + '/';
   const patch = { [base + 'awayUntil']: null, [base + 'awaySince']: null };
   const since = member.awaySince || 0;
-  const dur = since ? Math.max(0, endMs - since) : 0;
+  const dur = since ? Math.max(0, endMs - since - overlapMs) : 0;
   if (!dur) return patch;
   const sinceDay = localDateStr(new Date(since));
   if (member.lastStreakDate && member.lastStreakDate < sinceDay) {
@@ -66,7 +67,7 @@ export async function clearAway(name, isAdminFn) {
 
 // Any editing client ends an expired away period (start of the day after awayUntil).
 export function checkAwayExpiry(now = Date.now()) {
-  if (READONLY) return;
+  if (READONLY || state.pause) return; // paused: the resume ends expired away periods by the union (#391)
   const today = localDateStr(new Date(now));
   Object.values(state.members).forEach(m => {
     if (!m || !m.awayUntil || !DATE_RE.test(m.awayUntil) || today <= m.awayUntil) return;
