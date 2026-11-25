@@ -573,6 +573,8 @@ body.tv-night::after { content: ''; position: fixed; inset: 0; background: rgba(
   body.tv .section[data-k="done"] { grid-column: 1 / -1; grid-row: 2; }
   body.tv .section[data-k="available"] { grid-column: 1 / -1; grid-row: 3; }
   body.tv .section[data-k="ok"] { grid-column: 1 / -1; grid-row: 4; }
+  body.tv .section[data-k="off"] { grid-column: 1 / -1; grid-row: 5; } /* Off + folded Done sit below everything (#392) */
+  body.tv .section[data-k="stale"] { grid-column: 1 / -1; grid-row: 6; }
   body.tv .goal-text { font-size: 1.8rem; font-family: 'DM Serif Display', serif; }
   body.tv .goal-track { height: 22px; border-radius: 11px; }
   body.tv .goal-confetti { font-size: 3rem; top: -20px; }
@@ -584,6 +586,8 @@ body.tv-night::after { content: ''; position: fixed; inset: 0; background: rgba(
   body.tv .section[data-k="done"] { grid-column: 3; grid-row: 1; }
   body.tv .section[data-k="available"] { grid-row: 2; }
   body.tv .section[data-k="ok"] { grid-row: 3; }
+  body.tv .section[data-k="off"] { grid-column: 1 / -1; grid-row: 4; }
+  body.tv .section[data-k="stale"] { grid-column: 1 / -1; grid-row: 5; }
 }
 /* DOUBLE-POINTS DAY (#225) */
 .double-banner { flex: 1 1 100%; order: 8; padding: 6px 10px; border-radius: var(--radius-sm); background: var(--warn, var(--accent)); color: #fff; font-weight: 700; font-size: 0.9rem; text-align: center; }

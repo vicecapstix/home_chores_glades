@@ -374,12 +374,12 @@ function _renderTasks() {
   const staleOpen = !!taskList.querySelector('details.done-once[open]');
   const offOpen = !!taskList.querySelector('details.off-chores[open]');
   if (showStale) {
-    html += '<details class="section done-once"' + (staleOpen ? ' open' : '') + '><summary class="section-head"><span class="section-dot dot-done"></span>Done (' + stale.length + ')</summary>' +
+    html += '<details class="section done-once" data-k="stale"' + (staleOpen ? ' open' : '') + '><summary class="section-head"><span class="section-dot dot-done"></span>Done (' + stale.length + ')</summary>' +
       (_isAdmin() ? '<button class="btn-sm" onclick="window.clearDoneOnes()">Clear done one-offs</button>' : '') +
       stale.map(cardHTML).join('') + '</details>';
   }
   if (offs.length) {
-    html += '<details class="section off-chores"' + (offOpen ? ' open' : '') + '><summary class="section-head"><span class="section-dot dot-ok"></span>💤 Off (' + offs.length + ')</summary>' +
+    html += '<details class="section off-chores" data-k="off"' + (offOpen ? ' open' : '') + '><summary class="section-head"><span class="section-dot dot-ok"></span>💤 Off (' + offs.length + ')</summary>' +
       offs.map(t => '<div class="off-item">' + cardHTML(t) +
         (!READONLY && _isAdmin() ? '<button type="button" class="btn-sm" onclick="window.switchOnNow(\'' + jsq(t.id) + '\')">Switch on now</button>' : '') + '</div>').join('') + '</details>';
   }
