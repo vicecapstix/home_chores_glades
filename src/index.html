@@ -189,6 +189,10 @@
     </div>
     <label for="goal-target" class="sr-only">Set goal for member</label>
     <select id="goal-target" class="hidden" onchange="window.pickGoalTarget(this.value)"></select>
+    <div id="rewards-note-wrap" class="hidden reward-note-wrap">
+      <label for="reward-note" class="sr-only">Note for your next request (optional)</label>
+      <input type="text" id="reward-note" maxlength="60" placeholder="Note for your next request, e.g. for Saturday (optional)" autocomplete="off" />
+    </div>
     <div id="rewards-list"></div>
     <div id="rewards-pending" aria-live="polite"></div>
     <div id="claims-section" aria-live="polite"></div>

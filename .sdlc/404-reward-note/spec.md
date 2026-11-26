@@ -1,0 +1,7 @@
+# Spec — #404 short note on a reward request
+**Behaviour.** The Rewards modal has an optional "Note for your next request" input (max 60 chars) above the list, shown only to a signed-in member. `requestReward` reads it, trims it, collapses whitespace and cuts it to 60 chars; an empty result is omitted. The note is stored on the new redemption as `note` and the input is cleared after a successful request. It is shown (always via `esc()`) in: the member's own pending list, the admin "awaiting approval" list, the admin "To give" list, and History (`🎁 Name (requested) — "note"`).
+**UI states.** Member: input + notes on own pending. Admin: sees notes in pending and To give; the input appears too when the admin is signed in as a member (requests are always for the signed-in member). Readonly TV: no rewards modal writes; `requestReward` returns first on READONLY.
+**Data.** `state/redemptions/<id>/note`: optional string ≤ 60 chars. Redemptions stay capped at 100; no new collection. Existing entries without `note` render unchanged. `src/restore.js` already clones each redemption, so `note` survives a restore (restore not touched). Firebase rules not touched (they only require `member` and `status`).
+**Security/RBAC.** Same guards as today (READONLY, member must exist, points/stock/limit checks). The note is user text: escaped everywhere it is put in HTML; it is never placed inside an inline `onclick`.
+**Cost guardrails.** ≤ 60 extra bytes per redemption; no service, dependency, rules or auth change.
+**Concerns.** None.

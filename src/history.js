@@ -25,7 +25,7 @@ export function redemptionEvents(redemptions) {
   const out = [];
   Object.values(redemptions || {}).forEach(r => {
     if (!r || !r.member || !(r.cost > 0)) return;
-    if (r.requestedAt) out.push({ completedAt: r.requestedAt, person: r.member, points: -r.cost, label: '🎁 ' + (r.rewardName || 'Reward') + ' (requested)' });
+    if (r.requestedAt) out.push({ completedAt: r.requestedAt, person: r.member, points: -r.cost, label: '🎁 ' + (r.rewardName || 'Reward') + ' (requested)' + (r.note ? ' — “' + String(r.note).slice(0, 60) + '”' : '') });
     if (r.status === 'denied' && r.decidedAt) out.push({ completedAt: r.decidedAt, person: r.member, points: r.cost, label: 'Refund: ' + (r.rewardName || 'Reward') + ' (denied)' });
   });
   return out;
