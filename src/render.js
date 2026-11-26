@@ -1,3 +1,4 @@
+import { streakTag } from './chorestreak.js';
 import { state, getMembers } from './state.js';
 import { PCOLS, BADGES, READONLY } from './config.js';
 import { updateAppBadge } from './appbadge.js';
@@ -518,7 +519,7 @@ export function cardHTML(t) {
         '<span class="task-name">' + esc(iconPrefix(t)) + esc(t.name) + subsBadge + '</span>' +
         notesLine + sentBack +
       '</div>' +
-      '<div class="task-meta">' + dueTag + diffTag + ptsTag + minTag + freqTag + timeTag + todTag + offTag + rotationTag(t, getMembers()) + syncTagHTML(t.id) + checkTag + catTag + personTag + '</div>' +
+      '<div class="task-meta">' + dueTag + diffTag + ptsTag + minTag + freqTag + streakTag(t) + timeTag + todTag + offTag + rotationTag(t, getMembers()) + syncTagHTML(t.id) + checkTag + catTag + personTag + '</div>' +
       chevronBtn +
       // In select mode a card tap only toggles selection: no per-card action buttons (#167)
       (selectMode ? '' :
