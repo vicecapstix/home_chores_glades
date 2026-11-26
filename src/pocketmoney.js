@@ -17,7 +17,7 @@ export function validRate(pts, amount) {
   const aStr = String(amount == null ? '' : amount).trim();
   const a = Number(aStr);
   if (!Number.isInteger(p) || p < 1 || p > 1000) return null;
-  if (!/^\d+(\.\d{1,2})?$/.test(aStr) || !(a >= 0.01 && a <= 1000)) return null;
+  if (!/^(\d+(\.\d{1,2})?|\.\d{1,2})$/.test(aStr) || !(a >= 0.01 && a <= 1000)) return null;
   return { pts: p, amount: a };
 }
 
