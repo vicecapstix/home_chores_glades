@@ -106,3 +106,10 @@ describe('rewards modal lists (member pending + admin awaiting approval)', () =>
     expect(admin).toContain('&lt;img'); expect(admin).not.toContain('<img');
   });
 });
+
+describe('note input visibility rule', () => {
+  it('has a matching #rewards-note-wrap.hidden display:none rule (modal/hidden pattern)', async () => {
+    const { readFileSync } = await import('node:fs');
+    expect(readFileSync('src/style.css', 'utf8')).toMatch(/#rewards-note-wrap\.hidden\s*\{\s*display:\s*none;/);
+  });
+});

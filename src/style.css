@@ -364,6 +364,7 @@ body[data-readonly] .wk-day h3 { font-size: 1.3rem; }
 .reward-cost { font-size: 0.8rem; font-weight: 600; color: var(--accent); }
 .reward-pts { font-size: 0.85rem; font-weight: 600; margin-top: var(--space-md); }
 .reward-note-wrap { margin: 0 0 var(--space-md); }
+#rewards-note-wrap.hidden { display: none; }
 .reward-note-wrap input { width: 100%; box-sizing: border-box; font: inherit; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--card, var(--bg)); color: inherit; }
 .reward-pending-h { font-size: 0.8rem; color: var(--muted); margin-top: var(--space-sm, 8px); }
 .reward-row .btn-sm:disabled { opacity: 0.45; cursor: not-allowed; }
