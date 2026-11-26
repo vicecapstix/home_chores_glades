@@ -6,6 +6,12 @@ import { pushUndo } from './undo.js';
 import { getWeekStart } from './utils.js';
 
 export const MAX_REDEMPTIONS = 100;
+export const NOTE_MAX = 60;
+
+// Optional short note on a request (#404): trimmed, whitespace collapsed, cut to NOTE_MAX. '' = none.
+export function cleanNote(s) {
+  return typeof s === 'string' ? s.replace(/\s+/g, ' ').trim().slice(0, NOTE_MAX).trim() : '';
+}
 let busy = false;
 let deciding = false;
 
@@ -51,7 +57,7 @@ export function usedThisWeek(redemptions, rewardId, member, now = Date.now()) {
     (r.status === 'pending' || r.status === 'approved') && r.requestedAt >= start && r.requestedAt < end).length;
 }
 
-export async function requestReward(rewardId, currentMemberFn) {
+export async function requestReward(rewardId, currentMemberFn, noteText) {
   if (READONLY || busy) return;
   const me = currentMemberFn();
   const m = me && state.members[me];
@@ -78,7 +84,8 @@ export async function requestReward(rewardId, currentMemberFn) {
     catch (err) { await giveBack(); showToast('Request failed: ' + (err.code || err.message)); return; }
     if (!ok) { await giveBack(); showToast('Not enough points'); return; }
     const id = 'rd' + Date.now();
-    const entry = { id, rewardId, rewardName: reward.name, cost: reward.cost, member: me, requestedAt: Date.now(), status: 'pending' };
+    const note = cleanNote(noteText);
+    const entry = { id, rewardId, rewardName: reward.name, cost: reward.cost, member: me, requestedAt: Date.now(), status: 'pending', ...(note ? { note } : {}) };
     const fields = { ['redemptions/' + id]: entry };
     drops.forEach(d => { fields['redemptions/' + d] = null; });
     try { await patchRoot(fields); }
@@ -92,6 +99,8 @@ export async function requestReward(rewardId, currentMemberFn) {
     state.redemptions[id] = entry;
     drops.forEach(d => { delete state.redemptions[d]; });
     showToast('Requested ' + reward.name);
+    const box = document.getElementById('reward-note');
+    if (box) box.value = '';
     pushUndo({
       label: reward.name, verb: 'Requested',
       undo: async () => {

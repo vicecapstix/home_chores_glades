@@ -363,6 +363,9 @@ body[data-readonly] .wk-day h3 { font-size: 1.3rem; }
 .reward-name { flex: 1; min-width: 120px; font-size: 0.95rem; overflow-wrap: anywhere; }
 .reward-cost { font-size: 0.8rem; font-weight: 600; color: var(--accent); }
 .reward-pts { font-size: 0.85rem; font-weight: 600; margin-top: var(--space-md); }
+.reward-note-wrap { margin: 0 0 var(--space-md); }
+#rewards-note-wrap.hidden { display: none; }
+.reward-note-wrap input { width: 100%; box-sizing: border-box; font: inherit; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--card, var(--bg)); color: inherit; }
 .reward-pending-h { font-size: 0.8rem; color: var(--muted); margin-top: var(--space-sm, 8px); }
 .reward-row .btn-sm:disabled { opacity: 0.45; cursor: not-allowed; }
 .rewards-badge { position: absolute; top: -6px; right: -6px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px; background: var(--accent); color: #fff; font-size: 0.65rem; font-weight: 700; line-height: 16px; text-align: center; }

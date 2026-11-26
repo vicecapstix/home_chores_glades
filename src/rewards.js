@@ -49,6 +49,9 @@ export function sortedRewards(rewards) {
     .sort((a, b) => (a.cost - b.cost) || String(a.name).localeCompare(String(b.name)));
 }
 
+// Optional note a member added to a request (#404), escaped; '' when none.
+const noteText = r => r && r.note ? ' — “' + esc(r.note) + '”' : '';
+
 const atLimit = (r, me) => !!r.perWeek && usedThisWeek(state.redemptions, r.id, me) >= r.perWeek;
 const limitText = (r, me) => Math.min(usedThisWeek(state.redemptions, r.id, me), r.perWeek) + '/' + r.perWeek + ' this week';
 
@@ -91,6 +94,7 @@ export function renderRewards() {
   }
   // Request buttons are always for the logged-in member; the dropdown only picks the saving-goal target (#248).
   const self = me && state.members[me];
+  document.getElementById('rewards-note-wrap')?.classList.toggle('hidden', READONLY || !self);
   list.innerHTML = rewardsHTML(state.rewards, canEdit, self ? { me, points: self.points || 0, goalId: member ? member.goalRewardId : '' } : {});
   const pend = document.getElementById('rewards-pending');
   if (pend) {
@@ -99,11 +103,11 @@ export function renderRewards() {
     pend.innerHTML = READONLY ? '' :
       (member ? '<div class="reward-pts">' + (target === me ? 'Your' : esc(target) + "'s") + ' points: ' + esc(String(member.points || 0)) + '</div>' + goalHTML(member, state.rewards) : '') +
       (mine.length ? '<div class="reward-pending-h">Your pending requests</div>' +
-        mine.map(r => '<div class="reward-row"><span class="reward-name">' + esc(r.rewardName) + '</span><span class="reward-cost">' + esc(String(r.cost)) + ' pts</span></div>').join('') : '') +
+        mine.map(r => '<div class="reward-row"><span class="reward-name">' + esc(r.rewardName) + noteText(r) + '</span><span class="reward-cost">' + esc(String(r.cost)) + ' pts</span></div>').join('') : '') +
       (member ? decidedFor(me).map(r => '<div class="reward-row"><span class="reward-name">' + esc(r.rewardName) + '</span><span class="reward-status ' + esc(r.status) + '">' +
         statusText(r) + '</span></div>').join('') : '') +
       (canEdit && all.length ? '<div class="reward-pending-h">' + all.length + ' request' + (all.length === 1 ? '' : 's') + ' awaiting approval</div>' +
-        all.map(r => '<div class="reward-row"><span class="reward-name">' + esc(r.member) + ' — ' + esc(r.rewardName) + '</span><span class="reward-cost">' + esc(String(r.cost)) + ' pts</span>' +
+        all.map(r => '<div class="reward-row"><span class="reward-name">' + esc(r.member) + ' — ' + esc(r.rewardName) + noteText(r) + '</span><span class="reward-cost">' + esc(String(r.cost)) + ' pts</span>' +
           '<button class="btn-sm btn-accent" aria-label="Approve ' + esc(r.rewardName) + ' for ' + esc(r.member) + '" onclick="window.approveRedemption(\'' + jsq(r.id) + '\')">Approve</button>' +
           '<button class="btn-sm" aria-label="Deny ' + esc(r.rewardName) + ' for ' + esc(r.member) + '" onclick="window.denyRedemption(\'' + jsq(r.id) + '\')">Deny</button></div>').join('') : '') +
       (canEdit ? toGiveHTML(toGive()) : '');
@@ -122,7 +126,7 @@ function statusText(r) {
 export function toGiveHTML(list) {
   if (!list.length) return '';
   return '<div class="reward-pending-h">To give (' + list.length + ')</div>' +
-    list.map(r => '<div class="reward-row"><span class="reward-name">' + esc(r.member) + ' — ' + esc(r.rewardName) + '</span>' +
+    list.map(r => '<div class="reward-row"><span class="reward-name">' + esc(r.member) + ' — ' + esc(r.rewardName) + noteText(r) + '</span>' +
       '<button class="btn-sm btn-accent" aria-label="Mark ' + esc(r.rewardName) + ' as given to ' + esc(r.member) + '" onclick="window.markRewardGiven(\'' + jsq(r.id) + '\')">Given ✓</button></div>').join('');
 }
 

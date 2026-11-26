@@ -453,7 +453,7 @@ window.openToCheck = () => openToCheck(_isAdmin);
 
 // Rewards catalog (everyone can browse; admin-only edits are guarded in rewards.js)
 window.openRewards       = ()     => openRewards(_isAdmin, _currentMember);
-window.requestReward     = id     => requestReward(id, _currentMember);
+window.requestReward     = id     => requestReward(id, _currentMember, document.getElementById('reward-note')?.value);
 window.approveRedemption = id     => decideRequest(id, 'approved', _isAdmin, _currentMember);
 window.denyRedemption    = id     => decideRequest(id, 'denied', _isAdmin, _currentMember);
 window.markRewardGiven   = id     => markGiven(id, _isAdmin, _currentMember);
