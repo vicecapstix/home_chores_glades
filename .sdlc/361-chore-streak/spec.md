@@ -1,0 +1,7 @@
+# Spec — #361 per-chore streak ("🔁 N in a row")
+**Behaviour.** A recurring chore card shows `🔁 N in a row` when the chore was completed in N consecutive periods, N ≥ 3. Computed at render time from `state.history` (completion entries only: `taskId` match, no `type`). Period = local calendar day (daily), scheduled days (weekdays: a weekend or unscheduled day between two completions is not a miss), Mon-based week (weekly), 2-week block (fortnightly), calendar month (monthly), N-day block (interval). The current period not yet done does not break the streak; one fully missed period does. One-off chores and weekdays chores with `everyWeeks` ≥ 2 never show it (not computed). Tooltip: "Done in N periods in a row (counted from the last 500 history entries, so older streaks may show lower)".
+**UI states.** Admin / member / readonly TV all use `cardHTML` so the tag appears everywhere; it is display only (no buttons, no handlers).
+**Data.** None. No new stored fields, so nothing for `src/restore.js` to strip or keep; no change to restore or rename.
+**Security/RBAC.** No write path. Tag text is built from numbers and a fixed word list only (no user strings), so no `esc()` risk.
+**Cost guardrails.** No service, dependency, read or storage change; history cap 500 unchanged. Index of completions is built once per history array (memoised), not per card.
+**Concerns.** Undercounts when history has rolled past 500 entries (stated in tooltip). Does not account for pause/away days (a paused day can end a streak).
