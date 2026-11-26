@@ -84,7 +84,8 @@ export async function acceptSwap(id, currentMemberFn) {
       label: 'swap ' + s.taskName, verb: 'Accepted',
       undo: async () => {
         const cur = state.tasks[s.taskId];
-        if (cur?.person !== me) return;
+        // Reassigned (or deleted) since the swap: nothing to hand back. Throw so undo.js says "Restore failed" (#393).
+        if (cur?.person !== me) throw new Error('the chore has been reassigned');
         // Ticked (or reset) since the swap: handing it back would give a done chore to someone who didn't do it (#352).
         // Throw so undo.js shows "Restore failed" instead of a false "Restored" (same as skip undo, #309).
         if (cur.done || (cur.lastDone || 0) !== lastDoneAtSwap) throw new Error('the chore has been done');
