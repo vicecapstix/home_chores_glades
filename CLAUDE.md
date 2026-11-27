@@ -292,6 +292,7 @@ Every piece of user-supplied data injected into `innerHTML` or an `onclick` stri
   awaySince,      // timestamp ms the away period started
   goalRewardId,   // reward id the member is saving towards (saving goal)
   payouts,        // { 'p<at>': { at, by, points } } pocket-money payouts, newest 52; points = all-time points at payout
+  spent,          // net points spent on rewards (spend minus refunds, never < 0); pocket money adds it back to points so a spend is not a loss (#347)
 }
 ```
 
