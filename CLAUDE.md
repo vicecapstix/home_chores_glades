@@ -22,7 +22,7 @@ src/
   auth.js          — login/session flow, member PIN, isAdmin, currentMember
   utils.js         — pure helpers: esc, sha256, dueStatus, taskPoints, freqDays, …
   ui.js            — showToast, toggleTheme, leaderboard, stats, templates, modals
-  tasks.js         — task CRUD, toggle (check/uncheck), subtasks, claim, skip, move up/down reorder
+  tasks.js         — task CRUD, duplicate ("Copy" in the edit view), toggle (check/uncheck), subtasks, claim, skip, move up/down reorder
   members.js       — member add/remove/toggleRole
   render.js        — DOM rendering: render(), cardHTML(), filters, select/bulk mode
   modals.js        — modal stack manager + browser back-button support
