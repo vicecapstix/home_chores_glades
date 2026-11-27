@@ -9,6 +9,7 @@ import { renderCheerBanner } from './cheer.js';
 import { renderBackupReminder } from './backupreminder.js';
 import { renderTeamGoal } from './teamgoal.js';
 import { renderDoublePointsBanner, activeMultiplier } from './doublepoints.js';
+import { renderBirthdayBanner } from './birthday.js';
 import { bonusFor } from './bonuschore.js';
 import { owedHTML } from './pocketmoney.js';
 import { awayText, esc, num, jsq, taskPoints, avatarPrefix, validTime, dueStatus, freqLabel, rotationTag, isMine, isSkipped, localDateStr, doneAgoLabel, currentStreak, iconPrefix, minutesLabel, timeOfDayLabel, isOffNow, parseLocalDate, goalHTML, isStaleDoneOnce, viewFromSearch, freezeTag, lateLabel } from './utils.js';
@@ -194,6 +195,7 @@ export function render() {
   renderBackupReminder(_isAdmin);
   renderTeamGoal();
   renderDoublePointsBanner();
+  renderBirthdayBanner();
   if (!READONLY) {
     document.body.setAttribute('data-role', _isAdmin() ? 'admin' : 'member');
   }
