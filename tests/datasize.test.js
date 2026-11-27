@@ -73,3 +73,13 @@ describe('openDataSize (#353)', () => {
     expect(document.getElementById('datasize-list').innerHTML).toBe('');
   });
 });
+
+describe('stateSize includes bonusChore (#395)', () => {
+  it('counts the bonus chore bytes', () => {
+    const base = stateSize(state).bytes;
+    state.bonusChore = { date: '2026-11-27', taskId: 't1', extra: 5 };
+    const withBonus = stateSize(state).bytes;
+    state.bonusChore = null;
+    expect(withBonus - base).toBe(new TextEncoder().encode(',"bonusChore":' + JSON.stringify({ date: '2026-11-27', taskId: 't1', extra: 5 })).length);
+  });
+});
