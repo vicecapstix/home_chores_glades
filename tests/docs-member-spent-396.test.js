@@ -12,4 +12,7 @@ describe('CLAUDE.md member data shape lists spent (#396)', () => {
   it('lists every member field the code writes (spent, payouts, goalRewardId, awayUntil)', () => {
     for (const f of ['spent', 'payouts', 'goalRewardId', 'awayUntil', 'awaySince']) expect(shape).toContain(f + ',');
   });
+  it('documents the earned field written on each payout (src/pocketmoney.js)', () => {
+    expect(shape).toMatch(/payouts,.*earned\?/);
+  });
 });
