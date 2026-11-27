@@ -22,7 +22,7 @@ src/
   auth.js          — login/session flow, member PIN, isAdmin, currentMember
   utils.js         — pure helpers: esc, sha256, dueStatus, taskPoints, freqDays, …
   ui.js            — showToast, toggleTheme, leaderboard, stats, templates, modals
-  tasks.js         — task CRUD, toggle (check/uncheck), subtasks, claim, skip, move up/down reorder
+  tasks.js         — task CRUD, duplicate ("Copy" in the edit view), toggle (check/uncheck), subtasks, claim, skip, move up/down reorder
   members.js       — member add/remove/toggleRole
   render.js        — DOM rendering: render(), cardHTML(), filters, select/bulk mode
   modals.js        — modal stack manager + browser back-button support
@@ -293,7 +293,8 @@ Every piece of user-supplied data injected into `innerHTML` or an `onclick` stri
   awayUntil,      // YYYY-MM-DD inclusive, only while away (away mode)
   awaySince,      // timestamp ms the away period started
   goalRewardId,   // reward id the member is saving towards (saving goal)
-  payouts,        // { 'p<at>': { at, by, points } } pocket-money payouts, newest 52; points = all-time points at payout
+  payouts,        // { 'p<at>': { at, by, points, earned? } } pocket-money payouts, newest 52; points = all-time points at payout, earned = points + spent (absent on older payouts)
+  spent,          // net points spent on rewards (spend minus refunds, never < 0); pocket money adds it back to points so a spend is not a loss (#347)
 }
 ```
 

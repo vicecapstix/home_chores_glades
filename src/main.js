@@ -33,7 +33,7 @@ import {
 import {
   checkTaskResets,
   addTask, editTask, saveTask, approveCheck, sendBackCheck,
-  toggleTask, deleteTask,
+  toggleTask, deleteTask, duplicateTask,
   toggleSubtasks, toggleSubtask, addSubtask, removeSubtask,
   claimTask, moveTask, skipTask, clearDoneOnes,
 } from './tasks.js';
@@ -260,6 +260,7 @@ window.cancelEdit    = function(id) {
 window.retrySync = id => retrySync(id);
 window.toggleTask    = id         => toggleTask(id, _currentMember, _isAdmin);
 window.deleteTask    = id         => deleteTask(id, _isAdmin);
+window.duplicateTask = id         => duplicateTask(id, _isAdmin);
 window.moveTask      = (id, dir)  => moveTask(id, dir, _isAdmin);
 window.clearDoneOnes = ()         => clearDoneOnes(_isAdmin);
 window.switchOnNow  = id         => switchOnNow(id, _isAdmin);

@@ -183,6 +183,7 @@ export function editTask(id, isAdminFn) {
     '<div class="edit-actions">' +
       '<button class="btn-sm btn-accent" onclick="window.saveTask(\'' + jsq(id) + '\')">Save</button>' +
       '<button class="btn-sm" onclick="window.cancelEdit(\'' + jsq(id) + '\')">Cancel</button>' +
+      '<button class="btn-sm" onclick="window.duplicateTask(\'' + jsq(id) + '\')" title="Add a copy of this chore">Copy</button>' +
     '</div>';
   card.querySelector('.edit-name').focus();
 }
@@ -492,6 +493,30 @@ export async function deleteTask(id, isAdminFn) {
     pushUndo({ label: t.name, undo: () => restoreTask(id, savedData) });
   } catch (err) {
     showToast('Delete failed: ' + (err.code || err.message));
+  }
+}
+
+// Admin "Copy" (#405): same settings, fresh state. Not done, no history/check links, subtasks reset.
+const COPY_DROP = ['id', 'done', 'lastDone', 'lastDoneBy', 'lastDonePoints', 'lastDoneBadges', 'lastDoneAt', 'lastDoneWeek', 'prevLastDone',
+  'prevStreak', 'prevStreakDate', 'prevFreezes', 'skippedAt', 'checkPending', 'checkNote', 'subtasks', 'order', 'name'];
+export async function duplicateTask(id, isAdminFn) {
+  if (READONLY || !isAdminFn()) return;
+  const t = state.tasks[id];
+  if (!t) return;
+  const nid = 't' + Date.now();
+  const subtasks = {};
+  Object.values(t.subtasks || {}).forEach((s, i) => { const sid = 's' + (Date.now() + i); subtasks[sid] = { id: sid, name: s.name, done: false }; });
+  const copy = { ...Object.fromEntries(Object.entries(t).filter(([k]) => !COPY_DROP.includes(k))),
+    id: nid, name: (t.name + ' (copy)').slice(0, 60), done: false,
+    lastDone: initialLastDone(t.freq === 'interval' ? { freq: t.freq, intervalDays: t.intervalDays } : t.freq), subtasks, order: Date.now() };
+  state.tasks[nid] = copy;
+  state.nextId++;
+  try {
+    await patchPaths({ ['tasks/' + nid]: copy, nextId: state.nextId });
+    pushUndo({ label: copy.name, undo: () => removeTask(nid) });
+  } catch (err) {
+    delete state.tasks[nid]; state.nextId--;
+    showToast('Copy failed: ' + (err.code || err.message));
   }
 }
 
