@@ -8,7 +8,7 @@ import { esc } from './utils.js';
 export const WARN_BYTES = 1048576; // 1 MB
 export const DEVICES = 5;          // assumed family devices
 export const OPENS_PER_DAY = 10;   // assumed app opens per device per day
-const DB_KEYS = ['members', 'tasks', 'history', 'nextId', 'templates', 'rewards', 'redemptions', 'claims', 'swaps', 'pause', 'teamGoal', 'doublePoints', 'pocketMoney'];
+const DB_KEYS = ['members', 'tasks', 'history', 'nextId', 'templates', 'rewards', 'redemptions', 'claims', 'swaps', 'pause', 'teamGoal', 'doublePoints', 'pocketMoney', 'bonusChore'];
 const size = v => (v && typeof v === 'object' ? (Array.isArray(v) ? v.length : Object.keys(v).length) : 0);
 
 // Pure: bytes of the database-backed state as JSON (PIN hashes left out) and collection counts.
