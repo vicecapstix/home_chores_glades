@@ -42,6 +42,7 @@ import { setAway, clearAway, checkAwayExpiry, awayAdminHTML } from './away.js';
 import { setTeamGoal, clearTeamGoal, teamGoalAdminHTML } from './teamgoal.js';
 import { setPocketMoney, clearPocketMoney, markPaid, pocketMoneyAdminHTML, markPaidButtonHTML } from './pocketmoney.js';
 import { setDoublePoints, clearDoublePoints, doublePointsAdminHTML } from './doublepoints.js';
+import { setBirthday, birthdayAdminHTML } from './birthday.js';
 import { setBonusChore, clearBonusChore, bonusChoreAdminHTML } from './bonuschore.js';
 import { checkOffExpiry, switchOnNow } from './seasonal.js';
 import { checkPauseExpiry, renderPauseBanner, setPause, clearPause, pauseAdminHTML } from './pause.js';
@@ -315,6 +316,7 @@ window.openAdminPanel = function() {
         '<option value="">No avatar</option>' +
         AVATARS.map(a => '<option value="' + a + '"' + (state.members[m]?.avatar === a ? ' selected' : '') + '>' + a + '</option>').join('') +
       '</select>' +
+      birthdayAdminHTML(m) +
       '<span class="admin-member-role' + (isAdm ? ' is-admin' : '') + '">' + (isAdm ? '👑 Admin' : 'Member') + '</span>' +
       '<button class="btn-sm" onclick="window.toggleRoleInPanel(\'' + jsq(m) + '\')">Toggle</button>' +
       '<button class="btn-sm" aria-label="Rename ' + esc(m) + '" onclick="window.renameMember(\'' + jsq(m) + '\')">Rename</button>' +
@@ -327,6 +329,7 @@ window.openAdminPanel = function() {
   document.getElementById('admin-parent-out').classList.toggle('hidden', !state.parentEmail);
   openModal('admin-panel-modal');
 };
+window.setBirthday = (name, v) => setBirthday(name, v, _isAdmin);
 window.setPause = () => { const el = document.getElementById('pause-until'); return setPause(el && el.value, _isAdmin, _currentMember).then(() => window.openAdminPanel()); };
 window.setAway = () => setAway(document.getElementById('away-member')?.value, document.getElementById('away-until')?.value, _isAdmin).then(ok => ok && window.openAdminPanel());
 window.clearAway = name => clearAway(name, _isAdmin).then(ok => ok && window.openAdminPanel());

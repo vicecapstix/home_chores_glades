@@ -64,6 +64,7 @@ src/
   theme.js         — Auto/Light/Dark theme setting (follows prefers-color-scheme)
   textsize.js      — Normal/Large/Extra large text size (html.ts-* class), device-local; ?text=large on the TV
   teamgoal.js      — family weekly points goal (state/teamGoal), bar + admin form
+  birthday.js      — member birthday (members/<name>/birthday 'MM-DD'): admin field in the Admin Panel, '🎂 Happy birthday' banner on that local date (display only)
   doublepoints.js  — double-points day (state/doublePoints {date, mult}), banner + admin form
   bonuschore.js    — bonus chore of the day (state/bonusChore {date, taskId, extra}): +1..20 points on one chore for one local date, tag on card/TV, admin form
   pocketmoney.js   — pocket money: display-only rate (state/pocketMoney {pts, amount}), owed on chips/TV, admin Mark paid + undo
@@ -288,6 +289,7 @@ Every piece of user-supplied data injected into `innerHTML` or an `onclick` stri
                   //   'century', 'consistent', 'on_fire', 'dedicated'
   colorIdx,       // index into PCOLS, assigned once so colours stay stable
   avatar,         // optional emoji avatar (one of AVATARS)
+  birthday,       // optional 'MM-DD' (month and day only, no year); banner on that local date
   awayUntil,      // YYYY-MM-DD inclusive, only while away (away mode)
   awaySince,      // timestamp ms the away period started
   goalRewardId,   // reward id the member is saving towards (saving goal)

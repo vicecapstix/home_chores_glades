@@ -591,6 +591,8 @@ body.tv-night::after { content: ''; position: fixed; inset: 0; background: rgba(
 /* DOUBLE-POINTS DAY (#225) */
 .double-banner { flex: 1 1 100%; order: 8; padding: 6px 10px; border-radius: var(--radius-sm); background: var(--warn, var(--accent)); color: #fff; font-weight: 700; font-size: 0.9rem; text-align: center; }
 .double-banner.hidden { display: none; }
+.birthday-banner { order: 7; }
+.admin-birthday { width: 4.5em; }
 [data-theme="dark"] .double-banner { color: var(--bg); } /* white on the dark --warn was ~2.5:1 */
 body.tv .double-banner { font-size: 2rem; padding: 10px 16px; }
 /* FAMILY DAILY GOAL */
