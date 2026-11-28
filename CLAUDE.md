@@ -124,7 +124,7 @@ Database path: `/state`
   teamGoal:  { points, reward }  ← weekly family goal; progress computed from history
   claims:    { "cl<timestamp>": { id, member, name, points, requestedAt } }  ← pending only, max 20 per member
   swaps:     { "sw<timestamp>": { id, taskId, taskName, from, to, offeredAt, lastDone } }  ← open chore-swap offers, max 50; expire after 24 h or when the chore is done/reset/reassigned
-  redemptions: { "<id>": { id, rewardId, rewardName, cost, member, requestedAt, status, …, givenAt?, givenBy? } }
+  redemptions: { "<id>": { id, rewardId, rewardName, cost, member, requestedAt, status, note?, …, givenAt?, givenBy? } }
   pause:     { until, by, since }  ← house pause (holiday mode); absent when not paused
   doublePoints: { date, mult }  ← double-points day (x2/x3 on one local date); absent when off
   bonusChore: { date, taskId, extra }  ← bonus chore of the day (+1..20 extra points on one chore, one local date); absent when off
