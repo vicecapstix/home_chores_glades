@@ -49,6 +49,12 @@ A real-time chore tracker for families — assign tasks, track progress, earn po
 - **TV tomorrow** — from 18:00 the TV shows a Tomorrow panel with the chores due the next day
 - **Chore swaps** — a member can offer one of their pending chores to a sibling, who accepts or declines; offers expire after 24 hours
 - **Avatars & rename** — admins can give members an emoji avatar or rename them (points and PIN are kept)
+- **Birthday** — admins can set a member's birthday (month and day only, no year) in the Admin Panel; a 🎂 Happy birthday banner shows on that day. Display only
+- **Chore streak** — a chore done 3 or more periods in a row shows a "🔁 N in a row" tag on its card and the TV. Worked out from History, nothing extra is stored
+- **Parent cheer** — admins can tap 👏 on a completion in History; that member sees a cheer banner once on their device
+- **Quiet hours** — the 🔕 header button holds chore notifications back between 21:00 and 07:00 (on by default, tap again to turn off); one summary is sent when it ends. Saved on that device only
+- **Copy a chore** — admins can tap Copy in a chore's edit view to add a fresh copy with the same settings (not done, subtasks reset)
+- **Reward note** — a member can add an optional short note (up to 60 characters) to a reward request, shown to the admin
 - **Chore icons** — admins can pick an optional emoji for a chore (fixed list); it shows on cards, the TV and the This week planner, and is kept in templates and chore files
 - **Streak freezes** — a member earns 1 freeze per 7-day streak (max 2); one is spent automatically to bridge a single missed day (not during a house pause). Shown as ❄️N next to the streak
 - **Badges** — First Chore (1), Getting Started (10), Tenacious (25), Fifty Strong (50), Century (100 completions); Consistent (3-day streak), On Fire (7), Dedicated (30)
